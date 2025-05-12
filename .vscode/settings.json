@@ -1,0 +1,14 @@
+{
+  "editor.formatOnSave": true,
+  "files.encoding": "utf8",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "[xml]": {
+    "editor.tabSize": 4,
+    "editor.detectIndentation": false
+  },
+  "[json]": {
+    "editor.tabSize": 2,
+    "editor.detectIndentation": false
+  }
+}
