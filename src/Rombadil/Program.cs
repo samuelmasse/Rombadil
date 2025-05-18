@@ -1,8 +1,28 @@
+using Rombadil.Assembler;
 using Rombadil.Cpu;
 
 var mem = new byte[80000];
 var cpu = new Cpu6502(mem);
 var logger = new CpuLogger(mem, cpu);
+
+var assembler = new Assembler6502();
+
+var source =
+"""
+ADC #$44
+ADC $44
+ADC $44,X
+ADC $4400
+ADC $4400,X
+ADC $4400,Y
+ADC ($44,X)
+ADC ($44),Y
+""";
+
+var bytes = assembler.Assemble(source.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries));
+
+Console.WriteLine("Assembled output:");
+Console.WriteLine(string.Join(" ", bytes.Select(b => $"{b:X2}")));
 
 byte[] program = [
     0xA9, 0x01,       // LDA #$01

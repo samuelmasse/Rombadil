@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rombadil", "src\Rombadil\Ro
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rombadil.Cpu", "src\Rombadil.Cpu\Rombadil.Cpu.csproj", "{54BE2208-1F5F-44A6-994A-DC312D10FEBD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rombadil.Assembler", "src\Rombadil.Assembler\Rombadil.Assembler.csproj", "{D2390EAC-F351-4926-8D4B-438E701760DF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,6 +22,10 @@ Global
 		{54BE2208-1F5F-44A6-994A-DC312D10FEBD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{54BE2208-1F5F-44A6-994A-DC312D10FEBD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{54BE2208-1F5F-44A6-994A-DC312D10FEBD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D2390EAC-F351-4926-8D4B-438E701760DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D2390EAC-F351-4926-8D4B-438E701760DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D2390EAC-F351-4926-8D4B-438E701760DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D2390EAC-F351-4926-8D4B-438E701760DF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
