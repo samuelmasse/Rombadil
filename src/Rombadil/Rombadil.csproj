@@ -5,7 +5,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Rombadil.Cpu\Rombadil.Cpu.csproj" />
+        <ProjectReference Include="..\Rombadil.Cpu\Rombadil.Cpu.csproj" />
     </ItemGroup>
 
 </Project>

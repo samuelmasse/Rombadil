@@ -21,6 +21,12 @@ public class CpuLogger(Memory<byte> memory, Cpu6502 cpu)
             direct[2] = memory.Span[reg.PC + 2];
             dissassemble = $"STA ${(ushort)(direct[1] | direct[2] << 8):X4}";
         }
+        else if (opcode == CpuOpcode.TAX)
+            dissassemble = "TAX";
+        else if (opcode == CpuOpcode.INX)
+            dissassemble = "INX";
+        else if (opcode == CpuOpcode.DEX)
+            dissassemble = "DEX";
 
         string directOp = $"{direct[0]:X2}";
         if (direct[1] >= 0)

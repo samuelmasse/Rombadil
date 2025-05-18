@@ -9,6 +9,15 @@ byte[] program = [
     0x8D, 0x00, 0x02, // STA $0200
     0xA9, 0x05,       // LDA #$05
     0x8D, 0x01, 0x02, // STA $0201
+    0xAA,             // TAX
+    0xE8,             // INX
+    0xCA,             // DEX
+    0xCA,             // DEX
+    0xCA,             // DEX
+    0xCA,             // DEX
+    0xCA,             // DEX
+    0xCA,             // DEX
+    0xF0, 0x0F        // BEQ something
 ];
 
 ushort start = 5000;
@@ -20,13 +29,8 @@ program.AsSpan().CopyTo(mem.AsSpan()[start..]);
 
 cpu.Reset();
 
-logger.Step();
-logger.Step();
-logger.Step();
-logger.Step();
-logger.Step();
-logger.Step();
-logger.Step();
+for (int i = 0; i < 32; i++)
+    logger.Step();
 
 Console.WriteLine($"Should be 1 : {mem[0x0200]}");
 Console.WriteLine($"Should be 5 : {mem[0x0201]}");
