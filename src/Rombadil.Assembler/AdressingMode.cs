@@ -4,6 +4,8 @@ public enum AdressingMode
 {
     Implied,
     Immediate,
+    Relative,
+    Indirect,
     ZeroPage,
     ZeroPageX,
     ZeroPageY,

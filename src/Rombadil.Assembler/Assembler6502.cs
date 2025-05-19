@@ -59,6 +59,11 @@ public class Assembler6502
                     }
                     else throw new AssemblerSyntaxException(i, line, $"Invalid operand format: '{operand}'");
                 }
+                else if (operand.StartsWith('(') && operand.EndsWith(')'))
+                {
+                    arg = ReadNumber(operand[1..^1]);
+                    mode = AdressingMode.Indirect;
+                }
                 else
                 {
                     arg = ReadNumber(operand);
