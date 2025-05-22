@@ -37,6 +37,11 @@ public class OpcodeMap
             (AdressingMode.AbsoluteX, CpuOpcode.ASL_ABSX)
         );
 
+        Register(Instruction.BIT,
+            (AdressingMode.ZeroPage, CpuOpcode.BIT_ZP),
+            (AdressingMode.Absolute, CpuOpcode.BIT_ABS)
+        );
+
         Register(Instruction.BPL, (AdressingMode.Relative, CpuOpcode.BPL));
         Register(Instruction.BMI, (AdressingMode.Relative, CpuOpcode.BMI));
         Register(Instruction.BVC, (AdressingMode.Relative, CpuOpcode.BVC));

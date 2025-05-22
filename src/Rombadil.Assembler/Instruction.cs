@@ -5,6 +5,7 @@ public enum Instruction
     ADC,
     AND,
     ASL,
+    BIT,
     BPL,
     BMI,
     BVC,

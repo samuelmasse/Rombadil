@@ -2,19 +2,26 @@ namespace Rombadil.Assembler;
 
 public class Assembler6502
 {
-    private readonly OpcodeMap opcodeMap = new();
+    public byte[] Assemble(string[] source) => new AssemblerCompilationUnit(source, new()).Compile();
 
-    public byte[] Assemble(string[] source)
+    public byte[] AssembleOld(string[] source)
     {
         var output = new List<byte>();
+        var opcodeMap = new OpcodeMap();
 
         for (int i = 0; i < source.Length; i++)
         {
             var line = source[i].Trim();
-            if (string.IsNullOrWhiteSpace(line) || line.StartsWith(";"))
+            int comment = line.IndexOf(';');
+            if (comment >= 0)
+                line = line[..comment].Trim();
+
+            if (string.IsNullOrWhiteSpace(line))
                 continue;
 
-            var parts = line.ToUpperInvariant().Split(' ');
+            var parts = line.ToUpperInvariant().Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0)
+                continue;
 
             if (!Enum.TryParse<Instruction>(parts[0].Trim(), out var instruction))
                 throw new AssemblerSyntaxException(i, line, $"Unknown instruction '{parts[0]}'"); ;
@@ -121,11 +128,20 @@ public class Assembler6502
             return Convert.ToInt32(str[1..], 2);
         return Convert.ToInt32(str, 10);
     }
-
-    public string[] Dissasemble(byte[] code)
-    {
-        return [];
-    }
 }
 
-public class AssemblerSyntaxException(int lineNumber, string line, string message) : Exception($"Line {lineNumber + 1}: {message}\n→ \"{line}\"");
+public record struct AssemblerLine(string Name, string Value, AssemblerLineType Type);
+public enum AssemblerLineType
+{
+    Constant,
+    Label,
+    Operation
+}
+public record struct AssemblerInstruction(Instruction Instruction, AdressingMode AdressingMode, string Operand);
+public record struct AssemblerTerm(string Value, AssemblerOperation Operation);
+public enum AssemblerOperation
+{
+    Add,
+    Subtract
+}
+public class AssemblerSyntaxException(int lineNumber, string line, string message) : Exception($"Line {lineNumber + 1}: {message}\n-> \"{line}\"");
