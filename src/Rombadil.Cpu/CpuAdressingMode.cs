@@ -1,6 +1,6 @@
-namespace Rombadil.Assembler;
+namespace Rombadil.Cpu;
 
-public enum AdressingMode
+public enum CpuAdressingMode
 {
     Implied,
     Immediate,

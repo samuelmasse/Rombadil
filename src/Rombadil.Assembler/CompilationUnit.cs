@@ -1,16 +1,15 @@
 namespace Rombadil.Assembler;
 
-public class AssemblerCompilationUnit(string[] source, AssemblerLiner liner)
+public class CompilationUnit(string[] source, StatementParser liner)
 {
     private readonly Dictionary<string, int> constLocations = [];
     private readonly Dictionary<string, int> constValues = [];
 
-    private AssemblerLine[] lines = [];
-    private AssemblerInstruction?[] instructions = [];
+    private Statement[] lines = [];
 
     public byte[] Compile()
     {
-        lines = liner.Process(source);
+        lines = liner.Parse(source);
         PopulateConstantLocations();
         ParseOperationStatements();
         ResolveAllConstants();
@@ -22,7 +21,7 @@ public class AssemblerCompilationUnit(string[] source, AssemblerLiner liner)
         for (int i = 0; i < lines.Length; i++)
         {
             var line = lines[i];
-            if (line.Type == AssemblerLineType.Constant)
+            if (line.Type == StatementType.Constant)
                 constLocations.Add(line.Name, i);
         }
     }
@@ -31,22 +30,20 @@ public class AssemblerCompilationUnit(string[] source, AssemblerLiner liner)
     {
         foreach (var line in lines)
         {
-            if (line.Type == AssemblerLineType.Constant)
+            if (line.Type == StatementType.Constant)
                 ResolveConstant(line.Name);
         }
     }
 
     private void ParseOperationStatements()
     {
-        instructions = new AssemblerInstruction?[lines.Length];
-
         for (int i = 0; i < lines.Length; i++)
         {
             var line = lines[i];
-            if (line.Type != AssemblerLineType.Operation)
+            if (line.Type != StatementType.Operation)
                 continue;
 
-            if (!Enum.TryParse<Instruction>(line.Name, true, out var instruction))
+            if (!Enum.TryParse<CpuInstruction>(line.Name, true, out var instruction))
             {
                 // .org must expect constant expression
                 // Console.WriteLine(line.Name);
@@ -62,30 +59,31 @@ public class AssemblerCompilationUnit(string[] source, AssemblerLiner liner)
         }
     }
 
-    private (AdressingMode, string) ParseOperationArguments(string operand)
+    private (CpuAdressingMode, string) ParseOperationArguments(string operand)
     {
         if (operand.Length == 0 || operand == "A" || operand == "a")
-            return (AdressingMode.Implied, string.Empty);
+            return (CpuAdressingMode.Implied, string.Empty);
         else if (operand.StartsWith('#'))
-            return (AdressingMode.Immediate, operand[1..]);
+            return (CpuAdressingMode.Immediate, operand[1..]);
         else if (operand.Contains(','))
         {
             if (operand.StartsWith('(') && operand.EndsWith(",X)", StringComparison.InvariantCultureIgnoreCase))
-                return (AdressingMode.IndirectX, operand[1..^3]);
+                return (CpuAdressingMode.IndirectX, operand[1..^3]);
             else if (operand.StartsWith('(') && operand.EndsWith("),Y", StringComparison.InvariantCultureIgnoreCase))
-                return (AdressingMode.IndirectY, operand[1..^3]);
+                return (CpuAdressingMode.IndirectY, operand[1..^3]);
             else if (operand.EndsWith(",X", StringComparison.InvariantCultureIgnoreCase))
             {
-                // NOTE : if a variable can't be resolved when labels are not defined then it must be absolute. Otherwise it can be zero page if less than max value
-                return (AdressingMode.AbsoluteX, operand[..^2]); // Can become ZeroPageX
+                // NOTE : if a variable can't be resolved when labels are not defined then it must be absolute.
+                // Otherwise it can be zero page if less than max value
+                return (CpuAdressingMode.AbsoluteX, operand[..^2]); // Can become ZeroPageX
             }
             else if (operand.EndsWith(",Y", StringComparison.InvariantCultureIgnoreCase))
-                return (AdressingMode.AbsoluteY, operand[..^2]); // Can become ZeroPageY
+                return (CpuAdressingMode.AbsoluteY, operand[..^2]); // Can become ZeroPageY
             else throw new Exception($"Invalid operand format: '{operand}'");
         }
         else if (operand.StartsWith('(') && operand.EndsWith(')'))
-            return (AdressingMode.Indirect, operand[1..^1]);
-        else return (AdressingMode.Absolute, operand); // Can become ZeroPage
+            return (CpuAdressingMode.Indirect, operand[1..^1]);
+        else return (CpuAdressingMode.Absolute, operand); // Can become ZeroPage
     }
 
     private int ResolveConstant(string name)
@@ -112,7 +110,7 @@ public class AssemblerCompilationUnit(string[] source, AssemblerLiner liner)
             int value = char.IsLetter(term.Value[0]) ?
                 ResolveConstant(term.Value) : ParseNumber(term.Value);
 
-            if (term.Operation == AssemblerOperation.Add)
+            if (term.Operation == EquationTermOperation.Add)
                 sum += value;
             else sum -= value;
         }
@@ -120,22 +118,22 @@ public class AssemblerCompilationUnit(string[] source, AssemblerLiner liner)
         return sum;
     }
 
-    public static List<AssemblerTerm> ParseTerms(string expression)
+    public static List<EquationTerm> ParseTerms(string expression)
     {
-        var result = new List<AssemblerTerm>();
+        var result = new List<EquationTerm>();
         int i = 0;
-        var op = AssemblerOperation.Add;
+        var op = EquationTermOperation.Add;
 
         while (i < expression.Length)
         {
             if (expression[i] == '+')
             {
-                op = AssemblerOperation.Add;
+                op = EquationTermOperation.Add;
                 i++;
             }
             else if (expression[i] == '-')
             {
-                op = AssemblerOperation.Subtract;
+                op = EquationTermOperation.Subtract;
                 i++;
             }
 
@@ -147,7 +145,7 @@ public class AssemblerCompilationUnit(string[] source, AssemblerLiner liner)
             {
                 string value = expression[start..i];
                 result.Add(new(value, op));
-                op = AssemblerOperation.Add;
+                op = EquationTermOperation.Add;
             }
         }
 
@@ -159,14 +157,14 @@ public class AssemblerCompilationUnit(string[] source, AssemblerLiner liner)
         return 0;
     }
 
-    private void PrintLine(AssemblerLine line)
+    private void PrintLine(Statement line)
     {
-        if (line.Type == AssemblerLineType.Label)
+        if (line.Type == StatementType.Label)
         {
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine($"{line.Name}:");
         }
-        else if (line.Type == AssemblerLineType.Constant)
+        else if (line.Type == StatementType.Constant)
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Write(line.Name);
@@ -175,7 +173,7 @@ public class AssemblerCompilationUnit(string[] source, AssemblerLiner liner)
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine(line.Value);
         }
-        else if (line.Type == AssemblerLineType.Operation)
+        else if (line.Type == StatementType.Operation)
         {
             Console.ForegroundColor = ConsoleColor.Blue;
             Console.Write(line.Name);

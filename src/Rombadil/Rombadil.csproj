@@ -5,7 +5,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Rombadil.Cpu\Rombadil.Cpu.csproj" />
+        <ProjectReference Include="..\Rombadil.Assembler\Rombadil.Assembler.csproj" />
+        <ProjectReference Include="..\Rombadil.Cpu.Emulator\Rombadil.Cpu.Emulator.csproj" />
     </ItemGroup>
 
 </Project>

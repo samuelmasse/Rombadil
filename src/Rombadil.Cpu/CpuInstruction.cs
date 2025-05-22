@@ -1,6 +1,6 @@
-namespace Rombadil.Assembler;
+namespace Rombadil.Cpu;
 
-public enum Instruction
+public enum CpuInstruction
 {
     ADC,
     AND,

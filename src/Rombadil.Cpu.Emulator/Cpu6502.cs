@@ -1,4 +1,4 @@
-namespace Rombadil.Cpu;
+namespace Rombadil.Cpu.Emulator;
 
 public class Cpu6502(Memory<byte> memory)
 {

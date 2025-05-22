@@ -1,4 +1,4 @@
-namespace Rombadil.Cpu;
+namespace Rombadil.Cpu.Emulator;
 
 public struct CpuRegisters
 {

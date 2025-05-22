@@ -1,7 +1,3 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <ItemGroup>
-        <ProjectReference Include="..\Rombadil.Assembler\Rombadil.Assembler.csproj" />
-    </ItemGroup>
-
 </Project>

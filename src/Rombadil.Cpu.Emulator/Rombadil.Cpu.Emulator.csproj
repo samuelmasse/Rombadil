@@ -4,8 +4,4 @@
         <ProjectReference Include="..\Rombadil.Cpu\Rombadil.Cpu.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-        <Using Include="Rombadil.Cpu" />
-    </ItemGroup>
-
 </Project>
