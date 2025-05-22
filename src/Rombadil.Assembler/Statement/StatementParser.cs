@@ -2,7 +2,7 @@ namespace Rombadil.Assembler;
 
 public class StatementParser
 {
-    public Statement[] Parse(string[] lines)
+    public Statement[] Parse(ReadOnlyMemory<string> lines)
     {
         int divider = 16;
         int chunk = Math.Max(64, (lines.Length / divider) + 1);
@@ -16,7 +16,7 @@ public class StatementParser
             if (end > start)
             {
                 var section = new StatementParserWorker();
-                section.Parse(lines.AsSpan()[start..end]);
+                section.Parse(lines.Span[start..end]);
                 outputs[i] = section.Statements;
             }
             else outputs[i] = [];

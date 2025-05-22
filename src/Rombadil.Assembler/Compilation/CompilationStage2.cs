@@ -1,45 +1,39 @@
 namespace Rombadil.Assembler;
 
-public class CompilationUnit(string[] source, StatementParser liner)
+public class CompilationStage2(CompilationStatements statements, CompilationConstants constants, CompilationResolver resolver)
 {
-    private readonly Dictionary<string, int> constLocations = [];
-    private readonly Dictionary<string, int> constValues = [];
-
-    private Statement[] lines = [];
-
     public byte[] Compile()
     {
-        lines = liner.Parse(source);
         PopulateConstantLocations();
-        ParseOperationStatements();
         ResolveAllConstants();
+        ParseOperationStatements();
         return [];
     }
 
     private void PopulateConstantLocations()
     {
-        for (int i = 0; i < lines.Length; i++)
+        for (int i = 0; i < statements.Statements.Length; i++)
         {
-            var line = lines[i];
+            var line = statements.Statements[i];
             if (line.Type == StatementType.Constant)
-                constLocations.Add(line.Name, i);
+                constants.Declare(line.Name, i);
         }
     }
 
     private void ResolveAllConstants()
     {
-        foreach (var line in lines)
+        foreach (var statement in statements.Statements)
         {
-            if (line.Type == StatementType.Constant)
-                ResolveConstant(line.Name);
+            if (statement.Type == StatementType.Constant)
+                resolver.ResolveConstant(statement.Name);
         }
     }
 
     private void ParseOperationStatements()
     {
-        for (int i = 0; i < lines.Length; i++)
+        for (int i = 0; i < statements.Statements.Length; i++)
         {
-            var line = lines[i];
+            var line = statements.Statements[i];
             if (line.Type != StatementType.Operation)
                 continue;
 
@@ -84,77 +78,6 @@ public class CompilationUnit(string[] source, StatementParser liner)
         else if (operand.StartsWith('(') && operand.EndsWith(')'))
             return (CpuAdressingMode.Indirect, operand[1..^1]);
         else return (CpuAdressingMode.Absolute, operand); // Can become ZeroPage
-    }
-
-    private int ResolveConstant(string name)
-    {
-        if (constValues.TryGetValue(name, out var v))
-            return v;
-
-        var location = constLocations[name];
-        var line = lines[location];
-
-        int sum = ResolveEquation(line.Value);
-        constValues.Add(name, sum);
-
-        return sum;
-    }
-
-    private int ResolveEquation(string equation)
-    {
-        var terms = ParseTerms(equation);
-
-        int sum = 0;
-        foreach (var term in terms)
-        {
-            int value = char.IsLetter(term.Value[0]) ?
-                ResolveConstant(term.Value) : ParseNumber(term.Value);
-
-            if (term.Operation == EquationTermOperation.Add)
-                sum += value;
-            else sum -= value;
-        }
-
-        return sum;
-    }
-
-    public static List<EquationTerm> ParseTerms(string expression)
-    {
-        var result = new List<EquationTerm>();
-        int i = 0;
-        var op = EquationTermOperation.Add;
-
-        while (i < expression.Length)
-        {
-            if (expression[i] == '+')
-            {
-                op = EquationTermOperation.Add;
-                i++;
-            }
-            else if (expression[i] == '-')
-            {
-                op = EquationTermOperation.Subtract;
-                i++;
-            }
-
-            int start = i;
-            while (i < expression.Length && expression[i] != '+' && expression[i] != '-')
-                i++;
-
-            if (start < i)
-            {
-                string value = expression[start..i];
-                result.Add(new(value, op));
-                op = EquationTermOperation.Add;
-            }
-        }
-
-        return result;
-    }
-
-    private int ParseNumber(string expression)
-    {
-        return 0;
     }
 
     private void PrintLine(Statement line)

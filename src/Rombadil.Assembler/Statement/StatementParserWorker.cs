@@ -7,7 +7,7 @@ public class StatementParserWorker
 
     public List<Statement> Statements => statements;
 
-    public void Parse(Span<string> lines)
+    public void Parse(ReadOnlySpan<string> lines)
     {
         foreach (string line in lines)
             ParseLine(line);
