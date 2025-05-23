@@ -6,35 +6,52 @@ public class CompilationResolver(
     EquationParser equationParser,
     NumberParser numberParser)
 {
-    public int ResolveConstant(string name)
+    public bool TryResolveConstant(string name, out int value)
     {
-        if (constants.TryGetValue(name, out var v))
-            return v;
+        if (constants.TryGetValue(name, out value))
+            return true;
 
-        constants.TryGetStatementIndex(name, out var location);
+        if (!constants.TryGetStatementIndex(name, out var location))
+            return false;
+
         var statement = statements.Statements[location];
+        if (statement.Type == StatementType.Label)
+            return false;
 
-        int sum = ResolveEquation(statement.Value);
-        constants.SetValue(name, sum);
+        if (!TryResolveEquation(statement.Value, out value))
+            return false;
 
-        return sum;
+        constants.SetValue(name, value);
+
+        return true;
     }
 
-    public int ResolveEquation(string equation)
+    public bool TryResolveEquation(string equation, out int value)
     {
         var terms = equationParser.Parse(equation);
+        value = 0;
 
-        int sum = 0;
         foreach (var term in terms)
         {
-            int value = char.IsLetter(term.Value[0]) ?
-                ResolveConstant(term.Value) : numberParser.Parse(term.Value);
+            int val;
+
+            if (char.IsLetter(term.Value[0]))
+            {
+                if (!TryResolveConstant(term.Value, out val))
+                    return false;
+            }
+            else val = numberParser.Parse(term.Value);
+
+            if (term.Select == EquationTermSelect.LowByte)
+                val &= 0xFF;
+            else if (term.Select == EquationTermSelect.HighByte)
+                val = (val >> 8) & 0xFF;
 
             if (term.Operation == EquationTermOperation.Add)
-                sum += value;
-            else sum -= value;
+                value += val;
+            else value -= val;
         }
 
-        return sum;
+        return true;
     }
 }

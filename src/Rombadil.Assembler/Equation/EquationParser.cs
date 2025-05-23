@@ -7,6 +7,7 @@ public class EquationParser
         var result = new List<EquationTerm>();
         int i = 0;
         var op = EquationTermOperation.Add;
+        var select = EquationTermSelect.Whole;
 
         while (i < expression.Length)
         {
@@ -21,6 +22,20 @@ public class EquationParser
                 i++;
             }
 
+            if (i < expression.Length)
+            {
+                if (expression[i] == '<')
+                {
+                    select = EquationTermSelect.LowByte;
+                    i++;
+                }
+                else if (expression[i] == '>')
+                {
+                    select = EquationTermSelect.HighByte;
+                    i++;
+                }
+            }
+
             int start = i;
             while (i < expression.Length && expression[i] != '+' && expression[i] != '-')
                 i++;
@@ -28,8 +43,11 @@ public class EquationParser
             if (start < i)
             {
                 string value = expression[start..i];
-                result.Add(new(value, op));
+
+                result.Add(new(value, op, select));
+
                 op = EquationTermOperation.Add;
+                select = EquationTermSelect.Whole;
             }
         }
 

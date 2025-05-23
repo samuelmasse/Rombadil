@@ -191,6 +191,29 @@ public static class CpuOpcodeMap
 
         Register(CpuInstruction.RTI, (CpuAdressingMode.Implied, CpuOpcode.RTI));
 
+        Register(CpuInstruction.RTS, (CpuAdressingMode.Implied, CpuOpcode.RTS));
+
+        Register(CpuInstruction.STA,
+            (CpuAdressingMode.ZeroPage, CpuOpcode.STA_ZP),
+            (CpuAdressingMode.ZeroPageX, CpuOpcode.STA_ZPX),
+            (CpuAdressingMode.Absolute, CpuOpcode.STA_ABS),
+            (CpuAdressingMode.AbsoluteX, CpuOpcode.STA_ABSX),
+            (CpuAdressingMode.AbsoluteY, CpuOpcode.STA_ABSY),
+            (CpuAdressingMode.IndirectX, CpuOpcode.STA_INDX),
+            (CpuAdressingMode.IndirectY, CpuOpcode.STA_INDY)
+        );
+
+        Register(CpuInstruction.SBC,
+            (CpuAdressingMode.Immediate, CpuOpcode.SBC_IM),
+            (CpuAdressingMode.ZeroPage, CpuOpcode.SBC_ZP),
+            (CpuAdressingMode.ZeroPageX, CpuOpcode.SBC_ZPX),
+            (CpuAdressingMode.Absolute, CpuOpcode.SBC_ABS),
+            (CpuAdressingMode.AbsoluteX, CpuOpcode.SBC_ABSX),
+            (CpuAdressingMode.AbsoluteY, CpuOpcode.SBC_ABSY),
+            (CpuAdressingMode.IndirectX, CpuOpcode.SBC_INDX),
+            (CpuAdressingMode.IndirectY, CpuOpcode.SBC_INDY)
+        );
+
         Register(CpuInstruction.TXS, (CpuAdressingMode.Implied, CpuOpcode.TXS));
         Register(CpuInstruction.TSX, (CpuAdressingMode.Implied, CpuOpcode.TSX));
         Register(CpuInstruction.PHA, (CpuAdressingMode.Implied, CpuOpcode.PHA));
@@ -211,19 +234,11 @@ public static class CpuOpcodeMap
         );
     }
 
-    public static CpuOpcode EncodeOpcode(CpuInstruction op, CpuAdressingMode mode)
-    {
-        if (toOpcode.TryGetValue((op, mode), out var opcode))
-            return opcode;
-        else throw new InvalidOperationException($"No opcode found for {op} with {mode} addressing");
-    }
+    public static bool TryEncodeOpcode(CpuInstruction op, CpuAdressingMode mode, out CpuOpcode opcode) =>
+        toOpcode.TryGetValue((op, mode), out opcode);
 
-    public static (CpuInstruction, CpuAdressingMode) DecodeOpcode(CpuOpcode opcode)
-    {
-        if (fromOpcode.TryGetValue(opcode, out var pair))
-            return pair;
-        else throw new InvalidOperationException($"Opcode {opcode} is not registered in the mapping");
-    }
+    public static bool TryDecodeOpcode(CpuOpcode opcode, out (CpuInstruction, CpuAdressingMode) decode) =>
+        fromOpcode.TryGetValue(opcode, out decode);
 
     private static void Register(CpuInstruction instr, params (CpuAdressingMode mode, CpuOpcode opcode)[] variants)
     {

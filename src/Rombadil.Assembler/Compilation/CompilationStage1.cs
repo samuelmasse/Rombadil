@@ -9,7 +9,18 @@ public class CompilationStage1(CompilationSource source, StatementParser stateme
         var equationParser = new EquationParser();
         var numberParser = new NumberParser();
         var resolver = new CompilationResolver(statements, constants, equationParser, numberParser);
+        var adressingModeResolver = new CompilationAdressingModeResolver(resolver);
+        var instructionStatements = new CompilationInstructionStatements(statements);
+        var directiveStatements = new CompilationDirectiveStatements(statements);
+        var memoryLayout = new CompilationMemoryLayout(statements);
 
-        return new CompilationStage2(statements, constants, resolver).Compile();
+        return new CompilationStage2(
+            statements,
+            constants,
+            resolver,
+            adressingModeResolver,
+            instructionStatements,
+            directiveStatements,
+            memoryLayout).Compile();
     }
 }

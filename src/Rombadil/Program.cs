@@ -1,5 +1,5 @@
 using Rombadil.Assembler;
-using Rombadil.Cpu;
+using Rombadil.Cpu.Emulator;
 
 var mem = new byte[80000];
 var cpu = new Cpu6502(mem);
