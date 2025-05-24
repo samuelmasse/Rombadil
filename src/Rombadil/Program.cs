@@ -19,8 +19,32 @@ ADC ($44,X)
 ADC ($44),Y
 """;
 
+source = File.ReadAllText(@"C:\Users\Samuel\Documents\Repos\smb1\game.asm");
+
 var bytes = assembler.Assemble(source.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries));
 
+var rbytes = File.ReadAllBytes(@"C:\Users\Samuel\Documents\Repos\smb1\game.nes");
+
+var color = ConsoleColor.Green;
+Console.ForegroundColor = color;
+int t = 0;
+
+for (int i = 0; i < Math.Max(bytes.Length, rbytes.Length - 0x10); i++)
+{
+    var b = (i + 8 < bytes.Length) ? bytes[i + 8] : 0;
+    var rb = rbytes[i + 0x10];
+
+    var c = b == rb ? ConsoleColor.Green : ConsoleColor.Red;
+    if (c != color)
+        Console.ForegroundColor = c;
+
+    Console.Write($"{b:X2} ");
+    t++;
+    if (t % 16 == 0)
+        Console.WriteLine();
+}
+
+Console.ResetColor();
 Console.WriteLine("Assembled output:");
 Console.WriteLine(string.Join(" ", bytes.Select(b => $"{b:X2}")));
 

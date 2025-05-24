@@ -1,16 +1,18 @@
 namespace Rombadil.Assembler;
 
-public class CompilationStage2(
-    CompilationStatements statements,
+public class CompilationStage(
+    string[] lines,
+    StatementParser statementParser,
+    List<Statement> statements,
     CompilationConstants constants,
     CompilationResolver resolver,
-    CompilationAdressingModeResolver adressingModeResolver,
-    CompilationInstructionStatements instructionStatements,
-    CompilationDirectiveStatements directiveStatements,
-    CompilationMemoryLayout memoryLayout)
+    CompilationAdressingModeResolver adressingModeResolver)
 {
     public byte[] Compile()
     {
+        foreach (var statement in statementParser.Parse(lines))
+            statements.Add(statement);
+
         PopulateConstantLocations();
         ParseOperationStatements();
         CreateMemoryLayout();
@@ -18,11 +20,12 @@ public class CompilationStage2(
         return EmitBinary();
     }
 
+
     private void PopulateConstantLocations()
     {
-        for (int i = 0; i < statements.Statements.Length; i++)
+        for (int i = 0; i < statements.Count; i++)
         {
-            var line = statements.Statements[i];
+            var line = statements[i];
             if (line.Type == StatementType.Constant || line.Type == StatementType.Label)
                 constants.Declare(line.Name, i);
         }
@@ -30,9 +33,9 @@ public class CompilationStage2(
 
     private void ParseOperationStatements()
     {
-        for (int i = 0; i < statements.Statements.Length; i++)
+        for (int i = 0; i < statements.Count; i++)
         {
-            var statement = statements.Statements[i];
+            var statement = statements[i];
             if (statement.Type == StatementType.Operation)
                 ParseOperationStatement(statement, i);
         }
@@ -53,7 +56,7 @@ public class CompilationStage2(
             throw new Exception(); // TODO
 
         var expressions = statement.Value.Split(',');
-        directiveStatements[i] = new(directiveType, expressions);
+        statements[i].DirectiveStatement = new(directiveType, expressions);
     }
 
     private void ParseInstructionStatement(Statement statement, int i)
@@ -63,38 +66,38 @@ public class CompilationStage2(
 
         var operand = statement.Value;
         var (adressingMode, expression) = adressingModeResolver.Resolve(instruction, operand);
-        instructionStatements[i] = new(instruction, adressingMode, expression);
+        statements[i].InstructionStatement = new(instruction, adressingMode, expression);
     }
 
     private void CreateMemoryLayout()
     {
         int index = 0;
 
-        for (int i = 0; i < statements.Statements.Length; i++)
+        for (int i = 0; i < statements.Count; i++)
         {
-            var instructionStatement = instructionStatements[i];
+            var instructionStatement = statements[i].InstructionStatement;
             if (instructionStatement != null)
             {
-                memoryLayout[i] = index;
+                statements[i].MemoryLocation = index;
                 index += 1 + OperandSize(instructionStatement.Value.AdressingMode);
                 continue;
             }
 
-            var directiveStatement = directiveStatements[i];
+            var directiveStatement = statements[i].DirectiveStatement;
             if (directiveStatement != null)
             {
                 var dirst = directiveStatement.Value;
 
                 if (dirst.Type == DirectiveType.Word)
                 {
-                    memoryLayout[i] = index;
+                    statements[i].MemoryLocation = index;
                     index += 2 * dirst.Expressions.Length;
                     continue;
                 }
 
                 if (dirst.Type == DirectiveType.Byte)
                 {
-                    memoryLayout[i] = index;
+                    statements[i].MemoryLocation = index;
                     index += dirst.Expressions.Length;
                     continue;
                 }
@@ -113,9 +116,9 @@ public class CompilationStage2(
 
     private void ResolveLabelValues()
     {
-        for (int i = 0; i < statements.Statements.Length; i++)
+        for (int i = 0; i < statements.Count; i++)
         {
-            var statement = statements.Statements[i];
+            var statement = statements[i];
             if (statement.Type == StatementType.Label)
                 ResolveLabelValue(statement.Name, i);
         }
@@ -124,9 +127,9 @@ public class CompilationStage2(
     private void ResolveLabelValue(string name, int i)
     {
         int nextIndex = i;
-        while (nextIndex < statements.Statements.Length)
+        while (nextIndex < statements.Count)
         {
-            int? memoryValue = memoryLayout[nextIndex];
+            int? memoryValue = statements[nextIndex].MemoryLocation;
             if (memoryValue != null)
             {
                 constants.SetValue(name, memoryValue.Value);
@@ -143,9 +146,9 @@ public class CompilationStage2(
     {
         var output = new List<byte>();
 
-        for (int i = 0; i < statements.Statements.Length; i++)
+        for (int i = 0; i < statements.Count; i++)
         {
-            var instructionStatement = instructionStatements[i];
+            var instructionStatement = statements[i].InstructionStatement;
             if (instructionStatement != null)
             {
                 var istat = instructionStatement.Value;
@@ -154,7 +157,7 @@ public class CompilationStage2(
                     throw new Exception();
 
                 if (istat.AdressingMode == CpuAdressingMode.Relative)
-                    arg = arg - memoryLayout[i]!.Value - 2;
+                    arg = arg - statements[i].MemoryLocation!.Value - 2;
 
                 if (!CpuOpcodeMap.TryEncodeOpcode(istat.Instruction, istat.AdressingMode, out var opcode))
                     throw new InvalidOperationException($"No opcode found for {istat.Instruction} with {istat.AdressingMode} addressing");
@@ -169,7 +172,7 @@ public class CompilationStage2(
                 continue;
             }
 
-            var directiveStatement = directiveStatements[i];
+            var directiveStatement = statements[i].DirectiveStatement;
             if (directiveStatement != null)
             {
                 var dstat = directiveStatement.Value;
