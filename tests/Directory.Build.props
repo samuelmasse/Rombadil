@@ -8,11 +8,18 @@
 
     <PropertyGroup>
         <BaseOutputPath>..\..\bin\$(MSBuildProjectName)</BaseOutputPath>
-        <BaseIntermediateOutputPath>..\..\obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+        <BaseIntermediateOutputPath>..\..\obj/$(MSBuildProjectName)</BaseIntermediateOutputPath>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="coverlet.collector" Version="6.0.4" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+        <PackageReference Include="MSTest" Version="3.8.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
         <Using Include="System.Collections.Concurrent" />
         <Using Include="System.Diagnostics" />
         <Using Include="System.Diagnostics.CodeAnalysis" />

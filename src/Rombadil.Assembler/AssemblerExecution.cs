@@ -108,19 +108,20 @@ internal class AssemblerExecution(
                 continue;
 
             int index = i;
+            int? loc = null;
+
             while (index < statements.Count)
             {
-                int? loc = statements[index].MemoryLocation;
+                loc = statements[index].MemoryLocation;
                 if (loc != null)
-                {
-                    values.Add(statement.Name, loc.Value);
-                    continue;
-                }
+                    break;
 
                 index++;
             }
 
-            throw new Exception();
+            if (loc != null)
+                values.Add(statement.Name, loc.Value);
+            else throw new Exception();
         }
     }
 }

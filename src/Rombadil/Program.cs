@@ -21,7 +21,13 @@ ADC ($44),Y
 
 source = File.ReadAllText(@"C:\Users\Samuel\Documents\Repos\smb1\game.asm");
 
-var bytes = assembler.Assemble(source.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries));
+var lines = source.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+
+var sw = Stopwatch.StartNew();
+var bytes = assembler.Assemble(lines);
+sw.Stop();
+
+Console.WriteLine($"took {sw.Elapsed.TotalMilliseconds} ms");
 
 var rbytes = File.ReadAllBytes(@"C:\Users\Samuel\Documents\Repos\smb1\game.nes");
 
