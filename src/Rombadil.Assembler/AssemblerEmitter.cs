@@ -9,9 +9,9 @@ internal class AssemblerEmitter(List<AssemblerStatement> statements, AssemblerRe
             var statement = statements[i];
 
             if (statement.Instruction != null)
-                EmitInstruction(statement, statement.Instruction.Value);
+                EmitInstruction(statement, statement.Instruction);
             else if (statement.Directive != null)
-                EmitDirective(statement, statement.Directive.Value);
+                EmitDirective(statement, statement.Directive);
         }
     }
 

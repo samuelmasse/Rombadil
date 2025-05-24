@@ -1,6 +1,6 @@
 namespace Rombadil.Assembler;
 
-internal class AssemblerResolver(List<AssemblerStatement> statements, AssemblerConstants constants)
+internal class AssemblerResolver(List<AssemblerStatement> statements, Dictionary<string, int> declarations, Dictionary<string, int> values)
 {
     internal bool TryResolveEquation(string equation, out int value)
     {
@@ -32,10 +32,10 @@ internal class AssemblerResolver(List<AssemblerStatement> statements, AssemblerC
 
     private bool TryResolveConstant(string name, out int value)
     {
-        if (constants.TryGetValue(name, out value))
+        if (values.TryGetValue(name, out value))
             return true;
 
-        if (!constants.TryGetStatementIndex(name, out var location))
+        if (!declarations.TryGetValue(name, out var location))
             return false;
 
         var statement = statements[location];
@@ -45,7 +45,7 @@ internal class AssemblerResolver(List<AssemblerStatement> statements, AssemblerC
         if (!TryResolveEquation(statement.Value, out value))
             return false;
 
-        constants.SetValue(name, value);
+        values.Add(name, value);
 
         return true;
     }

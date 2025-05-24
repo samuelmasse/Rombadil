@@ -3,35 +3,36 @@ namespace Rombadil.Assembler;
 internal class AssemblerExecution(
     string[] lines,
     List<AssemblerStatement> statements,
+    Dictionary<string, int> declarations,
+    Dictionary<string, int> values,
     AssemblerParser parser,
-    AssemblerConstants constants,
     AssemblerResolver resolver,
     AssemblerAddresser addresser,
     AssemblerEmitter emitter)
 {
     internal void Compile()
     {
-        ParseLines();
-        PopulateConstantLocations();
+        ParseLinesIntoStatements();
+        DeclareConstants();
         ParseOperationStatements();
         CreateMemoryLayout();
         ResolveLabelValues();
         emitter.Emit();
     }
 
-    private void ParseLines()
+    private void ParseLinesIntoStatements()
     {
         foreach (var line in lines)
             parser.Parse(line);
     }
 
-    private void PopulateConstantLocations()
+    private void DeclareConstants()
     {
         for (int i = 0; i < statements.Count; i++)
         {
             var line = statements[i];
             if (line.Type == AssemblerStatementType.Constant || line.Type == AssemblerStatementType.Label)
-                constants.Declare(line.Name, i);
+                declarations.Add(line.Name, i);
         }
     }
 
@@ -40,40 +41,34 @@ internal class AssemblerExecution(
         for (int i = 0; i < statements.Count; i++)
         {
             var statement = statements[i];
-            if (statement.Type == AssemblerStatementType.Operation)
-                ParseOperationStatement(statement, i);
+            if (statement.Type != AssemblerStatementType.Operation)
+                continue;
+
+            if (statement.Name.StartsWith('.'))
+            {
+                if (!Enum.TryParse<AssemblerDirectiveType>(statement.Name[1..], true, out var directiveType))
+                    throw new Exception(); // TODO
+
+                var expressions = statement.Value.Split(',');
+
+                statement.Directive = new(directiveType, expressions);
+            }
+            else
+            {
+                if (!Enum.TryParse<CpuInstruction>(statement.Name, true, out var instruction))
+                    throw new Exception(); // TODO
+
+                var operand = statement.Value;
+                var (addressingMode, expression) = addresser.Resolve(instruction, operand);
+
+                statement.Instruction = new(instruction, addressingMode, expression);
+            }
         }
-    }
-
-    private void ParseOperationStatement(AssemblerStatement statement, int i)
-    {
-        if (statement.Name.StartsWith('.'))
-            ParseDirectiveStatement(statement, i);
-        else ParseInstructionStatement(statement, i);
-    }
-
-    private void ParseDirectiveStatement(AssemblerStatement statement, int i)
-    {
-        if (!Enum.TryParse<AssemblerDirectiveType>(statement.Name[1..], true, out var directiveType))
-            throw new Exception(); // TODO
-
-        var expressions = statement.Value.Split(',');
-        statements[i].Directive = new(directiveType, expressions);
-    }
-
-    private void ParseInstructionStatement(AssemblerStatement statement, int i)
-    {
-        if (!Enum.TryParse<CpuInstruction>(statement.Name, true, out var instruction))
-            throw new Exception(); // TODO
-
-        var operand = statement.Value;
-        var (addressingMode, expression) = addresser.Resolve(instruction, operand);
-        statements[i].Instruction = new(instruction, addressingMode, expression);
     }
 
     private void CreateMemoryLayout()
     {
-        int index = 0;
+        int cur = 0;
 
         for (int i = 0; i < statements.Count; i++)
         {
@@ -81,28 +76,25 @@ internal class AssemblerExecution(
 
             if (statement.Instruction != null)
             {
-                statement.MemoryLocation = index;
-                index += 1 + CpuAddressingModeSize.Get(statement.Instruction.Value.AddressingMode);
+                statement.MemoryLocation = cur;
+                cur += 1 + CpuAddressingModeSize.Get(statement.Instruction.AddressingMode);
             }
-            else if (statement.Directive != null)
+            else if (statement.Directive?.Type == AssemblerDirectiveType.Word)
             {
-                if (statement.Directive.Value.Type == AssemblerDirectiveType.Word)
-                {
-                    statement.MemoryLocation = index;
-                    index += 2 * statement.Directive.Value.Expressions.Length;
-                }
-                else if (statement.Directive.Value.Type == AssemblerDirectiveType.Byte)
-                {
-                    statement.MemoryLocation = index;
-                    index += statement.Directive.Value.Expressions.Length;
-                }
-                else if (statement.Directive.Value.Type == AssemblerDirectiveType.Org)
-                {
-                    if (!resolver.TryResolveEquation(statement.Directive.Value.Expressions[0], out var jmp))
-                        throw new Exception(); // TODO
+                statement.MemoryLocation = cur;
+                cur += statement.Directive.Expressions.Length * 2;
+            }
+            else if (statement.Directive?.Type == AssemblerDirectiveType.Byte)
+            {
+                statement.MemoryLocation = cur;
+                cur += statement.Directive.Expressions.Length;
+            }
+            else if (statement.Directive?.Type == AssemblerDirectiveType.Org)
+            {
+                if (!resolver.TryResolveEquation(statement.Directive.Expressions[0], out var jmp))
+                    throw new Exception(); // TODO
 
-                    index = jmp;
-                }
+                cur = jmp;
             }
         }
     }
@@ -112,26 +104,23 @@ internal class AssemblerExecution(
         for (int i = 0; i < statements.Count; i++)
         {
             var statement = statements[i];
-            if (statement.Type == AssemblerStatementType.Label)
-                ResolveLabelValue(statement.Name, i);
-        }
-    }
+            if (statement.Type != AssemblerStatementType.Label)
+                continue;
 
-    private void ResolveLabelValue(string name, int i)
-    {
-        int nextIndex = i;
-        while (nextIndex < statements.Count)
-        {
-            int? memoryValue = statements[nextIndex].MemoryLocation;
-            if (memoryValue != null)
+            int index = i;
+            while (index < statements.Count)
             {
-                constants.SetValue(name, memoryValue.Value);
-                return;
+                int? loc = statements[index].MemoryLocation;
+                if (loc != null)
+                {
+                    values.Add(statement.Name, loc.Value);
+                    continue;
+                }
+
+                index++;
             }
 
-            nextIndex++;
+            throw new Exception();
         }
-
-        throw new Exception();
     }
 }

@@ -5,18 +5,21 @@ public class Assembler6502
     public byte[] Assemble(string[] lines)
     {
         var statements = new List<AssemblerStatement>();
-        var parser = new AssemblerParser(statements);
-        var constants = new AssemblerConstants();
-        var resolver = new AssemblerResolver(statements, constants);
-        var addresser = new AssemblerAddresser(resolver);
+        var declarations = new Dictionary<string, int>();
+        var values = new Dictionary<string, int>();
         var output = new List<byte>();
+
+        var parser = new AssemblerParser(statements);
+        var resolver = new AssemblerResolver(statements, declarations, values);
+        var addresser = new AssemblerAddresser(resolver);
         var emitter = new AssemblerEmitter(statements, resolver, output);
 
         new AssemblerExecution(
             lines,
             statements,
+            declarations,
+            values,
             parser,
-            constants,
             resolver,
             addresser,
             emitter).Compile();

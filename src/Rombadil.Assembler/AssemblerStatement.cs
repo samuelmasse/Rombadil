@@ -14,7 +14,7 @@ internal enum AssemblerStatementType
     Operation
 }
 
-internal record struct AssemblerDirective(AssemblerDirectiveType Type, string[] Expressions);
+internal record class AssemblerDirective(AssemblerDirectiveType Type, string[] Expressions);
 
 internal enum AssemblerDirectiveType
 {
@@ -25,4 +25,4 @@ internal enum AssemblerDirectiveType
     Incbin
 }
 
-internal record struct AssemblerInstruction(CpuInstruction Instruction, CpuAddressingMode AddressingMode, string Expression);
+internal record class AssemblerInstruction(CpuInstruction Instruction, CpuAddressingMode AddressingMode, string Expression);
