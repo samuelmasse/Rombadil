@@ -20,7 +20,7 @@ internal class AssemblerParser(List<AssemblerStatement> statements)
         var parts = str.Split('=');
 
         var name = parts[0].Trim();
-        var value = TrimAroundSymbols(parts[1].Trim());
+        var value = RemoveAllSpaces(parts[1].Trim());
 
         statements.Add(new(name, value, AssemblerStatementType.Constant));
     }
@@ -30,7 +30,7 @@ internal class AssemblerParser(List<AssemblerStatement> statements)
         int index = str.IndexOf(' ');
 
         string operation = (index >= 0 ? str[..index] : str).Trim();
-        string operand = index >= 0 ? TrimAroundSymbols(str[index..].Trim()) : string.Empty;
+        string operand = index >= 0 ? RemoveAllSpaces(str[index..].Trim()) : string.Empty;
 
         statements.Add(new(operation, operand, AssemblerStatementType.Operation));
     }
@@ -78,26 +78,12 @@ internal class AssemblerParser(List<AssemblerStatement> statements)
         return sb.ToString();
     }
 
-    private string TrimAroundSymbols(string str)
+    private string RemoveAllSpaces(string str)
     {
-        ReadOnlySpan<char> symbols = "()+-#,><";
         sb.Clear();
-
-        for (int i = 0; i < str.Length; i++)
-        {
-            char c = str[i];
-
-            if (c == ' ')
-            {
-                if (i > 0 && symbols.Contains(str[i - 1]))
-                    continue;
-                else if (i + 1 < str.Length && symbols.Contains(str[i + 1]))
-                    continue;
-            }
-
-            sb.Append(c);
-        }
-
+        foreach (char c in str)
+            if (c != ' ')
+                sb.Append(c);
         return sb.ToString();
     }
 }
