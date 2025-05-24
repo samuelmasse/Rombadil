@@ -1,8 +1,8 @@
 namespace Rombadil.Assembler;
 
-public class CompilationAddressingModeResolver(CompilationResolver resolver)
+internal class AssemblerAddresser(AssemblerResolver resolver)
 {
-    public (CpuAddressingMode, string) Resolve(CpuInstruction instruction, string operand)
+    internal (CpuAddressingMode, string) Resolve(CpuInstruction instruction, string operand)
     {
         var c = StringComparison.InvariantCultureIgnoreCase;
 

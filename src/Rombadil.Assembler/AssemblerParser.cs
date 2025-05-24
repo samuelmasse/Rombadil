@@ -1,19 +1,10 @@
 namespace Rombadil.Assembler;
 
-public class StatementParserWorker
+internal class AssemblerParser(List<AssemblerStatement> statements)
 {
-    private readonly List<Statement> statements = [];
     private readonly StringBuilder sb = new();
 
-    public List<Statement> Statements => statements;
-
-    public void Parse(ReadOnlySpan<string> lines)
-    {
-        foreach (string line in lines)
-            ParseLine(line);
-    }
-
-    private void ParseLine(string source)
+    internal void Parse(string source)
     {
         var line = ExtractLabel(CollapseSpaces(RemoveComment(source))).Trim();
         if (string.IsNullOrWhiteSpace(line))
@@ -31,7 +22,7 @@ public class StatementParserWorker
         var name = parts[0].Trim();
         var value = TrimAroundSymbols(parts[1].Trim());
 
-        statements.Add(new(name, value, StatementType.Constant));
+        statements.Add(new(name, value, AssemblerStatementType.Constant));
     }
 
     private void ParseOperation(string str)
@@ -41,7 +32,7 @@ public class StatementParserWorker
         string operation = (index >= 0 ? str[..index] : str).Trim();
         string operand = index >= 0 ? TrimAroundSymbols(str[index..].Trim()) : string.Empty;
 
-        statements.Add(new(operation, operand, StatementType.Operation));
+        statements.Add(new(operation, operand, AssemblerStatementType.Operation));
     }
 
     private string ExtractLabel(string str)
@@ -51,7 +42,7 @@ public class StatementParserWorker
             return str;
 
         var name = str[..index].Trim();
-        statements.Add(new(name, string.Empty, StatementType.Label));
+        statements.Add(new(name, string.Empty, AssemblerStatementType.Label));
 
         return str[(index + 1)..];
     }

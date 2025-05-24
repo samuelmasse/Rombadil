@@ -1,18 +1,16 @@
 namespace Rombadil.Assembler;
 
-public class CompilationStage(
+internal class AssemblerExecution(
     string[] lines,
-    StatementParser statementParser,
-    List<Statement> statements,
-    CompilationConstants constants,
-    CompilationResolver resolver,
-    CompilationAddressingModeResolver addressingModeResolver)
+    List<AssemblerStatement> statements,
+    AssemblerParser parser,
+    AssemblerConstants constants,
+    AssemblerResolver resolver,
+    AssemblerAddresser addresser)
 {
-    public byte[] Compile()
+    internal byte[] Compile()
     {
-        foreach (var statement in statementParser.Parse(lines))
-            statements.Add(statement);
-
+        ParseLines();
         PopulateConstantLocations();
         ParseOperationStatements();
         CreateMemoryLayout();
@@ -20,13 +18,18 @@ public class CompilationStage(
         return EmitBinary();
     }
 
+    private void ParseLines()
+    {
+        foreach (var line in lines)
+            parser.Parse(line);
+    }
 
     private void PopulateConstantLocations()
     {
         for (int i = 0; i < statements.Count; i++)
         {
             var line = statements[i];
-            if (line.Type == StatementType.Constant || line.Type == StatementType.Label)
+            if (line.Type == AssemblerStatementType.Constant || line.Type == AssemblerStatementType.Label)
                 constants.Declare(line.Name, i);
         }
     }
@@ -36,37 +39,35 @@ public class CompilationStage(
         for (int i = 0; i < statements.Count; i++)
         {
             var statement = statements[i];
-            if (statement.Type == StatementType.Operation)
+            if (statement.Type == AssemblerStatementType.Operation)
                 ParseOperationStatement(statement, i);
         }
     }
 
-    private void ParseOperationStatement(Statement statement, int i)
+    private void ParseOperationStatement(AssemblerStatement statement, int i)
     {
         if (statement.Name.StartsWith('.'))
             ParseDirectiveStatement(statement, i);
         else ParseInstructionStatement(statement, i);
     }
 
-    private void ParseDirectiveStatement(Statement statement, int i)
+    private void ParseDirectiveStatement(AssemblerStatement statement, int i)
     {
-        var noDot = statement.Name[1..];
-
-        if (!Enum.TryParse<DirectiveType>(noDot, true, out var directiveType))
+        if (!Enum.TryParse<AssemblerDirectiveType>(statement.Name[1..], true, out var directiveType))
             throw new Exception(); // TODO
 
         var expressions = statement.Value.Split(',');
-        statements[i].DirectiveStatement = new(directiveType, expressions);
+        statements[i].Directive = new(directiveType, expressions);
     }
 
-    private void ParseInstructionStatement(Statement statement, int i)
+    private void ParseInstructionStatement(AssemblerStatement statement, int i)
     {
         if (!Enum.TryParse<CpuInstruction>(statement.Name, true, out var instruction))
             throw new Exception(); // TODO
 
         var operand = statement.Value;
-        var (addressingMode, expression) = addressingModeResolver.Resolve(instruction, operand);
-        statements[i].InstructionStatement = new(instruction, addressingMode, expression);
+        var (addressingMode, expression) = addresser.Resolve(instruction, operand);
+        statements[i].Instruction = new(instruction, addressingMode, expression);
     }
 
     private void CreateMemoryLayout()
@@ -75,40 +76,32 @@ public class CompilationStage(
 
         for (int i = 0; i < statements.Count; i++)
         {
-            var instructionStatement = statements[i].InstructionStatement;
-            if (instructionStatement != null)
+            var statement = statements[i];
+
+            if (statement.Instruction != null)
             {
                 statements[i].MemoryLocation = index;
-                index += 1 + OperandSize(instructionStatement.Value.AddressingMode);
+                index += 1 + OperandSize(statement.Instruction.Value.AddressingMode);
                 continue;
             }
-
-            var directiveStatement = statements[i].DirectiveStatement;
-            if (directiveStatement != null)
+            else if (statement.Directive != null)
             {
-                var dirst = directiveStatement.Value;
-
-                if (dirst.Type == DirectiveType.Word)
+                if (statement.Directive.Value.Type == AssemblerDirectiveType.Word)
                 {
                     statements[i].MemoryLocation = index;
-                    index += 2 * dirst.Expressions.Length;
-                    continue;
+                    index += 2 * statement.Directive.Value.Expressions.Length;
                 }
-
-                if (dirst.Type == DirectiveType.Byte)
+                else if (statement.Directive.Value.Type == AssemblerDirectiveType.Byte)
                 {
                     statements[i].MemoryLocation = index;
-                    index += dirst.Expressions.Length;
-                    continue;
+                    index += statement.Directive.Value.Expressions.Length;
                 }
-
-                if (dirst.Type == DirectiveType.Org)
+                else if (statement.Directive.Value.Type == AssemblerDirectiveType.Org)
                 {
-                    if (!resolver.TryResolveEquation(dirst.Expressions[0], out var jmp))
+                    if (!resolver.TryResolveEquation(statement.Directive.Value.Expressions[0], out var jmp))
                         throw new Exception(); // TODO
 
                     index = jmp;
-                    continue;
                 }
             }
         }
@@ -119,7 +112,7 @@ public class CompilationStage(
         for (int i = 0; i < statements.Count; i++)
         {
             var statement = statements[i];
-            if (statement.Type == StatementType.Label)
+            if (statement.Type == AssemblerStatementType.Label)
                 ResolveLabelValue(statement.Name, i);
         }
     }
@@ -148,7 +141,7 @@ public class CompilationStage(
 
         for (int i = 0; i < statements.Count; i++)
         {
-            var instructionStatement = statements[i].InstructionStatement;
+            var instructionStatement = statements[i].Instruction;
             if (instructionStatement != null)
             {
                 var istat = instructionStatement.Value;
@@ -172,12 +165,12 @@ public class CompilationStage(
                 continue;
             }
 
-            var directiveStatement = statements[i].DirectiveStatement;
+            var directiveStatement = statements[i].Directive;
             if (directiveStatement != null)
             {
                 var dstat = directiveStatement.Value;
 
-                if (dstat.Type == DirectiveType.Byte)
+                if (dstat.Type == AssemblerDirectiveType.Byte)
                 {
                     foreach (var expression in dstat.Expressions)
                     {
@@ -187,7 +180,7 @@ public class CompilationStage(
                         output.Add((byte)(val & 0xFF));
                     }
                 }
-                else if (dstat.Type == DirectiveType.Word)
+                else if (dstat.Type == AssemblerDirectiveType.Word)
                 {
                     foreach (var expression in dstat.Expressions)
                     {

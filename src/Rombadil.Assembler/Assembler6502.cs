@@ -4,18 +4,18 @@ public class Assembler6502
 {
     public byte[] Assemble(string[] lines)
     {
-        var statementParser = new StatementParser();
-        var statements = new List<Statement>();
-        var constants = new CompilationConstants();
-        var resolver = new CompilationResolver(statements, constants);
-        var addressingModeResolver = new CompilationAddressingModeResolver(resolver);
+        var statements = new List<AssemblerStatement>();
+        var parser = new AssemblerParser(statements);
+        var constants = new AssemblerConstants();
+        var resolver = new AssemblerResolver(statements, constants);
+        var addresser = new AssemblerAddresser(resolver);
 
-        return new CompilationStage(
+        return new AssemblerExecution(
             lines,
-            statementParser,
             statements,
+            parser,
             constants,
             resolver,
-            addressingModeResolver).Compile();
+            addresser).Compile();
     }
 }

@@ -1,8 +1,8 @@
 namespace Rombadil.Assembler;
 
-public class CompilationResolver(List<Statement> statements, CompilationConstants constants)
+internal class AssemblerResolver(List<AssemblerStatement> statements, AssemblerConstants constants)
 {
-    public bool TryResolveEquation(string equation, out int value)
+    internal bool TryResolveEquation(string equation, out int value)
     {
         value = 0;
 
@@ -39,7 +39,7 @@ public class CompilationResolver(List<Statement> statements, CompilationConstant
             return false;
 
         var statement = statements[location];
-        if (statement.Type == StatementType.Label)
+        if (statement.Type == AssemblerStatementType.Label)
             return false;
 
         if (!TryResolveEquation(statement.Value, out value))
