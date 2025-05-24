@@ -9,13 +9,18 @@ public class Assembler6502
         var constants = new AssemblerConstants();
         var resolver = new AssemblerResolver(statements, constants);
         var addresser = new AssemblerAddresser(resolver);
+        var output = new List<byte>();
+        var emitter = new AssemblerEmitter(statements, resolver, output);
 
-        return new AssemblerExecution(
+        new AssemblerExecution(
             lines,
             statements,
             parser,
             constants,
             resolver,
-            addresser).Compile();
+            addresser,
+            emitter).Compile();
+
+        return [.. output];
     }
 }

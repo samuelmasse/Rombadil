@@ -6,16 +6,17 @@ internal class AssemblerExecution(
     AssemblerParser parser,
     AssemblerConstants constants,
     AssemblerResolver resolver,
-    AssemblerAddresser addresser)
+    AssemblerAddresser addresser,
+    AssemblerEmitter emitter)
 {
-    internal byte[] Compile()
+    internal void Compile()
     {
         ParseLines();
         PopulateConstantLocations();
         ParseOperationStatements();
         CreateMemoryLayout();
         ResolveLabelValues();
-        return EmitBinary();
+        emitter.Emit();
     }
 
     private void ParseLines()
@@ -80,20 +81,19 @@ internal class AssemblerExecution(
 
             if (statement.Instruction != null)
             {
-                statements[i].MemoryLocation = index;
-                index += 1 + OperandSize(statement.Instruction.Value.AddressingMode);
-                continue;
+                statement.MemoryLocation = index;
+                index += 1 + CpuAddressingModeSize.Get(statement.Instruction.Value.AddressingMode);
             }
             else if (statement.Directive != null)
             {
                 if (statement.Directive.Value.Type == AssemblerDirectiveType.Word)
                 {
-                    statements[i].MemoryLocation = index;
+                    statement.MemoryLocation = index;
                     index += 2 * statement.Directive.Value.Expressions.Length;
                 }
                 else if (statement.Directive.Value.Type == AssemblerDirectiveType.Byte)
                 {
-                    statements[i].MemoryLocation = index;
+                    statement.MemoryLocation = index;
                     index += statement.Directive.Value.Expressions.Length;
                 }
                 else if (statement.Directive.Value.Type == AssemblerDirectiveType.Org)
@@ -133,79 +133,5 @@ internal class AssemblerExecution(
         }
 
         throw new Exception();
-    }
-
-    private byte[] EmitBinary()
-    {
-        var output = new List<byte>();
-
-        for (int i = 0; i < statements.Count; i++)
-        {
-            var instructionStatement = statements[i].Instruction;
-            if (instructionStatement != null)
-            {
-                var istat = instructionStatement.Value;
-
-                if (!resolver.TryResolveEquation(istat.Expression, out int arg))
-                    throw new Exception();
-
-                if (istat.AddressingMode == CpuAddressingMode.Relative)
-                    arg = arg - statements[i].MemoryLocation!.Value - 2;
-
-                if (!CpuOpcodeMap.TryEncodeOpcode(istat.Instruction, istat.AddressingMode, out var opcode))
-                    throw new InvalidOperationException($"No opcode found for {istat.Instruction} with {istat.AddressingMode} addressing");
-                output.Add((byte)opcode);
-
-                var size = OperandSize(istat.AddressingMode);
-                if (size >= 1)
-                    output.Add((byte)(arg & 0xFF));
-                if (size >= 2)
-                    output.Add((byte)((arg >> 8) & 0xFF));
-
-                continue;
-            }
-
-            var directiveStatement = statements[i].Directive;
-            if (directiveStatement != null)
-            {
-                var dstat = directiveStatement.Value;
-
-                if (dstat.Type == AssemblerDirectiveType.Byte)
-                {
-                    foreach (var expression in dstat.Expressions)
-                    {
-                        if (!resolver.TryResolveEquation(expression, out int val))
-                            throw new Exception();
-
-                        output.Add((byte)(val & 0xFF));
-                    }
-                }
-                else if (dstat.Type == AssemblerDirectiveType.Word)
-                {
-                    foreach (var expression in dstat.Expressions)
-                    {
-                        if (!resolver.TryResolveEquation(expression, out int val))
-                            throw new Exception();
-
-                        output.Add((byte)(val & 0xFF));
-                        output.Add((byte)((val >> 8) & 0xFF));
-                    }
-                }
-            }
-        }
-
-        return [.. output];
-    }
-
-    private static int OperandSize(CpuAddressingMode mode)
-    {
-        if (mode == CpuAddressingMode.Indirect ||
-            mode == CpuAddressingMode.Absolute ||
-            mode == CpuAddressingMode.AbsoluteX ||
-            mode == CpuAddressingMode.AbsoluteY)
-            return 2;
-        else if (mode == CpuAddressingMode.Implied)
-            return 0;
-        else return 1;
     }
 }
