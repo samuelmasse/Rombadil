@@ -25,4 +25,4 @@ public enum DirectiveType
     Incbin
 }
 
-public record struct InstructionStatement(CpuInstruction Instruction, CpuAdressingMode AdressingMode, string Expression);
+public record struct InstructionStatement(CpuInstruction Instruction, CpuAddressingMode AddressingMode, string Expression);

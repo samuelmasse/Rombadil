@@ -1,6 +1,6 @@
 namespace Rombadil.Cpu;
 
-public enum CpuAdressingMode
+public enum CpuAddressingMode
 {
     Implied,
     Immediate,

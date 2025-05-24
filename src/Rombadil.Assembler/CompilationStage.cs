@@ -6,7 +6,7 @@ public class CompilationStage(
     List<Statement> statements,
     CompilationConstants constants,
     CompilationResolver resolver,
-    CompilationAdressingModeResolver adressingModeResolver)
+    CompilationAddressingModeResolver addressingModeResolver)
 {
     public byte[] Compile()
     {
@@ -65,8 +65,8 @@ public class CompilationStage(
             throw new Exception(); // TODO
 
         var operand = statement.Value;
-        var (adressingMode, expression) = adressingModeResolver.Resolve(instruction, operand);
-        statements[i].InstructionStatement = new(instruction, adressingMode, expression);
+        var (addressingMode, expression) = addressingModeResolver.Resolve(instruction, operand);
+        statements[i].InstructionStatement = new(instruction, addressingMode, expression);
     }
 
     private void CreateMemoryLayout()
@@ -79,7 +79,7 @@ public class CompilationStage(
             if (instructionStatement != null)
             {
                 statements[i].MemoryLocation = index;
-                index += 1 + OperandSize(instructionStatement.Value.AdressingMode);
+                index += 1 + OperandSize(instructionStatement.Value.AddressingMode);
                 continue;
             }
 
@@ -156,14 +156,14 @@ public class CompilationStage(
                 if (!resolver.TryResolveEquation(istat.Expression, out int arg))
                     throw new Exception();
 
-                if (istat.AdressingMode == CpuAdressingMode.Relative)
+                if (istat.AddressingMode == CpuAddressingMode.Relative)
                     arg = arg - statements[i].MemoryLocation!.Value - 2;
 
-                if (!CpuOpcodeMap.TryEncodeOpcode(istat.Instruction, istat.AdressingMode, out var opcode))
-                    throw new InvalidOperationException($"No opcode found for {istat.Instruction} with {istat.AdressingMode} addressing");
+                if (!CpuOpcodeMap.TryEncodeOpcode(istat.Instruction, istat.AddressingMode, out var opcode))
+                    throw new InvalidOperationException($"No opcode found for {istat.Instruction} with {istat.AddressingMode} addressing");
                 output.Add((byte)opcode);
 
-                var size = OperandSize(istat.AdressingMode);
+                var size = OperandSize(istat.AddressingMode);
                 if (size >= 1)
                     output.Add((byte)(arg & 0xFF));
                 if (size >= 2)
@@ -204,14 +204,14 @@ public class CompilationStage(
         return [.. output];
     }
 
-    private static int OperandSize(CpuAdressingMode mode)
+    private static int OperandSize(CpuAddressingMode mode)
     {
-        if (mode == CpuAdressingMode.Indirect ||
-            mode == CpuAdressingMode.Absolute ||
-            mode == CpuAdressingMode.AbsoluteX ||
-            mode == CpuAdressingMode.AbsoluteY)
+        if (mode == CpuAddressingMode.Indirect ||
+            mode == CpuAddressingMode.Absolute ||
+            mode == CpuAddressingMode.AbsoluteX ||
+            mode == CpuAddressingMode.AbsoluteY)
             return 2;
-        else if (mode == CpuAdressingMode.Implied)
+        else if (mode == CpuAddressingMode.Implied)
             return 0;
         else return 1;
     }

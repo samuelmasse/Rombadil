@@ -8,7 +8,7 @@ public class Assembler6502
         var statements = new List<Statement>();
         var constants = new CompilationConstants();
         var resolver = new CompilationResolver(statements, constants);
-        var adressingModeResolver = new CompilationAdressingModeResolver(resolver);
+        var addressingModeResolver = new CompilationAddressingModeResolver(resolver);
 
         return new CompilationStage(
             lines,
@@ -16,6 +16,6 @@ public class Assembler6502
             statements,
             constants,
             resolver,
-            adressingModeResolver).Compile();
+            addressingModeResolver).Compile();
     }
 }
