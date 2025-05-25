@@ -5,7 +5,12 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="TestableIO.System.IO.Abstractions.Wrappers" Version="22.0.14" />
+    </ItemGroup>
+
+    <ItemGroup>
         <Using Include="Rombadil.Cpu" />
+        <Using Include="System.IO.Abstractions" />
     </ItemGroup>
 
 </Project>

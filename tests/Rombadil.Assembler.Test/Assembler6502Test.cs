@@ -527,4 +527,67 @@ public sealed class Assembler6502Test
         byte[] expected = [0xAD, 0x1B, 0x00, 0xAD, 0x10, 0x0F];
         CollectionAssert.AreEqual(expected, binary);
     }
+
+    [TestMethod]
+    public void Assemble_SegmentAndIncbin_CorrectBytes()
+    {
+        string[] lines =
+        [
+            ".segment \"HEADER\"",
+            ".byte $01, $02, $03",
+            ".segment \"CODE\"",
+            "Start:",
+            "LDA #$04",
+            ".segment \"CHARS\"",
+            ".incbin \"game.chr\"",
+            ".segment \"VECTORS\"",
+            ".word $05, Start, $06"
+        ];
+
+        var chrData = Enumerable.Range(0, 0x1000).Select(i => (byte)(i % 256)).ToArray();
+
+        var fs = new MockFileSystem(new Dictionary<string, MockFileData>
+        {
+            { "/game.chr", new MockFileData(chrData) }
+        });
+
+        var segments = new List<AssemblerSegment>
+        {
+            new("HEADER", 0x0000, 0x0010),
+            new("CODE", 0x8000, 0x7FFA),
+            new("VECTORS", 0xFFFA, 0x0006),
+            new("CHARS", 0x0000, 0x2000)
+        };
+
+        var assembler = new Assembler6502(segments, fs);
+
+        var binary = assembler.Assemble(lines);
+
+        int length = segments.Sum(x => x.FileSize);
+        Assert.AreEqual(length, binary.Length);
+
+        var expected = new byte[length];
+
+        // .byte $01, $02, $03
+        expected[0x0000] = 0x01;
+        expected[0x0001] = 0x02;
+        expected[0x0002] = 0x03;
+
+        // LDA #$04
+        expected[0x0010] = 0xA9;
+        expected[0x0011] = 0x04;
+
+        // .incbin \"game.chr\"
+        Array.Copy(chrData, 0, expected, 0x0010 + 0x7FFA + 0x0006, 0x1000);
+
+        // .word $05, Start, $06
+        expected[0x0010 + 0x7FFA + 0] = 0x05;
+        expected[0x0010 + 0x7FFA + 1] = 0x00;
+        expected[0x0010 + 0x7FFA + 2] = 0x00;
+        expected[0x0010 + 0x7FFA + 3] = 0x80;
+        expected[0x0010 + 0x7FFA + 4] = 0x06;
+        expected[0x0010 + 0x7FFA + 5] = 0x00;
+
+        CollectionAssert.AreEqual(expected, binary);
+    }
 }

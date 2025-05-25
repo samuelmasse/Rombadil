@@ -5,6 +5,8 @@ internal record class AssemblerStatement(int LineNumber, string Name, string Val
     internal AssemblerDirective? Directive;
     internal AssemblerInstruction? Instruction;
     internal int? MemoryLocation;
+    internal byte[]? IncludedBytes;
+    internal AssemblerSegment? Segment;
 }
 
 internal enum AssemblerStatementType
@@ -19,7 +21,6 @@ internal record class AssemblerDirective(AssemblerDirectiveType Type, string[] E
 internal enum AssemblerDirectiveType
 {
     Segment,
-    Org,
     Byte,
     Word,
     Incbin

@@ -1,7 +1,14 @@
 namespace Rombadil.Assembler;
 
-internal class AssemblerEmitter(List<AssemblerStatement> statements, AssemblerResolver resolver, List<byte> output)
+internal class AssemblerEmitter(
+    IReadOnlyList<AssemblerSegment> segments,
+    List<AssemblerStatement> statements,
+    AssemblerResolver resolver,
+    List<byte> output)
 {
+    private readonly List<bool> written = [];
+    private int cursor;
+
     internal void Emit()
     {
         for (int i = 0; i < statements.Count; i++)
@@ -35,7 +42,7 @@ internal class AssemblerEmitter(List<AssemblerStatement> statements, AssemblerRe
                     $"Expected signed 8-bit value (-128 to 127).");
         }
 
-        output.Add((byte)opcode);
+        Write(statement, (byte)opcode);
 
         var size = CpuAddressingModeSize.Get(instruction.AddressingMode);
         if (size == 1)
@@ -48,7 +55,7 @@ internal class AssemblerEmitter(List<AssemblerStatement> statements, AssemblerRe
                         $"Expected 8-bit value (0 to 255).");
             }
 
-            output.Add((byte)arg);
+            Write(statement, (byte)arg);
         }
         else if (size == 2)
         {
@@ -57,8 +64,8 @@ internal class AssemblerEmitter(List<AssemblerStatement> statements, AssemblerRe
                     $"Operand value {arg} is out of range for instruction \"{instruction.Instruction}\". " +
                     $"Expected 16-bit value (0 to 65535).");
 
-            output.Add((byte)arg);
-            output.Add((byte)(arg >> 8));
+            Write(statement, (byte)arg);
+            Write(statement, (byte)(arg >> 8));
         }
     }
 
@@ -76,7 +83,7 @@ internal class AssemblerEmitter(List<AssemblerStatement> statements, AssemblerRe
                     throw new Assembler6502Exception(statement.LineNumber,
                         $"Value {val} is out of range for \".byte\" directive. Expected 8-bit unsigned value (0 to 255).");
 
-                output.Add((byte)(val & 0xFF));
+                Write(statement, (byte)(val & 0xFF));
             }
         }
         else if (directive.Type == AssemblerDirectiveType.Word)
@@ -91,9 +98,52 @@ internal class AssemblerEmitter(List<AssemblerStatement> statements, AssemblerRe
                     throw new Assembler6502Exception(statement.LineNumber,
                         $"Value {val} is out of range for \".word\" directive. Expected 16-bit unsigned value (0 to 65535).");
 
-                output.Add((byte)val);
-                output.Add((byte)(val >> 8));
+                Write(statement, (byte)val);
+                Write(statement, (byte)(val >> 8));
             }
         }
+        else if (directive.Type == AssemblerDirectiveType.Incbin)
+        {
+            var bytes = statement.IncludedBytes!;
+            foreach (var b in bytes)
+                Write(statement, b);
+        }
+        else if (directive.Type == AssemblerDirectiveType.Segment)
+        {
+            cursor = 0;
+
+            foreach (var segment in segments)
+            {
+                if (segment == statement.Segment)
+                    break;
+
+                cursor += segment.FileSize;
+            }
+
+            while (output.Count - cursor < statement.Segment!.FileSize)
+            {
+                output.Add(0);
+                written.Add(false);
+            }
+        }
+    }
+
+    private void Write(AssemblerStatement statement, byte b)
+    {
+        while (output.Count <= cursor)
+        {
+            output.Add(0);
+            written.Add(false);
+        }
+
+        if (written[cursor])
+            throw new Assembler6502Exception(statement.LineNumber,
+                $"Multiple writes to file offset {cursor:X4}. " +
+                $"This indicates overlapping output, possibly due to conflicting segment layout or repeated memory assignments.");
+
+        output[cursor] = b;
+        written[cursor] = true;
+
+        cursor++;
     }
 }

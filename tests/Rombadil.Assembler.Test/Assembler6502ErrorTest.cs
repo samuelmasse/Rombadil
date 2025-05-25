@@ -282,4 +282,86 @@ public class Assembler6502ErrorTest
         Assert.AreEqual(129, ex.Line);
         Assert.AreEqual("Relative branch offset -130 is out of range for instruction \"BNE\". Expected signed 8-bit value (-128 to 127).", ex.Error);
     }
+
+
+    [TestMethod]
+    public void Assemble_Incbin_TooManyArguments_Throws()
+    {
+        string[] lines = [".incbin a,b"];
+
+        var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
+
+        Assert.AreEqual(0, ex.Line);
+        Assert.AreEqual("The \".incbin\" directive requires exactly one file path argument.", ex.Error);
+    }
+
+    [TestMethod]
+    public void Assemble_Incbin_UnquotedPath_Throws()
+    {
+        string[] lines = [".incbin path/to/file"];
+
+        var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => new Assembler6502().Assemble(lines));
+
+        Assert.AreEqual(0, ex.Line);
+        Assert.AreEqual("The argument to \".incbin\" must be a quoted file path, e.g., '.incbin \"file.bin\"'.", ex.Error);
+    }
+
+    [TestMethod]
+    public void Assemble_Incbin_FileNotFound_Throws()
+    {
+        string[] lines = [".incbin \"missing.bin\""];
+        var fs = new MockFileSystem();
+
+        var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => new Assembler6502([], fs).Assemble(lines));
+
+        Assert.AreEqual(0, ex.Line);
+        Assert.AreEqual("The file \"missing.bin\" specified in \".incbin\" was not found.", ex.Error);
+    }
+
+    [TestMethod]
+    public void Assemble_Segment_TooManyArguments_Throws()
+    {
+        string[] lines = [".segment a,b"];
+
+        var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
+
+        Assert.AreEqual(0, ex.Line);
+        Assert.AreEqual("The \".segment\" directive requires exactly one segment name argument.", ex.Error);
+    }
+
+    [TestMethod]
+    public void Assemble_Segment_UnquotedName_Throws()
+    {
+        string[] lines = [".segment CODE"];
+
+        var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => new Assembler6502().Assemble(lines));
+
+        Assert.AreEqual(0, ex.Line);
+        Assert.AreEqual("The argument to \".segment\" must be a quoted segment name, e.g., '.segment \"CODE\"'.", ex.Error);
+    }
+
+    [TestMethod]
+    public void Assemble_Segment_UndefinedName_Throws()
+    {
+        string[] lines = [".segment \"DATA\""];
+
+        var ex = Assert.ThrowsExactly<Assembler6502Exception>(() =>
+            new Assembler6502([new("CODE", 0, 0)]).Assemble(lines));
+
+        Assert.AreEqual(0, ex.Line);
+        Assert.AreEqual("Segment \"DATA\" not defined. Available segments: \"CODE\"", ex.Error);
+    }
+
+    [TestMethod]
+    public void Assemble_Segment_Overlapping_Throws()
+    {
+        string[] lines = ["lda $00", ".segment \"CODE\"", "lda $00"];
+
+        var ex = Assert.ThrowsExactly<Assembler6502Exception>(() =>
+            new Assembler6502([new("CODE", 0, 0)]).Assemble(lines));
+
+        Assert.AreEqual(2, ex.Line);
+        Assert.AreEqual("Multiple writes to file offset 0000. This indicates overlapping output, " +
+            "possibly due to conflicting segment layout or repeated memory assignments.", ex.Error);
+    }
 }

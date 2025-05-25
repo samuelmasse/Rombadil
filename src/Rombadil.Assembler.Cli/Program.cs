@@ -3,16 +3,18 @@ using Rombadil.Assembler;
 
 var inputArgument = new Argument<FileInfo>("input", "Input source file");
 var outputOption = new Option<FileInfo>(["--output", "-o"], "Output binary file");
+var configOption = new Option<FileInfo>(["--config", "-c"], "Config file");
 
 var rootCommand = new RootCommand("Rombadil Assembler (rmdl)")
 {
     inputArgument,
-    outputOption
+    outputOption,
+    configOption
 };
 
 int exitCode = 1;
 
-rootCommand.SetHandler((FileInfo input, FileInfo? output) =>
+rootCommand.SetHandler((FileInfo input, FileInfo? output, FileInfo? config) =>
 {
     if (!input.Exists)
     {
@@ -20,12 +22,33 @@ rootCommand.SetHandler((FileInfo input, FileInfo? output) =>
         return;
     }
 
+    var segments = DefaultSegments();
+
+    if (config != null)
+    {
+        if (!config.Exists)
+        {
+            PrintError($"{config.Name}: ", "Config not found");
+            return;
+        }
+
+        try
+        {
+            segments = ParseSegments(File.ReadAllText(config.FullName));
+        }
+        catch
+        {
+            PrintError($"{config.Name}: ", "Failed to parse segments");
+            return;
+        }
+    }
+
     string[] source = File.ReadAllLines(input.FullName);
     byte[]? binary;
 
     try
     {
-        binary = new Assembler6502().Assemble(source);
+        binary = new Assembler6502(segments).Assemble(source);
     }
     catch (Assembler6502Exception e)
     {
@@ -46,7 +69,7 @@ rootCommand.SetHandler((FileInfo input, FileInfo? output) =>
     File.WriteAllBytes(file, binary);
     exitCode = 0;
 
-}, inputArgument, outputOption);
+}, inputArgument, outputOption, configOption);
 
 await rootCommand.InvokeAsync(args);
 return exitCode;
@@ -58,4 +81,35 @@ static void PrintError(string context, string message)
     Console.Error.Write("error: ");
     Console.ResetColor();
     Console.Error.WriteLine(message);
+}
+
+static List<AssemblerSegment> ParseSegments(string tomlContent)
+{
+    var model = Toml.Parse(tomlContent).ToModel();
+    var segments = new List<AssemblerSegment>();
+
+    foreach (var kvp in model)
+    {
+        if (kvp.Value is not TomlTable table)
+            continue;
+
+        var name = kvp.Key;
+        var memoryStart = Convert.ToInt32(table["MemoryStart"]);
+        var fileSize = Convert.ToInt32(table["FileSize"]);
+
+        segments.Add(new AssemblerSegment(name, memoryStart, fileSize));
+    }
+
+    return segments;
+}
+
+static List<AssemblerSegment> DefaultSegments()
+{
+    return
+    [
+        new("Header", 0x0000, 0x0010),
+        new("Code", 0x8000, 0x7FFA),
+        new("Vectors", 0xFFFA, 0x0006),
+        new("Chars", 0x0000, 0x2000)
+    ];
 }

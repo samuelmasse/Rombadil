@@ -5,8 +5,6 @@ var mem = new byte[80000];
 var cpu = new Cpu6502(mem);
 var logger = new CpuLogger(mem, cpu);
 
-var assembler = new Assembler6502();
-
 var source =
 """
 ADC #$44
@@ -19,12 +17,17 @@ ADC ($44,X)
 ADC ($44),Y
 """;
 
+Directory.SetCurrentDirectory(@"C:\Users\Samuel\Documents\Repos\smb1");
 source = File.ReadAllText(@"C:\Users\Samuel\Documents\Repos\smb1\game.asm");
 
 var lines = source.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
 
 var sw = Stopwatch.StartNew();
-var bytes = assembler.Assemble(lines);
+var bytes = new Assembler6502([
+    new("Header", 0x0000, 0x0010),
+    new("Code", 0x8000, 0x7FFA),
+    new("Vectors", 0xFFFA, 0x0006),
+    new("Chars", 0x0000, 0x2000)]).Assemble(lines);
 sw.Stop();
 
 Console.WriteLine($"took {sw.Elapsed.TotalMilliseconds} ms");
@@ -35,10 +38,10 @@ var color = ConsoleColor.Green;
 Console.ForegroundColor = color;
 int t = 0;
 
-for (int i = 0; i < Math.Max(bytes.Length, rbytes.Length - 0x10); i++)
+for (int i = 0; i < Math.Max(bytes.Length, rbytes.Length); i++)
 {
-    var b = (i + 8 < bytes.Length) ? bytes[i + 8] : 0;
-    var rb = rbytes[i + 0x10];
+    var b = (i < bytes.Length) ? bytes[i] : 0;
+    var rb = rbytes[i];
 
     var c = b == rb ? ConsoleColor.Green : ConsoleColor.Red;
     if (c != color)

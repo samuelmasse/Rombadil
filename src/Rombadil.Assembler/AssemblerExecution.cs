@@ -1,6 +1,8 @@
 namespace Rombadil.Assembler;
 
 internal class AssemblerExecution(
+    IFileSystem fileSystem,
+    IReadOnlyList<AssemblerSegment> segments,
     string[] lines,
     List<AssemblerStatement> statements,
     Dictionary<string, int> declarations,
@@ -34,7 +36,7 @@ internal class AssemblerExecution(
             var statement = statements[i];
             if (statement.Type == AssemblerStatementType.Constant || statement.Type == AssemblerStatementType.Label)
             {
-                string name = statement.Name ?? string.Empty;
+                string name = statement.Name;
 
                 if (string.IsNullOrWhiteSpace(name))
                     throw new Assembler6502Exception(statement.LineNumber, "Name cannot be empty.");
@@ -112,12 +114,47 @@ internal class AssemblerExecution(
                 statement.MemoryLocation = cur;
                 cur += statement.Directive.Expressions.Length;
             }
-            else if (statement.Directive?.Type == AssemblerDirectiveType.Org)
+            else if (statement.Directive?.Type == AssemblerDirectiveType.Incbin)
             {
-                if (!resolver.TryResolveEquation(statement.Directive.Expressions[0], out var jmp))
-                    throw new Exception(); // TODO
+                if (statement.Directive.Expressions.Length != 1)
+                    throw new Assembler6502Exception(statement.LineNumber,
+                        $"The \".incbin\" directive requires exactly one file path argument.");
 
-                cur = jmp;
+                var expression = statement.Directive.Expressions[0];
+                if (!expression.StartsWith('"') || !expression.EndsWith('"'))
+                    throw new Assembler6502Exception(statement.LineNumber,
+                        $"The argument to \".incbin\" must be a quoted file path, e.g., '.incbin \"file.bin\"'.");
+
+                var path = expression[1..^1];
+                if (!fileSystem.File.Exists(path))
+                    throw new Assembler6502Exception(statement.LineNumber,
+                        $"The file \"{path}\" specified in \".incbin\" was not found.");
+
+                var bytes = fileSystem.File.ReadAllBytes(path);
+
+                statement.IncludedBytes = bytes;
+                statement.MemoryLocation = cur;
+                cur += bytes.Length;
+            }
+            else if (statement.Directive?.Type == AssemblerDirectiveType.Segment)
+            {
+                if (statement.Directive.Expressions.Length != 1)
+                    throw new Assembler6502Exception(statement.LineNumber,
+                        $"The \".segment\" directive requires exactly one segment name argument.");
+
+                var expression = statement.Directive.Expressions[0];
+                if (!expression.StartsWith('"') && !expression.EndsWith('"'))
+                    throw new Assembler6502Exception(statement.LineNumber,
+                        $"The argument to \".segment\" must be a quoted segment name, e.g., '.segment \"CODE\"'.");
+
+                var name = expression[1..^1];
+                var segment = segments.FirstOrDefault(x => x.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase));
+                if (segment == null)
+                    throw new Assembler6502Exception(statement.LineNumber,
+                        $"Segment \"{name}\" not defined. Available segments: {string.Join(", ", segments.Select(s => $"\"{s.Name}\""))}");
+
+                statement.Segment = segment;
+                cur = segment.MemoryStart;
             }
         }
     }
