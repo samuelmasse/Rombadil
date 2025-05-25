@@ -9,7 +9,7 @@ public class Assembler6502(IReadOnlyList<AssemblerSegment> segments, IFileSystem
     {
         var statements = new List<AssemblerStatement>();
         var declarations = new Dictionary<string, int>();
-        var values = new Dictionary<string, int>();
+        var values = new Dictionary<string, (int, bool)>();
         var output = new List<byte>();
 
         var parser = new AssemblerParser(statements);

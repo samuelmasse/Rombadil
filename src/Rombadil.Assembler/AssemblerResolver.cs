@@ -1,16 +1,19 @@
 namespace Rombadil.Assembler;
 
-internal class AssemblerResolver(List<AssemblerStatement> statements, Dictionary<string, int> declarations, Dictionary<string, int> values)
+internal class AssemblerResolver(
+    List<AssemblerStatement> statements,
+    Dictionary<string, int> declarations,
+    Dictionary<string, (int, bool)> values)
 {
     private readonly HashSet<string> visited = [];
 
-    internal bool TryResolveEquation(string equation, out int value)
+    internal bool TryResolveEquation(string equation, out (int Value, bool IncludesLabel) value)
     {
-        value = 0;
+        value = (0, false);
 
         foreach (var term in ParseEquation(equation))
         {
-            int termValue;
+            (int Value, bool IncludesLabel) termValue = (0, false);
 
             if (char.IsLetter(term.Value[0]))
             {
@@ -19,24 +22,27 @@ internal class AssemblerResolver(List<AssemblerStatement> statements, Dictionary
             }
             else
             {
-                if (!TryParseNumber(term.Value, out termValue))
+                if (!TryParseNumber(term.Value, out termValue.Value))
                     return false;
             }
 
             if (term.Select == EquationTermSelect.LowByte)
-                termValue &= 0xFF;
+                termValue.Value &= 0xFF;
             else if (term.Select == EquationTermSelect.HighByte)
-                termValue = (termValue >> 8) & 0xFF;
+                termValue.Value = (termValue.Value >> 8) & 0xFF;
 
             if (term.Operation == EquationTermOperation.Add)
-                value += termValue;
-            else value -= termValue;
+                value.Value += termValue.Value;
+            else value.Value -= termValue.Value;
+
+            if (termValue.IncludesLabel)
+                value.IncludesLabel = true;
         }
 
         return true;
     }
 
-    private bool TryResolveConstant(string name, out int value)
+    private bool TryResolveConstant(string name, out (int, bool) value)
     {
         if (values.TryGetValue(name, out value))
             return true;

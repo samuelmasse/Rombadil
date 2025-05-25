@@ -270,6 +270,17 @@ public class Assembler6502ErrorTest
     }
 
     [TestMethod]
+    public void Assemble_RelativeOutOfRangeHardcoded_Throws()
+    {
+        List<string> lines = ["BNE 128"];
+
+        var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble([.. lines]));
+
+        Assert.AreEqual(0, ex.Line);
+        Assert.AreEqual("Relative branch offset 128 is out of range for instruction \"BNE\". Expected signed 8-bit value (-128 to 127).", ex.Error);
+    }
+
+    [TestMethod]
     public void Assemble_RelativeOutOfRangeMinus_Throws()
     {
         List<string> lines = ["Start:"];

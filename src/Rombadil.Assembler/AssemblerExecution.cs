@@ -6,7 +6,7 @@ internal class AssemblerExecution(
     string[] lines,
     List<AssemblerStatement> statements,
     Dictionary<string, int> declarations,
-    Dictionary<string, int> values,
+    Dictionary<string, (int, bool)> values,
     AssemblerParser parser,
     AssemblerResolver resolver,
     AssemblerAddresser addresser,
@@ -180,7 +180,7 @@ internal class AssemblerExecution(
             }
 
             if (loc != null)
-                values.Add(statement.Name, loc.Value);
+                values.Add(statement.Name, (loc.Value, true));
             else throw new Assembler6502Exception(statement.LineNumber,
                 $"Label \"{statement.Name}\" is not followed by any addressable statement.");
         }
@@ -194,7 +194,7 @@ internal class AssemblerExecution(
             if (statement.Type != AssemblerStatementType.Constant)
                 continue;
 
-            if (!resolver.TryResolveEquation(statement.Value, out int value))
+            if (!resolver.TryResolveEquation(statement.Value, out var value))
                 throw new Assembler6502Exception(statement.LineNumber,
                     $"Could not evaluate expression \"{statement.Value}\" for constant \"{statement.Name}\".");
 

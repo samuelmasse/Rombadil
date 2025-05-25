@@ -39,7 +39,7 @@ internal class AssemblerAddresser(AssemblerResolver resolver)
     private (CpuAddressingMode, string) ResolveZeroOrAbsolute(CpuInstruction instruction, string expression,
         CpuAddressingMode zpMode, CpuAddressingMode absMode)
     {
-        if (resolver.TryResolveEquation(expression, out var val) && Math.Abs(val) <= 0xFF &&
+        if (resolver.TryResolveEquation(expression, out var val) && Math.Abs(val.Value) <= 0xFF &&
             CpuOpcodeMap.TryEncodeOpcode(instruction, zpMode, out _))
             return (zpMode, expression);
 

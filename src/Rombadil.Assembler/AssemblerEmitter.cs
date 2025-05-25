@@ -28,17 +28,18 @@ internal class AssemblerEmitter(
             throw new Assembler6502Exception(statement.LineNumber,
                 $"No opcode exists for instruction \"{instruction.Instruction}\" with addressing mode \"{instruction.AddressingMode}\".");
 
-        if (!resolver.TryResolveEquation(instruction.Expression, out int arg))
+        if (!resolver.TryResolveEquation(instruction.Expression, out var arg))
             throw new Assembler6502Exception(statement.LineNumber,
                 $"Unable to resolve operand value \"{instruction.Expression}\" for instruction \"{instruction.Instruction}\".");
 
         if (instruction.AddressingMode == CpuAddressingMode.Relative)
         {
-            arg = arg - statement.MemoryLocation!.Value - 2;
+            if (arg.IncludesLabel)
+                arg.Value = arg.Value - statement.MemoryLocation!.Value - 2;
 
-            if (arg < -128 || arg > 127)
+            if (arg.Value < -128 || arg.Value > 127)
                 throw new Assembler6502Exception(statement.LineNumber,
-                    $"Relative branch offset {arg} is out of range for instruction \"{instruction.Instruction}\". " +
+                    $"Relative branch offset {arg.Value} is out of range for instruction \"{instruction.Instruction}\". " +
                     $"Expected signed 8-bit value (-128 to 127).");
         }
 
@@ -49,23 +50,23 @@ internal class AssemblerEmitter(
         {
             if (instruction.AddressingMode != CpuAddressingMode.Relative)
             {
-                if (arg < 0 || arg > 0xFF)
+                if (arg.Value < 0 || arg.Value > 0xFF)
                     throw new Assembler6502Exception(statement.LineNumber,
-                        $"Operand value {arg} is out of range for instruction \"{instruction.Instruction}\". " +
+                        $"Operand value {arg.Value} is out of range for instruction \"{instruction.Instruction}\". " +
                         $"Expected 8-bit value (0 to 255).");
             }
 
-            Write(statement, (byte)arg);
+            Write(statement, (byte)arg.Value);
         }
         else if (size == 2)
         {
-            if (arg < 0 || arg > 0xFFFF)
+            if (arg.Value < 0 || arg.Value > 0xFFFF)
                 throw new Assembler6502Exception(statement.LineNumber,
-                    $"Operand value {arg} is out of range for instruction \"{instruction.Instruction}\". " +
+                    $"Operand value {arg.Value} is out of range for instruction \"{instruction.Instruction}\". " +
                     $"Expected 16-bit value (0 to 65535).");
 
-            Write(statement, (byte)arg);
-            Write(statement, (byte)(arg >> 8));
+            Write(statement, (byte)arg.Value);
+            Write(statement, (byte)(arg.Value >> 8));
         }
     }
 
@@ -75,31 +76,31 @@ internal class AssemblerEmitter(
         {
             foreach (var expression in directive.Expressions)
             {
-                if (!resolver.TryResolveEquation(expression, out int val))
+                if (!resolver.TryResolveEquation(expression, out var val))
                     throw new Assembler6502Exception(statement.LineNumber,
                         $"Could not evaluate expression \"{expression}\" in \".byte\" directive.");
 
-                if (val < 0 || val > 0xFF)
+                if (val.Value < 0 || val.Value > 0xFF)
                     throw new Assembler6502Exception(statement.LineNumber,
-                        $"Value {val} is out of range for \".byte\" directive. Expected 8-bit unsigned value (0 to 255).");
+                        $"Value {val.Value} is out of range for \".byte\" directive. Expected 8-bit unsigned value (0 to 255).");
 
-                Write(statement, (byte)(val & 0xFF));
+                Write(statement, (byte)(val.Value & 0xFF));
             }
         }
         else if (directive.Type == AssemblerDirectiveType.Word)
         {
             foreach (var expression in directive.Expressions)
             {
-                if (!resolver.TryResolveEquation(expression, out int val))
+                if (!resolver.TryResolveEquation(expression, out var val))
                     throw new Assembler6502Exception(statement.LineNumber,
                         $"Could not evaluate expression \"{expression}\" in \".word\" directive.");
 
-                if (val < 0 || val > 0xFFFF)
+                if (val.Value < 0 || val.Value > 0xFFFF)
                     throw new Assembler6502Exception(statement.LineNumber,
-                        $"Value {val} is out of range for \".word\" directive. Expected 16-bit unsigned value (0 to 65535).");
+                        $"Value {val.Value} is out of range for \".word\" directive. Expected 16-bit unsigned value (0 to 65535).");
 
-                Write(statement, (byte)val);
-                Write(statement, (byte)(val >> 8));
+                Write(statement, (byte)val.Value);
+                Write(statement, (byte)(val.Value >> 8));
             }
         }
         else if (directive.Type == AssemblerDirectiveType.Incbin)

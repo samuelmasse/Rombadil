@@ -332,6 +332,23 @@ public sealed class Assembler6502Test
     }
 
     [TestMethod]
+    public void Assemble_BranchWithNoLabel_OffsetIsLiteral()
+    {
+        string[] lines =
+        [
+            "BEQ Done",
+            "BEQ -5",
+            "BEQ 41",
+            "Done: RTS"
+        ];
+
+        var binary = new Assembler6502().Assemble(lines);
+
+        byte[] expected = [0xF0, 0x04, 0xF0, unchecked((byte)-5), 0xF0, 41, 0x60];
+        CollectionAssert.AreEqual(expected, binary);
+    }
+
+    [TestMethod]
     public void Assemble_LabelWithOffset_AddsCorrectly()
     {
         string[] lines =
