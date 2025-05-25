@@ -1,10 +1,10 @@
 namespace Rombadil.Cpu.Emulator;
 
-public class CpuOpcodeTimings
+public class CpuEmulatorTimings
 {
     private static readonly Dictionary<(CpuInstruction, CpuAddressingMode), (byte, byte)> timings = [];
 
-    static CpuOpcodeTimings()
+    static CpuEmulatorTimings()
     {
         Register(CpuInstruction.ADC,
             (CpuAddressingMode.Immediate, 2, 0),

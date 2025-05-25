@@ -1,6 +1,6 @@
 namespace Rombadil.Cpu.Emulator;
 
-public struct CpuRegisters
+public struct CpuEmulatorRegisters
 {
     public ushort PC;
     public byte AC;

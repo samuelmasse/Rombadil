@@ -2,8 +2,8 @@ using Rombadil.Assembler;
 using Rombadil.Cpu.Emulator;
 
 var mem = new byte[80000];
-var cpu = new Cpu6502(mem);
-var logger = new CpuLogger(mem, cpu);
+var cpu = new CpuEmulator6502(mem);
+var logger = new CpuEmulatorLogger(mem, cpu);
 var assembler = new Assembler6502();
 
 var source =

@@ -1,6 +1,6 @@
 namespace Rombadil.Cpu.Emulator;
 
-public class CpuLogger(Memory<byte> memory, Cpu6502 cpu)
+public class CpuEmulatorLogger(Memory<byte> memory, CpuEmulator6502 cpu)
 {
     public void Log()
     {
