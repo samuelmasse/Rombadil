@@ -34,23 +34,27 @@ internal class AssemblerExecution(
             var statement = statements[i];
             if (statement.Type == AssemblerStatementType.Constant || statement.Type == AssemblerStatementType.Label)
             {
-                if (string.IsNullOrEmpty(statement.Name))
-                    throw new Assembler6502Exception(statement.LineNumber, $"Names must not be empty.");
+                string name = statement.Name ?? string.Empty;
 
-                if (!char.IsLetter(statement.Name[0]))
-                    throw new Assembler6502Exception(statement.LineNumber, $"Names must begin with a letter \"{statement.Name}\".");
+                if (string.IsNullOrWhiteSpace(name))
+                    throw new Assembler6502Exception(statement.LineNumber, "Name cannot be empty.");
 
-                foreach (char c in statement.Name)
+                if (!char.IsLetter(name[0]))
+                    throw new Assembler6502Exception(statement.LineNumber,
+                        $"Name \"{name}\" must begin with a letter.");
+
+                foreach (char c in name)
                 {
                     if (!char.IsLetterOrDigit(c) && c != '_')
                         throw new Assembler6502Exception(statement.LineNumber,
-                            $"Names must be composed only of letters, numbers or underscores \"{statement.Name}\".");
+                            $"Name \"{name}\" contains an invalid character '{c}'. Only letters, digits, and underscores are allowed.");
                 }
 
-                if (declarations.ContainsKey(statement.Name))
-                    throw new Assembler6502Exception(statement.LineNumber, $"Duplicate definition \"{statement.Name}\".");
+                if (declarations.ContainsKey(name))
+                    throw new Assembler6502Exception(statement.LineNumber,
+                        $"Duplicate symbol \"{name}\" is already defined.");
 
-                declarations.Add(statement.Name, i);
+                declarations.Add(name, i);
             }
         }
     }
@@ -140,7 +144,8 @@ internal class AssemblerExecution(
 
             if (loc != null)
                 values.Add(statement.Name, loc.Value);
-            else throw new Assembler6502Exception(statement.LineNumber, $"Dangling label \"{statement.Name}\".");
+            else throw new Assembler6502Exception(statement.LineNumber,
+                $"Label \"{statement.Name}\" is not followed by any addressable statement.");
         }
     }
 
@@ -154,7 +159,7 @@ internal class AssemblerExecution(
 
             if (!resolver.TryResolveEquation(statement.Value, out int value))
                 throw new Assembler6502Exception(statement.LineNumber,
-                    $"Unable to resolve constant value \"{statement.Value}\" of \"{statement.Name}\".");
+                    $"Could not evaluate expression \"{statement.Value}\" for constant \"{statement.Name}\".");
 
             values[statement.Name] = value;
         }

@@ -11,7 +11,7 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
 
         Assert.AreEqual(0, ex.Line);
-        Assert.AreEqual("Unable to resolve constant value \"$00+VAR2\" of \"VAR1\".", ex.Error);
+        Assert.AreEqual("Could not evaluate expression \"$00+VAR2\" for constant \"VAR1\".", ex.Error);
     }
 
     [TestMethod]
@@ -22,7 +22,7 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
 
         Assert.AreEqual(0, ex.Line);
-        Assert.AreEqual("Names must begin with a letter \"1VAR\".", ex.Error);
+        Assert.AreEqual("Name \"1VAR\" must begin with a letter.", ex.Error);
     }
 
     [TestMethod]
@@ -33,7 +33,7 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
 
         Assert.AreEqual(0, ex.Line);
-        Assert.AreEqual("Names must not be empty.", ex.Error);
+        Assert.AreEqual("Name cannot be empty.", ex.Error);
     }
 
     [TestMethod]
@@ -44,7 +44,7 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
 
         Assert.AreEqual(0, ex.Line);
-        Assert.AreEqual("Names must be composed only of letters, numbers and underscores \"a_%$@im\".", ex.Error);
+        Assert.AreEqual("Name \"a_%$@im\" contains an invalid character '%'. Only letters, digits, and underscores are allowed.", ex.Error);
     }
 
     [TestMethod]
@@ -66,7 +66,7 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
 
         Assert.AreEqual(0, ex.Line);
-        Assert.AreEqual("Operand is outside of valid single byte range value \"257\" for LDA.", ex.Error);
+        Assert.AreEqual("Operand value 257 is out of range for instruction \"LDA\". Expected 8-bit value (0 to 255).", ex.Error);
     }
 
     [TestMethod]
@@ -77,7 +77,7 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
 
         Assert.AreEqual(0, ex.Line);
-        Assert.AreEqual("Operand is outside of valid single byte range value \"-1\" for LDA.", ex.Error);
+        Assert.AreEqual("Operand value -1 is out of range for instruction \"LDA\". Expected 8-bit value (0 to 255).", ex.Error);
     }
 
     [TestMethod]
@@ -88,7 +88,7 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
 
         Assert.AreEqual(0, ex.Line);
-        Assert.AreEqual("Operand is outside of valid two byte range value \"1048575\" for STA.", ex.Error);
+        Assert.AreEqual("Operand value 1048575 is out of range for instruction \"STA\". Expected 16-bit value (0 to 65535).", ex.Error);
     }
 
     [TestMethod]
@@ -99,7 +99,7 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
 
         Assert.AreEqual(0, ex.Line);
-        Assert.AreEqual("Operand is outside of valid two byte range value \"-4095\" for STA.", ex.Error);
+        Assert.AreEqual("Operand value -4095 is out of range for instruction \"STA\". Expected 16-bit value (0 to 65535).", ex.Error);
     }
 
     [TestMethod]
@@ -110,7 +110,7 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
 
         Assert.AreEqual(0, ex.Line);
-        Assert.AreEqual("No opcode found for \"LDA\" with \"Indirect\" addressing.", ex.Error);
+        Assert.AreEqual("No opcode exists for instruction \"LDA\" with addressing mode \"Indirect\".", ex.Error);
     }
 
     [TestMethod]
@@ -121,7 +121,7 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
 
         Assert.AreEqual(0, ex.Line);
-        Assert.AreEqual("Unable to resolve operand value \"($00\" of \"LDA\".", ex.Error);
+        Assert.AreEqual("Unable to resolve operand value \"($00\" for instruction \"LDA\".", ex.Error);
     }
 
     [TestMethod]
@@ -143,7 +143,7 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
 
         Assert.AreEqual(0, ex.Line);
-        Assert.AreEqual("Unable to resolve operand value \"FOO\" of \"LDA\".", ex.Error);
+        Assert.AreEqual("Unable to resolve operand value \"FOO\" for instruction \"LDA\".", ex.Error);
     }
 
     [TestMethod]
@@ -154,7 +154,7 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
 
         Assert.AreEqual(2, ex.Line);
-        Assert.AreEqual("Unable to resolve constant value \"FOO\" of \"CONST\".", ex.Error);
+        Assert.AreEqual("Could not evaluate expression \"FOO\" for constant \"CONST\".", ex.Error);
     }
 
     [TestMethod]
@@ -165,7 +165,7 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
 
         Assert.AreEqual(1, ex.Line);
-        Assert.AreEqual("Unable to resolve .byte value \"$%\".", ex.Error);
+        Assert.AreEqual("Could not evaluate expression \"$%\" in \".byte\" directive.", ex.Error);
     }
 
     [TestMethod]
@@ -176,7 +176,7 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
 
         Assert.AreEqual(0, ex.Line);
-        Assert.AreEqual("Out of range .byte value \"65535\".", ex.Error);
+        Assert.AreEqual("Value 65535 is out of range for \".byte\" directive. Expected 8-bit unsigned value (0 to 255).", ex.Error);
     }
 
     [TestMethod]
@@ -187,7 +187,7 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
 
         Assert.AreEqual(0, ex.Line);
-        Assert.AreEqual("Out of range .byte value \"-1\".", ex.Error);
+        Assert.AreEqual("Value -1 is out of range for \".byte\" directive. Expected 8-bit unsigned value (0 to 255).", ex.Error);
     }
 
     [TestMethod]
@@ -198,7 +198,7 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
 
         Assert.AreEqual(2, ex.Line);
-        Assert.AreEqual("Unable to resolve .word value \"$2352345626234652435\".", ex.Error);
+        Assert.AreEqual("Could not evaluate expression \"$2352345626234652435\" in \".word\" directive.", ex.Error);
     }
 
     [TestMethod]
@@ -209,7 +209,7 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
 
         Assert.AreEqual(0, ex.Line);
-        Assert.AreEqual("Out of range .word value \"1048575\".", ex.Error);
+        Assert.AreEqual("Value 1048575 is out of range for \".word\" directive. Expected 16-bit unsigned value (0 to 65535).", ex.Error);
     }
 
     [TestMethod]
@@ -220,7 +220,7 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
 
         Assert.AreEqual(0, ex.Line);
-        Assert.AreEqual("Out of range .word value \"-1\".", ex.Error);
+        Assert.AreEqual("Value -1 is out of range for \".word\" directive. Expected 16-bit unsigned value (0 to 65535).", ex.Error);
     }
 
     [TestMethod]
@@ -236,7 +236,7 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
 
         Assert.AreEqual(2, ex.Line);
-        Assert.AreEqual("Duplicate definition \"FOO\".", ex.Error);
+        Assert.AreEqual("Duplicate symbol \"FOO\" is already defined.", ex.Error);
     }
 
     [TestMethod]
@@ -251,7 +251,7 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
 
         Assert.AreEqual(1, ex.Line);
-        Assert.AreEqual("Dangling label \"DANGLING\".", ex.Error);
+        Assert.AreEqual("Label \"DANGLING\" is not followed by any addressable statement.", ex.Error);
     }
 
     [TestMethod]
@@ -266,7 +266,7 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble([.. lines]));
 
         Assert.AreEqual(0, ex.Line);
-        Assert.AreEqual("Operand is outside of valid relative range value \"128\" for BNE.", ex.Error);
+        Assert.AreEqual("Relative branch offset 128 is out of range for instruction \"BNE\". Expected signed 8-bit value (-128 to 127).", ex.Error);
     }
 
     [TestMethod]
@@ -280,6 +280,6 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble([.. lines]));
 
         Assert.AreEqual(129, ex.Line);
-        Assert.AreEqual("Operand is outside of valid relative range value \"-130\" for BNE.", ex.Error);
+        Assert.AreEqual("Relative branch offset -130 is out of range for instruction \"BNE\". Expected signed 8-bit value (-128 to 127).", ex.Error);
     }
 }
