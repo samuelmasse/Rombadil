@@ -15,6 +15,39 @@ public class Assembler6502ErrorTest
     }
 
     [TestMethod]
+    public void Assemble_ConstantInvalidNameStartsWithNumber_Throws()
+    {
+        string[] lines = ["1VAR = $00"];
+
+        var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
+
+        Assert.AreEqual(0, ex.Line);
+        Assert.AreEqual("Names must begin with a letter \"1VAR\".", ex.Error);
+    }
+
+    [TestMethod]
+    public void Assemble_ConstantInvalidNameEmpty_Throws()
+    {
+        string[] lines = [" = $00"];
+
+        var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
+
+        Assert.AreEqual(0, ex.Line);
+        Assert.AreEqual("Names must not be empty.", ex.Error);
+    }
+
+    [TestMethod]
+    public void Assemble_ConstantInvalidNameInvalidChar_Throws()
+    {
+        string[] lines = ["a_%$@im = $00"];
+
+        var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
+
+        Assert.AreEqual(0, ex.Line);
+        Assert.AreEqual("Names must be composed only of letters, numbers and underscores \"a_%$@im\".", ex.Error);
+    }
+
+    [TestMethod]
     public void Assemble_BadInstruction_Throws()
     {
         string[] lines = ["bad $00"];
@@ -33,7 +66,18 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
 
         Assert.AreEqual(0, ex.Line);
-        Assert.AreEqual("Operand is outside of valid single byte range value \"257\" for LDA", ex.Error);
+        Assert.AreEqual("Operand is outside of valid single byte range value \"257\" for LDA.", ex.Error);
+    }
+
+    [TestMethod]
+    public void Assemble_OutOfRangeNegativeSingleByte_Throws()
+    {
+        string[] lines = ["lda -1"];
+
+        var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
+
+        Assert.AreEqual(0, ex.Line);
+        Assert.AreEqual("Operand is outside of valid single byte range value \"-1\" for LDA.", ex.Error);
     }
 
     [TestMethod]
@@ -44,7 +88,18 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
 
         Assert.AreEqual(0, ex.Line);
-        Assert.AreEqual("Operand is outside of valid two byte range value \"1048575\" for STA", ex.Error);
+        Assert.AreEqual("Operand is outside of valid two byte range value \"1048575\" for STA.", ex.Error);
+    }
+
+    [TestMethod]
+    public void Assemble_OutOfRangeNegativeTwoByte_Throws()
+    {
+        string[] lines = ["sta -$FFF"];
+
+        var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
+
+        Assert.AreEqual(0, ex.Line);
+        Assert.AreEqual("Operand is outside of valid two byte range value \"-4095\" for STA.", ex.Error);
     }
 
     [TestMethod]
@@ -114,6 +169,28 @@ public class Assembler6502ErrorTest
     }
 
     [TestMethod]
+    public void Assemble_OutOfRangeByte_Throws()
+    {
+        string[] lines = [".byte $FFFF"];
+
+        var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
+
+        Assert.AreEqual(0, ex.Line);
+        Assert.AreEqual("Out of range .byte value \"65535\".", ex.Error);
+    }
+
+    [TestMethod]
+    public void Assemble_OutOfRangeNegativeByte_Throws()
+    {
+        string[] lines = [".byte -1"];
+
+        var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
+
+        Assert.AreEqual(0, ex.Line);
+        Assert.AreEqual("Out of range .byte value \"-1\".", ex.Error);
+    }
+
+    [TestMethod]
     public void Assemble_BadWord_Throws()
     {
         string[] lines = ["", "", ".word $00,$00,$2352345626234652435,$24"];
@@ -122,6 +199,28 @@ public class Assembler6502ErrorTest
 
         Assert.AreEqual(2, ex.Line);
         Assert.AreEqual("Unable to resolve .word value \"$2352345626234652435\".", ex.Error);
+    }
+
+    [TestMethod]
+    public void Assemble_OutOfRangeWord_Throws()
+    {
+        string[] lines = [".word $FFFFF"];
+
+        var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
+
+        Assert.AreEqual(0, ex.Line);
+        Assert.AreEqual("Out of range .word value \"1048575\".", ex.Error);
+    }
+
+    [TestMethod]
+    public void Assemble_OutOfRangeNegativeWord_Throws()
+    {
+        string[] lines = [".word -1"];
+
+        var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble(lines));
+
+        Assert.AreEqual(0, ex.Line);
+        Assert.AreEqual("Out of range .word value \"-1\".", ex.Error);
     }
 
     [TestMethod]
@@ -167,7 +266,7 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble([.. lines]));
 
         Assert.AreEqual(0, ex.Line);
-        Assert.AreEqual("Operand is outside of valid relative range value \"128\" for BNE", ex.Error);
+        Assert.AreEqual("Operand is outside of valid relative range value \"128\" for BNE.", ex.Error);
     }
 
     [TestMethod]
@@ -181,6 +280,6 @@ public class Assembler6502ErrorTest
         var ex = Assert.ThrowsExactly<Assembler6502Exception>(() => _ = new Assembler6502().Assemble([.. lines]));
 
         Assert.AreEqual(129, ex.Line);
-        Assert.AreEqual("Operand is outside of valid relative range value \"-130\" for BNE", ex.Error);
+        Assert.AreEqual("Operand is outside of valid relative range value \"-130\" for BNE.", ex.Error);
     }
 }

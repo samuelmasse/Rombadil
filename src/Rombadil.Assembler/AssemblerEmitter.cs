@@ -31,7 +31,7 @@ internal class AssemblerEmitter(List<AssemblerStatement> statements, AssemblerRe
 
             if (arg < -128 || arg > 127)
                 throw new Assembler6502Exception(statement.LineNumber,
-                    $"Operand is outside of valid relative range value \"{arg}\" for {instruction.Instruction}");
+                    $"Operand is outside of valid relative range value \"{arg}\" for {instruction.Instruction}.");
         }
 
         output.Add((byte)opcode);
@@ -39,20 +39,23 @@ internal class AssemblerEmitter(List<AssemblerStatement> statements, AssemblerRe
         var size = CpuAddressingModeSize.Get(instruction.AddressingMode);
         if (size == 1)
         {
-            if (arg > 0xFF)
-                throw new Assembler6502Exception(statement.LineNumber,
-                    $"Operand is outside of valid single byte range value \"{arg}\" for {instruction.Instruction}");
+            if (instruction.AddressingMode != CpuAddressingMode.Relative)
+            {
+                if (arg < 0 || arg > 0xFF)
+                    throw new Assembler6502Exception(statement.LineNumber,
+                        $"Operand is outside of valid single byte range value \"{arg}\" for {instruction.Instruction}.");
+            }
 
             output.Add((byte)arg);
         }
         else if (size == 2)
         {
-            if (arg > 0xFFFF)
+            if (arg < 0 || arg > 0xFFFF)
                 throw new Assembler6502Exception(statement.LineNumber,
-                    $"Operand is outside of valid two byte range value \"{arg}\" for {instruction.Instruction}");
+                    $"Operand is outside of valid two byte range value \"{arg}\" for {instruction.Instruction}.");
 
-            output.Add((byte)(arg & 0xFF));
-            output.Add((byte)((arg >> 8) & 0xFF));
+            output.Add((byte)arg);
+            output.Add((byte)(arg >> 8));
         }
     }
 
@@ -65,6 +68,9 @@ internal class AssemblerEmitter(List<AssemblerStatement> statements, AssemblerRe
                 if (!resolver.TryResolveEquation(expression, out int val))
                     throw new Assembler6502Exception(statement.LineNumber, $"Unable to resolve .byte value \"{expression}\".");
 
+                if (val < 0 || val > 0xFF)
+                    throw new Assembler6502Exception(statement.LineNumber, $"Out of range .byte value \"{val}\".");
+
                 output.Add((byte)(val & 0xFF));
             }
         }
@@ -75,8 +81,11 @@ internal class AssemblerEmitter(List<AssemblerStatement> statements, AssemblerRe
                 if (!resolver.TryResolveEquation(expression, out int val))
                     throw new Assembler6502Exception(statement.LineNumber, $"Unable to resolve .word value \"{expression}\".");
 
-                output.Add((byte)(val & 0xFF));
-                output.Add((byte)((val >> 8) & 0xFF));
+                if (val < 0 || val > 0xFFFF)
+                    throw new Assembler6502Exception(statement.LineNumber, $"Out of range .word value \"{val}\".");
+
+                output.Add((byte)val);
+                output.Add((byte)(val >> 8));
             }
         }
     }

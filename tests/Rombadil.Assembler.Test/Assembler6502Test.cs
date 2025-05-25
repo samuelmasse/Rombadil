@@ -4,6 +4,17 @@ namespace Rombadil.Assembler.Test;
 public sealed class Assembler6502Test
 {
     [TestMethod]
+    public void Assemble_Empty_CorrectBytes()
+    {
+        string[] lines = [];
+
+        var binary = new Assembler6502().Assemble(lines);
+
+        byte[] expected = [];
+        CollectionAssert.AreEqual(expected, binary);
+    }
+
+    [TestMethod]
     public void Assemble_ImmediateLoadA_CorrectBytes()
     {
         string[] lines = ["LDA #$10"];

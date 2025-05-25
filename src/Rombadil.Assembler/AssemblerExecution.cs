@@ -34,6 +34,19 @@ internal class AssemblerExecution(
             var statement = statements[i];
             if (statement.Type == AssemblerStatementType.Constant || statement.Type == AssemblerStatementType.Label)
             {
+                if (string.IsNullOrEmpty(statement.Name))
+                    throw new Assembler6502Exception(statement.LineNumber, $"Names must not be empty.");
+
+                if (!char.IsLetter(statement.Name[0]))
+                    throw new Assembler6502Exception(statement.LineNumber, $"Names must begin with a letter \"{statement.Name}\".");
+
+                foreach (char c in statement.Name)
+                {
+                    if (!char.IsLetterOrDigit(c) && c != ' ')
+                        throw new Assembler6502Exception(statement.LineNumber,
+                            $"Names must be composed only of letters, numbers and underscores \"{statement.Name}\".");
+                }
+
                 if (declarations.ContainsKey(statement.Name))
                     throw new Assembler6502Exception(statement.LineNumber, $"Duplicate definition \"{statement.Name}\".");
 

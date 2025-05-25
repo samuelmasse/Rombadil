@@ -18,7 +18,7 @@ internal record class AssemblerDirective(AssemblerDirectiveType Type, string[] E
 
 internal enum AssemblerDirectiveType
 {
-    Segment, // TODO: remove this
+    Segment,
     Org,
     Byte,
     Word,
