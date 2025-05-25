@@ -16,6 +16,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rombadil.Script", "scripts\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rombadil.Script.Coverage", "scripts\Rombadil.Script.Coverage\Rombadil.Script.Coverage.csproj", "{18861869-0A4B-45FF-9468-F60DAD1A1081}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rombadil.Assembler.Cli", "src\Rombadil.Assembler.Cli\Rombadil.Assembler.Cli.csproj", "{485965BC-0C81-43B0-9B55-B4B4D47D53DA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -50,6 +52,10 @@ Global
 		{18861869-0A4B-45FF-9468-F60DAD1A1081}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{18861869-0A4B-45FF-9468-F60DAD1A1081}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{18861869-0A4B-45FF-9468-F60DAD1A1081}.Release|Any CPU.Build.0 = Release|Any CPU
+		{485965BC-0C81-43B0-9B55-B4B4D47D53DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{485965BC-0C81-43B0-9B55-B4B4D47D53DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{485965BC-0C81-43B0-9B55-B4B4D47D53DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{485965BC-0C81-43B0-9B55-B4B4D47D53DA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
