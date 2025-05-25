@@ -42,9 +42,9 @@ internal class AssemblerExecution(
 
                 foreach (char c in statement.Name)
                 {
-                    if (!char.IsLetterOrDigit(c) && c != ' ')
+                    if (!char.IsLetterOrDigit(c) && c != '_')
                         throw new Assembler6502Exception(statement.LineNumber,
-                            $"Names must be composed only of letters, numbers and underscores \"{statement.Name}\".");
+                            $"Names must be composed only of letters, numbers or underscores \"{statement.Name}\".");
                 }
 
                 if (declarations.ContainsKey(statement.Name))
