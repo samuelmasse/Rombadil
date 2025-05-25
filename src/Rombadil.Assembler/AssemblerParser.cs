@@ -4,45 +4,45 @@ internal class AssemblerParser(List<AssemblerStatement> statements)
 {
     private readonly StringBuilder sb = new();
 
-    internal void Parse(string source)
+    internal void Parse(int lineNumber, string source)
     {
-        var line = ExtractLabel(CollapseSpaces(RemoveComment(source))).Trim();
+        var line = ExtractLabel(lineNumber, CollapseSpaces(RemoveComment(source))).Trim();
         if (string.IsNullOrWhiteSpace(line))
             return;
 
         if (line.Contains('='))
-            ParseConstant(line);
-        else ParseOperation(line);
+            ParseConstant(lineNumber, line);
+        else ParseOperation(lineNumber, line);
     }
 
-    private void ParseConstant(string str)
+    private void ParseConstant(int lineNumber, string str)
     {
         var parts = str.Split('=');
 
         var name = parts[0].Trim();
         var value = RemoveAllSpaces(parts[1].Trim());
 
-        statements.Add(new(name, value, AssemblerStatementType.Constant));
+        statements.Add(new(lineNumber, name, value, AssemblerStatementType.Constant));
     }
 
-    private void ParseOperation(string str)
+    private void ParseOperation(int lineNumber, string str)
     {
         int index = str.IndexOf(' ');
 
         string operation = (index >= 0 ? str[..index] : str).Trim();
         string operand = index >= 0 ? RemoveAllSpaces(str[index..].Trim()) : string.Empty;
 
-        statements.Add(new(operation, operand, AssemblerStatementType.Operation));
+        statements.Add(new(lineNumber, operation, operand, AssemblerStatementType.Operation));
     }
 
-    private string ExtractLabel(string str)
+    private string ExtractLabel(int lineNumber, string str)
     {
         int index = str.IndexOf(':');
         if (index < 0)
             return str;
 
         var name = str[..index].Trim();
-        statements.Add(new(name, string.Empty, AssemblerStatementType.Label));
+        statements.Add(new(lineNumber, name, string.Empty, AssemblerStatementType.Label));
 
         return str[(index + 1)..];
     }

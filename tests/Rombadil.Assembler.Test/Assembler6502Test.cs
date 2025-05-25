@@ -77,13 +77,13 @@ public sealed class Assembler6502Test
     {
         string[] lines =
         [
-            " LDA\t(  $44  )  ,Y ",     // Indirect,Y
-            "LDA  ( $44,X  )",       // Indirect,X
-            "JMP  ( $1234  ) ",      // Indirect (JMP only)
-            "  \tLDX  #  $20 ",          // Immediate
-            " STA  $4400   ,Y",       // Absolute,Y
-            "ADC $4400 ,  X  ",      // Absolute,X
-            "SBC $44 , X"            // ZeroPage,X
+            " LdA\t(  $44  )  ,Y ", // Indirect,Y
+            "LDA  ( $44,X  )",      // Indirect,X
+            "jmP  ( $1234  ) ",     // Indirect
+            "  \tLDX  #  $20 ",     // Immediate
+            " STA  $4400   ,y",     // Absolute,Y
+            "adc $4400 ,  x  ",     // Absolute,X
+            "SBC $44 , X"           // ZeroPage,X
         ];
 
         var binary = new Assembler6502().Assemble(lines);
@@ -358,8 +358,8 @@ public sealed class Assembler6502Test
         string[] lines =
         [
             "VAL = $42",
-            ".byte VAL",
-            ".word VAL+1"
+            ".byTe VAL",
+            ".worD VAL+1"
         ];
 
         var binary = new Assembler6502().Assemble(lines);
@@ -399,6 +399,121 @@ public sealed class Assembler6502Test
         var binary = new Assembler6502().Assemble(lines);
 
         byte[] expected = [0xA9, 0x01, 0x8D, 0x00, 0x02]; // LDA #$01, STA $0200
+        CollectionAssert.AreEqual(expected, binary);
+    }
+
+    [TestMethod]
+    public void Assemble_ChainedConstants_EvaluateCorrectly()
+    {
+        string[] lines =
+        [
+            "A = $10",
+            "B = A + 1",
+            "C = B + 1",
+            "LDA #C"
+        ];
+
+        var binary = new Assembler6502().Assemble(lines);
+
+        byte[] expected = [0xA9, 0x12]; // $10 + 1 + 1 = $12
+        CollectionAssert.AreEqual(expected, binary);
+    }
+
+    [TestMethod]
+    public void Assemble_LabelBeforeByteDirective_LabelAddressIsCorrect()
+    {
+        string[] lines =
+        [
+            "Data: .byte $01, $02",
+            ".word Data"
+        ];
+
+        var binary = new Assembler6502().Assemble(lines);
+
+        byte[] expected = [0x01, 0x02, 0x00, 0x00]; // Data is at 0x0000
+        CollectionAssert.AreEqual(expected, binary);
+    }
+
+    [TestMethod]
+    public void Assemble_BackwardBranch_RelativeOffsetIsNegative()
+    {
+        string[] lines =
+        [
+            "Loop: NOP",
+            "BNE Loop"
+        ];
+
+        var binary = new Assembler6502().Assemble(lines);
+
+        byte[] expected = [0xEA, 0xD0, 0xFD]; // BNE -3
+        CollectionAssert.AreEqual(expected, binary);
+    }
+
+    [TestMethod]
+    public void Assemble_ByteDirective_WithSpacesStillCorrect()
+    {
+        string[] lines =
+        [
+            ".byte $01 ,  $02, $03 ,$04"
+        ];
+
+        var binary = new Assembler6502().Assemble(lines);
+
+        byte[] expected = [0x01, 0x02, 0x03, 0x04];
+        CollectionAssert.AreEqual(expected, binary);
+    }
+
+    [TestMethod]
+    public void Assemble_WordDirectiveWithLabelOffset_ResolvesCorrectly()
+    {
+        string[] lines =
+        [
+            "Start: NOP",
+            ".word Start + 1"
+        ];
+
+        var binary = new Assembler6502().Assemble(lines);
+
+        byte[] expected = [0xEA, 0x01, 0x00]; // Start = 0x0000, +1
+        CollectionAssert.AreEqual(expected, binary);
+    }
+
+    [TestMethod]
+    public void Assemble_ZeroPageVsAbsolute_DetermineByResolvingVariables()
+    {
+        string[] lines =
+        [
+            "ZP1 = $08",
+            "ZP2 = ZP1 + $10",
+            "AB1 = $0F0F",
+            "AB2 = AB1 + $01",
+            "LDA ZP2",    // ZeroPage
+            "LDA AB2"     // Absolute
+        ];
+
+        var binary = new Assembler6502().Assemble(lines);
+
+        byte[] expected = [0xA5, 0x18, 0xAD, 0x10, 0x0F];
+        CollectionAssert.AreEqual(expected, binary);
+    }
+
+    [TestMethod]
+    public void Assemble_ZeroPageVsAbsolute_DetermineByNotResolvingVariables()
+    {
+        string[] lines =
+        [
+            "ZP1 = $08 + Label",
+            "ZP2 = ZP1 + $10",
+            "AB1 = $0F0F",
+            "AB2 = AB1 + $01",
+            "LDA ZP2",    // Has to be absolute because it relies on label
+            "Label:",
+            "LDA AB2"     // Absolute
+        ];
+
+        var binary = new Assembler6502().Assemble(lines);
+
+        byte[] expected = [0xAD, 0x1B, 0x00, 0xAD, 0x10, 0x0F];
         CollectionAssert.AreEqual(expected, binary);
     }
 }

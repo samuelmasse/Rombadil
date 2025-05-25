@@ -1,6 +1,6 @@
 namespace Rombadil.Assembler;
 
-internal record class AssemblerStatement(string Name, string Value, AssemblerStatementType Type)
+internal record class AssemblerStatement(int LineNumber, string Name, string Value, AssemblerStatementType Type)
 {
     internal AssemblerDirective? Directive;
     internal AssemblerInstruction? Instruction;

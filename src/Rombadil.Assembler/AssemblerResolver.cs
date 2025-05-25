@@ -2,6 +2,8 @@ namespace Rombadil.Assembler;
 
 internal class AssemblerResolver(List<AssemblerStatement> statements, Dictionary<string, int> declarations, Dictionary<string, int> values)
 {
+    private readonly HashSet<string> visited = [];
+
     internal bool TryResolveEquation(string equation, out int value)
     {
         value = 0;
@@ -15,7 +17,11 @@ internal class AssemblerResolver(List<AssemblerStatement> statements, Dictionary
                 if (!TryResolveConstant(term.Value, out termValue))
                     return false;
             }
-            else termValue = ParseNumber(term.Value);
+            else
+            {
+                if (!TryParseNumber(term.Value, out termValue))
+                    return false;
+            }
 
             if (term.Select == EquationTermSelect.LowByte)
                 termValue &= 0xFF;
@@ -34,6 +40,9 @@ internal class AssemblerResolver(List<AssemblerStatement> statements, Dictionary
     {
         if (values.TryGetValue(name, out value))
             return true;
+
+        if (!visited.Add(name))
+            return false;
 
         if (!declarations.TryGetValue(name, out var location))
             return false;
@@ -102,13 +111,23 @@ internal class AssemblerResolver(List<AssemblerStatement> statements, Dictionary
         return result;
     }
 
-    private int ParseNumber(string str)
+    private bool TryParseNumber(string str, out int val)
     {
-        if (str.StartsWith('$'))
-            return Convert.ToInt32(str[1..], 16);
-        if (str.StartsWith('%'))
-            return Convert.ToInt32(str[1..], 2);
-        return Convert.ToInt32(str, 10);
+        try
+        {
+            if (str.StartsWith('$'))
+                val = Convert.ToInt32(str[1..], 16);
+            else if (str.StartsWith('%'))
+                val = Convert.ToInt32(str[1..], 2);
+            else val = Convert.ToInt32(str, 10);
+
+            return true;
+        }
+        catch
+        {
+            val = 0;
+            return false;
+        }
     }
 
     private record struct EquationTerm(string Value, EquationTermOperation Operation, EquationTermSelect Select);

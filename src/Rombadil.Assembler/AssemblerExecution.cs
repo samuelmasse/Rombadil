@@ -17,22 +17,28 @@ internal class AssemblerExecution(
         ParseOperationStatements();
         CreateMemoryLayout();
         ResolveLabelValues();
+        ResolveAllConstants();
         emitter.Emit();
     }
 
     private void ParseLinesIntoStatements()
     {
-        foreach (var line in lines)
-            parser.Parse(line);
+        for (int i = 0; i < lines.Length; i++)
+            parser.Parse(i, lines[i]);
     }
 
     private void DeclareConstants()
     {
         for (int i = 0; i < statements.Count; i++)
         {
-            var line = statements[i];
-            if (line.Type == AssemblerStatementType.Constant || line.Type == AssemblerStatementType.Label)
-                declarations.Add(line.Name, i);
+            var statement = statements[i];
+            if (statement.Type == AssemblerStatementType.Constant || statement.Type == AssemblerStatementType.Label)
+            {
+                if (declarations.ContainsKey(statement.Name))
+                    throw new Assembler6502Exception(statement.LineNumber, $"Duplicate definition \"{statement.Name}\".");
+
+                declarations.Add(statement.Name, i);
+            }
         }
     }
 
@@ -47,7 +53,7 @@ internal class AssemblerExecution(
             if (statement.Name.StartsWith('.'))
             {
                 if (!Enum.TryParse<AssemblerDirectiveType>(statement.Name[1..], true, out var directiveType))
-                    throw new Exception(); // TODO
+                    throw new Assembler6502Exception(statement.LineNumber, $"Unrecognized directive \"{statement.Name}\".");
 
                 var expressions = statement.Value.Split(',');
 
@@ -56,7 +62,7 @@ internal class AssemblerExecution(
             else
             {
                 if (!Enum.TryParse<CpuInstruction>(statement.Name, true, out var instruction))
-                    throw new Exception(); // TODO
+                    throw new Assembler6502Exception(statement.LineNumber, $"Unrecognized instruction \"{statement.Name}\".");
 
                 var operand = statement.Value;
                 var (addressingMode, expression) = addresser.Resolve(instruction, operand);
@@ -121,7 +127,23 @@ internal class AssemblerExecution(
 
             if (loc != null)
                 values.Add(statement.Name, loc.Value);
-            else throw new Exception();
+            else throw new Assembler6502Exception(statement.LineNumber, $"Dangling label \"{statement.Name}\".");
+        }
+    }
+
+    private void ResolveAllConstants()
+    {
+        for (int i = 0; i < statements.Count; i++)
+        {
+            var statement = statements[i];
+            if (statement.Type != AssemblerStatementType.Constant)
+                continue;
+
+            if (!resolver.TryResolveEquation(statement.Value, out int value))
+                throw new Assembler6502Exception(statement.LineNumber,
+                    $"Unable to resolve constant value \"{statement.Value}\" of \"{statement.Name}\".");
+
+            values[statement.Name] = value;
         }
     }
 }
