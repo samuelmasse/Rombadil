@@ -1,6 +1,6 @@
 namespace Rombadil.Cpu.Emulator;
 
-public class CpuEmulatorExecutor(CpuEmulatorState cpu)
+internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 {
     internal void Adc(CpuAddressingMode mode)
     {

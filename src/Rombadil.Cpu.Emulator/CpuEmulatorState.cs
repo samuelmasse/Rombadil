@@ -1,37 +1,37 @@
 namespace Rombadil.Cpu.Emulator;
 
-public class CpuEmulatorState(Memory<byte> memory)
+internal class CpuEmulatorState(Memory<byte> memory)
 {
     private CpuEmulatorRegisters reg;
     private long cycles;
 
-    public Span<byte> Mem => memory.Span;
-    public ref CpuEmulatorRegisters Reg => ref reg;
-    public ref long Cycles => ref cycles;
+    internal Span<byte> Mem => memory.Span;
+    internal ref CpuEmulatorRegisters Reg => ref reg;
+    internal ref long Cycles => ref cycles;
 
-    public void Push(byte value) => memory.Span[0x0100 + reg.SP--] = value;
-    public byte Pop() => memory.Span[0x0100 + ++reg.SP];
+    internal void Push(byte value) => memory.Span[0x0100 + reg.SP--] = value;
+    internal byte Pop() => memory.Span[0x0100 + ++reg.SP];
 
-    public void UpdateZeroNegativeFlags(byte value)
+    internal void UpdateZeroNegativeFlags(byte value)
     {
         SetFlag(CpuStatus.Zero, value == 0);
         SetFlag(CpuStatus.Negative, (value & 0b1000_0000) != 0);
     }
 
-    public void SetFlag(CpuStatus flag, bool on)
+    internal void SetFlag(CpuStatus flag, bool on)
     {
         if (on) reg.SR |= flag;
         else reg.SR &= ~flag;
     }
 
-    public ushort ReadWord()
+    internal ushort ReadWord()
     {
         ushort value = (ushort)(memory.Span[reg.PC] | (memory.Span[reg.PC + 1] << 8));
         reg.PC += 2;
         return value;
     }
 
-    public ushort ResolveOperandAddressWithCycles(CpuInstruction instr, CpuAddressingMode mode)
+    internal ushort ResolveOperandAddressWithCycles(CpuInstruction instr, CpuAddressingMode mode)
     {
         var mem = memory.Span;
 
