@@ -29,7 +29,7 @@ internal class CpuEmulatorTimings
         );
 
         Register(CpuInstruction.ASL,
-            (CpuAddressingMode.Implied, 2, 0),
+            (CpuAddressingMode.Accumulator, 2, 0),
             (CpuAddressingMode.ZeroPage, 5, 0),
             (CpuAddressingMode.ZeroPageX, 6, 0),
             (CpuAddressingMode.Absolute, 6, 0),
@@ -143,7 +143,7 @@ internal class CpuEmulatorTimings
         );
 
         Register(CpuInstruction.LSR,
-            (CpuAddressingMode.Implied, 2, 0),
+            (CpuAddressingMode.Accumulator, 2, 0),
             (CpuAddressingMode.ZeroPage, 5, 0),
             (CpuAddressingMode.ZeroPageX, 6, 0),
             (CpuAddressingMode.Absolute, 6, 0),
@@ -173,7 +173,7 @@ internal class CpuEmulatorTimings
         Register(CpuInstruction.INY, (CpuAddressingMode.Implied, 2, 0));
 
         Register(CpuInstruction.ROL,
-            (CpuAddressingMode.Implied, 2, 0),
+            (CpuAddressingMode.Accumulator, 2, 0),
             (CpuAddressingMode.ZeroPage, 5, 0),
             (CpuAddressingMode.ZeroPageX, 6, 0),
             (CpuAddressingMode.Absolute, 6, 0),
@@ -181,7 +181,7 @@ internal class CpuEmulatorTimings
         );
 
         Register(CpuInstruction.ROR,
-            (CpuAddressingMode.Implied, 2, 0),
+            (CpuAddressingMode.Accumulator, 2, 0),
             (CpuAddressingMode.ZeroPage, 5, 0),
             (CpuAddressingMode.ZeroPageX, 6, 0),
             (CpuAddressingMode.Absolute, 6, 0),

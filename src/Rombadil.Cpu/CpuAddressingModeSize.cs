@@ -9,7 +9,7 @@ public static class CpuAddressingModeSize
             mode == CpuAddressingMode.AbsoluteX ||
             mode == CpuAddressingMode.AbsoluteY)
             return 2;
-        else if (mode == CpuAddressingMode.Implied)
+        else if (mode == CpuAddressingMode.Implied || mode == CpuAddressingMode.Accumulator)
             return 0;
         else return 1;
     }

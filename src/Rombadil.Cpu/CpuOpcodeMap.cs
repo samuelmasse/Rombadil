@@ -30,7 +30,7 @@ public static class CpuOpcodeMap
         );
 
         Register(CpuInstruction.ASL,
-            (CpuAddressingMode.Implied, CpuOpcode.ASL_ACC),
+            (CpuAddressingMode.Accumulator, CpuOpcode.ASL_ACC),
             (CpuAddressingMode.ZeroPage, CpuOpcode.ASL_ZP),
             (CpuAddressingMode.ZeroPageX, CpuOpcode.ASL_ZPX),
             (CpuAddressingMode.Absolute, CpuOpcode.ASL_ABS),
@@ -144,7 +144,7 @@ public static class CpuOpcodeMap
         );
 
         Register(CpuInstruction.LSR,
-            (CpuAddressingMode.Implied, CpuOpcode.LSR_ACC),
+            (CpuAddressingMode.Accumulator, CpuOpcode.LSR_ACC),
             (CpuAddressingMode.ZeroPage, CpuOpcode.LSR_ZP),
             (CpuAddressingMode.ZeroPageX, CpuOpcode.LSR_ZPX),
             (CpuAddressingMode.Absolute, CpuOpcode.LSR_ABS),
@@ -174,7 +174,7 @@ public static class CpuOpcodeMap
         Register(CpuInstruction.INY, (CpuAddressingMode.Implied, CpuOpcode.INY));
 
         Register(CpuInstruction.ROL,
-            (CpuAddressingMode.Implied, CpuOpcode.ROL_ACC),
+            (CpuAddressingMode.Accumulator, CpuOpcode.ROL_ACC),
             (CpuAddressingMode.ZeroPage, CpuOpcode.ROL_ZP),
             (CpuAddressingMode.ZeroPageX, CpuOpcode.ROL_ZPX),
             (CpuAddressingMode.Absolute, CpuOpcode.ROL_ABS),
@@ -182,7 +182,7 @@ public static class CpuOpcodeMap
         );
 
         Register(CpuInstruction.ROR,
-            (CpuAddressingMode.Implied, CpuOpcode.ROR_ACC),
+            (CpuAddressingMode.Accumulator, CpuOpcode.ROR_ACC),
             (CpuAddressingMode.ZeroPage, CpuOpcode.ROR_ZP),
             (CpuAddressingMode.ZeroPageX, CpuOpcode.ROR_ZPX),
             (CpuAddressingMode.Absolute, CpuOpcode.ROR_ABS),

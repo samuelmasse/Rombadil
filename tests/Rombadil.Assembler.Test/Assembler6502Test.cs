@@ -26,6 +26,17 @@ public sealed class Assembler6502Test
     }
 
     [TestMethod]
+    public void Assemble_AccumulatorImplied_CorrectBytes()
+    {
+        string[] lines = ["ASL A", "ASL", "NOP"];
+
+        var binary = new Assembler6502().Assemble(lines);
+
+        byte[] expected = [0x0A, 0x0A, 0xEA];
+        CollectionAssert.AreEqual(expected, binary);
+    }
+
+    [TestMethod]
     public void Assemble_LDA_AddressingModes_CorrectOpcodes()
     {
         string[] lines =

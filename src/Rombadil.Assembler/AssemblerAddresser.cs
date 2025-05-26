@@ -6,8 +6,15 @@ internal class AssemblerAddresser(AssemblerResolver resolver)
     {
         var c = StringComparison.InvariantCultureIgnoreCase;
 
-        if (string.IsNullOrEmpty(operand) || operand.Equals("A", c))
-            return (CpuAddressingMode.Implied, string.Empty);
+        if (operand.Equals("A", c))
+            return (CpuAddressingMode.Accumulator, string.Empty);
+
+        if (string.IsNullOrEmpty(operand))
+        {
+            if (CpuOpcodeMap.TryEncodeOpcode(instruction, CpuAddressingMode.Accumulator, out _))
+                return (CpuAddressingMode.Accumulator, string.Empty);
+            else return (CpuAddressingMode.Implied, string.Empty);
+        }
 
         if (operand.StartsWith('#'))
             return (CpuAddressingMode.Immediate, operand[1..]);

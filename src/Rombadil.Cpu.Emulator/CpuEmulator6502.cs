@@ -8,15 +8,17 @@ public class CpuEmulator6502
     public CpuEmulatorRegisters Reg => state.Reg;
     public long Cycles => state.Cycles;
 
+    internal CpuEmulatorState State => state;
+
     public CpuEmulator6502(Memory<byte> memory)
     {
         state = new(memory);
         exec = new(state);
     }
 
-    public void Reset()
+    public void Reset(ushort? pc = null)
     {
-        state.Reg.PC = (ushort)(state.Mem[0xFFFC] | (state.Mem[0xFFFD] << 8));
+        state.Reg.PC = pc ?? (ushort)(state.Mem[0xFFFC] | (state.Mem[0xFFFD] << 8));
 
         state.Reg.AC = 0;
         state.Reg.X = 0;

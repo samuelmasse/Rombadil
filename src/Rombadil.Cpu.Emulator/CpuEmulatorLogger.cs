@@ -2,62 +2,86 @@ namespace Rombadil.Cpu.Emulator;
 
 public class CpuEmulatorLogger(Memory<byte> memory, CpuEmulator6502 cpu)
 {
-    public void Log()
+    public string Log()
     {
         var reg = cpu.Reg;
         var opcode = (CpuOpcode)memory.Span[reg.PC];
-        if (!CpuOpcodeMap.TryDecodeOpcode(opcode, out var decode))
-            return;
+        var low = memory.Span[reg.PC + 1];
+        var high = memory.Span[reg.PC + 2];
 
-        var (instruction, addressingMode) = decode;
+        if (!CpuOpcodeMap.TryDecodeOpcode(opcode, out var decode))
+            return string.Empty;
+
+        var (instruction, mode) = decode;
+        var (addr, baseAddr) = cpu.State.ResolveAddr((ushort)(reg.PC + 1), mode);
+
         string operand = string.Empty;
 
-        int size = CpuAddressingModeSize.Get(addressingMode);
-        int[] direct = [(byte)opcode, -1, -1];
-
-        if (size == 1)
+        if (mode == CpuAddressingMode.IndirectX)
         {
-            direct[1] = memory.Span[reg.PC + 1];
-            operand = $"{direct[1]:X2}";
+            byte zpBase = low;
+            byte zpAddr = (byte)(zpBase + reg.X);
+            operand = $"(${low:X2},X) @ {zpAddr:X2} = {addr:X4}";
         }
-        else if (size == 2)
+        else if (mode == CpuAddressingMode.IndirectY)
+            operand = $"(${low:X2}),Y = {baseAddr:X4} @ {addr:X4}";
+        else if (mode == CpuAddressingMode.Indirect)
+            operand = $"(${baseAddr:X4}) = {addr:X4}";
+        else if (mode == CpuAddressingMode.AbsoluteX || mode == CpuAddressingMode.AbsoluteY)
+            operand = $"${baseAddr:X4},{(mode == CpuAddressingMode.AbsoluteX ? "X" : "Y")} @ {addr:X4}";
+        else if (mode == CpuAddressingMode.ZeroPageX || mode == CpuAddressingMode.ZeroPageY)
+            operand = $"${baseAddr:X2},{(mode == CpuAddressingMode.ZeroPageX ? "X" : "Y")} @ {addr:X2}";
+        else if (mode == CpuAddressingMode.Relative)
         {
-            direct[1] = memory.Span[reg.PC + 1];
-            direct[2] = memory.Span[reg.PC + 2];
-            operand = $"{direct[1] | direct[2] << 8:X4}";
+            sbyte offset = (sbyte)low;
+            ushort target = (ushort)(reg.PC + 2 + offset);
+            operand = $"${target:X4}";
         }
+        else if (mode == CpuAddressingMode.Accumulator)
+            operand = $"A";
+        else if (mode == CpuAddressingMode.ZeroPage)
+            operand = $"${low:X2}";
+        else if (mode == CpuAddressingMode.Absolute)
+            operand = $"${low | high << 8:X4}";
+        else if (mode == CpuAddressingMode.Immediate)
+            operand = $"#${low:X2}";
 
-        string dissassemble = $"{instruction} {FormatArgument(addressingMode, operand)}".Trim();
+        string dissassemble = $"{instruction} {operand}";
 
-        string directOp = $"{direct[0]:X2}";
-        if (direct[1] >= 0)
+        if (ShouldShowMemoryValue(instruction, mode))
         {
-            directOp += $" {direct[1]:X2}";
-
-            if (direct[2] >= 0)
-                directOp += $" {direct[2]:X2}";
+            var display = $"{memory.Span[addr]:X2}";
+            dissassemble += $" = {display}";
         }
 
-        Console.WriteLine(string.Format("{0:X4}  {1, -8}  {2, -32}A:{3:X2} X:{4:X2} Y:{5:X2} P:{6:X2} SP:{7:X2} CYC:{8}",
-            reg.PC, directOp, dissassemble, reg.AC, reg.X, reg.Y, (byte)reg.SR, reg.SP, cpu.Cycles));
+        int size = CpuAddressingModeSize.Get(mode);
+        string directOp = $"{(byte)opcode:X2}";
+        if (size >= 1)
+        {
+            directOp += $" {low:X2}";
+            if (size >= 2)
+                directOp += $" {high:X2}";
+        }
+
+        long totalPpuCycles = cpu.Cycles * 3;
+        long scanline = totalPpuCycles / 341;
+        long dot = totalPpuCycles % 341;
+
+        string ppuText = $"PPU:{scanline,3},{dot,3}";
+        return string.Format("{0:X4}  {1, -8}  {2, -32}A:{3:X2} X:{4:X2} Y:{5:X2} P:{6:X2} SP:{7:X2} {8} CYC:{9}",
+            reg.PC, directOp, dissassemble, reg.AC, reg.X, reg.Y, (byte)reg.SR, reg.SP, ppuText, cpu.Cycles);
     }
 
-    private static string FormatArgument(CpuAddressingMode mode, string operand)
+    private static bool ShouldShowMemoryValue(CpuInstruction instruction, CpuAddressingMode mode)
     {
-        return mode switch
-        {
-            CpuAddressingMode.Immediate => $"#{operand}",
-            CpuAddressingMode.Relative => operand,
-            CpuAddressingMode.Indirect => $"({operand})",
-            CpuAddressingMode.ZeroPage => operand,
-            CpuAddressingMode.ZeroPageX => $"{operand},X",
-            CpuAddressingMode.ZeroPageY => $"{operand},Y",
-            CpuAddressingMode.Absolute => operand,
-            CpuAddressingMode.AbsoluteX => $"{operand},X",
-            CpuAddressingMode.AbsoluteY => $"{operand},Y",
-            CpuAddressingMode.IndirectX => $"({operand},X)",
-            CpuAddressingMode.IndirectY => $"({operand}),Y",
-            _ => string.Empty
-        };
+        if (instruction is CpuInstruction.JMP or CpuInstruction.JSR or CpuInstruction.RTS or CpuInstruction.RTI or
+            CpuInstruction.BEQ or CpuInstruction.BNE or CpuInstruction.BCS or CpuInstruction.BCC or
+            CpuInstruction.BVS or CpuInstruction.BVC or CpuInstruction.BMI or CpuInstruction.BPL)
+            return false;
+
+        return mode is CpuAddressingMode.ZeroPage or CpuAddressingMode.ZeroPageX or CpuAddressingMode.ZeroPageY or
+            CpuAddressingMode.Absolute or CpuAddressingMode.AbsoluteX or CpuAddressingMode.AbsoluteY or
+            CpuAddressingMode.IndirectX or CpuAddressingMode.IndirectY;
     }
+
 }

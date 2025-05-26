@@ -4,7 +4,7 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 {
     internal void Adc(CpuAddressingMode mode)
     {
-        ushort addr = cpu.ResolveOperandAddressWithCycles(CpuInstruction.ADC, mode);
+        ushort addr = cpu.Addr(CpuInstruction.ADC, mode);
         byte value = cpu.Mem[addr];
 
         int carry = (cpu.Reg.SR & CpuStatus.Carry) != 0 ? 1 : 0;
@@ -23,14 +23,14 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 
     internal void And(CpuAddressingMode mode)
     {
-        ushort addr = cpu.ResolveOperandAddressWithCycles(CpuInstruction.AND, mode);
+        ushort addr = cpu.Addr(CpuInstruction.AND, mode);
         cpu.Reg.AC &= cpu.Mem[addr];
         cpu.UpdateZeroNegativeFlags(cpu.Reg.AC);
     }
 
     internal void Asl(CpuAddressingMode mode)
     {
-        if (mode == CpuAddressingMode.Implied)
+        if (mode == CpuAddressingMode.Accumulator)
         {
             cpu.SetFlag(CpuStatus.Carry, (cpu.Reg.AC & 0x80) != 0);
             cpu.Reg.AC <<= 1;
@@ -39,7 +39,7 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
             return;
         }
 
-        ushort addr = cpu.ResolveOperandAddressWithCycles(CpuInstruction.ASL, mode);
+        ushort addr = cpu.Addr(CpuInstruction.ASL, mode);
         ref byte value = ref cpu.Mem[addr];
 
         cpu.SetFlag(CpuStatus.Carry, (value & 0x80) != 0);
@@ -49,7 +49,7 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 
     internal void Bit(CpuAddressingMode mode)
     {
-        ushort addr = cpu.ResolveOperandAddressWithCycles(CpuInstruction.BIT, mode);
+        ushort addr = cpu.Addr(CpuInstruction.BIT, mode);
         byte value = cpu.Mem[addr];
 
         cpu.SetFlag(CpuStatus.Zero, (cpu.Reg.AC & value) == 0);
@@ -92,7 +92,7 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 
     internal void Cmp(CpuAddressingMode mode)
     {
-        ushort addr = cpu.ResolveOperandAddressWithCycles(CpuInstruction.CMP, mode);
+        ushort addr = cpu.Addr(CpuInstruction.CMP, mode);
         byte value = cpu.Mem[addr];
 
         int result = cpu.Reg.AC - value;
@@ -104,7 +104,7 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 
     internal void Cpx(CpuAddressingMode mode)
     {
-        ushort addr = cpu.ResolveOperandAddressWithCycles(CpuInstruction.CPX, mode);
+        ushort addr = cpu.Addr(CpuInstruction.CPX, mode);
         byte value = cpu.Mem[addr];
 
         int result = cpu.Reg.X - value;
@@ -116,7 +116,7 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 
     internal void Cpy(CpuAddressingMode mode)
     {
-        ushort addr = cpu.ResolveOperandAddressWithCycles(CpuInstruction.CPY, mode);
+        ushort addr = cpu.Addr(CpuInstruction.CPY, mode);
         byte value = cpu.Mem[addr];
 
         int result = cpu.Reg.Y - value;
@@ -128,7 +128,7 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 
     internal void Dec(CpuAddressingMode mode)
     {
-        ushort addr = cpu.ResolveOperandAddressWithCycles(CpuInstruction.DEC, mode);
+        ushort addr = cpu.Addr(CpuInstruction.DEC, mode);
         ref byte value = ref cpu.Mem[addr];
 
         value--;
@@ -137,7 +137,7 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 
     internal void Eor(CpuAddressingMode mode)
     {
-        ushort addr = cpu.ResolveOperandAddressWithCycles(CpuInstruction.EOR, mode);
+        ushort addr = cpu.Addr(CpuInstruction.EOR, mode);
         cpu.Reg.AC ^= cpu.Mem[addr];
         cpu.UpdateZeroNegativeFlags(cpu.Reg.AC);
     }
@@ -186,7 +186,7 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 
     internal void Inc(CpuAddressingMode mode)
     {
-        ushort addr = cpu.ResolveOperandAddressWithCycles(CpuInstruction.INC, mode);
+        ushort addr = cpu.Addr(CpuInstruction.INC, mode);
         ref byte value = ref cpu.Mem[addr];
 
         value++;
@@ -195,28 +195,14 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 
     internal void Jmp(CpuAddressingMode mode)
     {
-        if (mode == CpuAddressingMode.Absolute)
-        {
-            cpu.Reg.PC = cpu.ReadWord();
-        }
-        else if (mode == CpuAddressingMode.Indirect)
-        {
-            ushort addr = cpu.ReadWord();
-
-            // Emulate JMP ($xxFF) bug — no page carry
-            var span = cpu.Mem;
-            byte low = span[addr];
-            byte high = span[(ushort)((addr & 0xFF00) | ((addr + 1) & 0x00FF))];
-
-            cpu.Reg.PC = (ushort)(low | (high << 8));
-        }
-
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.JMP, mode).Cycles;
+        ushort addr = cpu.Addr(CpuInstruction.JMP, mode);
+        cpu.Reg.PC = addr;
     }
 
     internal void Jsr()
     {
         ushort target = cpu.ReadWord();
+        cpu.Reg.PC += 2;
 
         ushort returnAddr = (ushort)(cpu.Reg.PC - 1);
         cpu.Push((byte)((returnAddr >> 8) & 0xFF));
@@ -228,28 +214,28 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 
     internal void Lda(CpuAddressingMode mode)
     {
-        ushort addr = cpu.ResolveOperandAddressWithCycles(CpuInstruction.LDA, mode);
+        ushort addr = cpu.Addr(CpuInstruction.LDA, mode);
         cpu.Reg.AC = cpu.Mem[addr];
         cpu.UpdateZeroNegativeFlags(cpu.Reg.AC);
     }
 
     internal void Ldx(CpuAddressingMode mode)
     {
-        ushort addr = cpu.ResolveOperandAddressWithCycles(CpuInstruction.LDX, mode);
+        ushort addr = cpu.Addr(CpuInstruction.LDX, mode);
         cpu.Reg.X = cpu.Mem[addr];
         cpu.UpdateZeroNegativeFlags(cpu.Reg.X);
     }
 
     internal void Ldy(CpuAddressingMode mode)
     {
-        ushort addr = cpu.ResolveOperandAddressWithCycles(CpuInstruction.LDY, mode);
+        ushort addr = cpu.Addr(CpuInstruction.LDY, mode);
         cpu.Reg.Y = cpu.Mem[addr];
         cpu.UpdateZeroNegativeFlags(cpu.Reg.Y);
     }
 
     internal void Lsr(CpuAddressingMode mode)
     {
-        if (mode == CpuAddressingMode.Implied)
+        if (mode == CpuAddressingMode.Accumulator)
         {
             cpu.SetFlag(CpuStatus.Carry, (cpu.Reg.AC & 0x01) != 0);
             cpu.Reg.AC >>= 1;
@@ -260,7 +246,7 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
             return;
         }
 
-        ushort addr = cpu.ResolveOperandAddressWithCycles(CpuInstruction.LSR, mode);
+        ushort addr = cpu.Addr(CpuInstruction.LSR, mode);
         ref byte value = ref cpu.Mem[addr];
 
         cpu.SetFlag(CpuStatus.Carry, (value & 0x01) != 0);
@@ -276,7 +262,7 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 
     internal void Ora(CpuAddressingMode mode)
     {
-        ushort addr = cpu.ResolveOperandAddressWithCycles(CpuInstruction.ORA, mode);
+        ushort addr = cpu.Addr(CpuInstruction.ORA, mode);
         cpu.Reg.AC |= cpu.Mem[addr];
         cpu.UpdateZeroNegativeFlags(cpu.Reg.AC);
     }
@@ -339,7 +325,7 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 
     internal void Rol(CpuAddressingMode mode)
     {
-        if (mode == CpuAddressingMode.Implied)
+        if (mode == CpuAddressingMode.Accumulator)
         {
             int carryIn = (cpu.Reg.SR & CpuStatus.Carry) != 0 ? 1 : 0;
             bool carryOut = (cpu.Reg.AC & 0x80) != 0;
@@ -353,7 +339,7 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
             return;
         }
 
-        ushort addr = cpu.ResolveOperandAddressWithCycles(CpuInstruction.ROL, mode);
+        ushort addr = cpu.Addr(CpuInstruction.ROL, mode);
         ref byte value = ref cpu.Mem[addr];
 
         int carryInMem = (cpu.Reg.SR & CpuStatus.Carry) != 0 ? 1 : 0;
@@ -367,7 +353,7 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 
     internal void Ror(CpuAddressingMode mode)
     {
-        if (mode == CpuAddressingMode.Implied)
+        if (mode == CpuAddressingMode.Accumulator)
         {
             int carryIn = (cpu.Reg.SR & CpuStatus.Carry) != 0 ? 1 : 0;
             bool carryOut = (cpu.Reg.AC & 0x01) != 0;
@@ -381,7 +367,7 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
             return;
         }
 
-        ushort addr = cpu.ResolveOperandAddressWithCycles(CpuInstruction.ROR, mode);
+        ushort addr = cpu.Addr(CpuInstruction.ROR, mode);
         ref byte value = ref cpu.Mem[addr];
 
         int carryInMem = (cpu.Reg.SR & CpuStatus.Carry) != 0 ? 1 : 0;
@@ -419,7 +405,7 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 
     internal void Sbc(CpuAddressingMode mode)
     {
-        ushort addr = cpu.ResolveOperandAddressWithCycles(CpuInstruction.SBC, mode);
+        ushort addr = cpu.Addr(CpuInstruction.SBC, mode);
         byte value = cpu.Mem[addr];
 
         int carry = (cpu.Reg.SR & CpuStatus.Carry) != 0 ? 1 : 0;
@@ -440,7 +426,7 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 
     internal void Sta(CpuAddressingMode mode)
     {
-        ushort addr = cpu.ResolveOperandAddressWithCycles(CpuInstruction.STA, mode);
+        ushort addr = cpu.Addr(CpuInstruction.STA, mode);
         cpu.Mem[addr] = cpu.Reg.AC;
     }
 
@@ -486,13 +472,13 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 
     internal void Stx(CpuAddressingMode mode)
     {
-        ushort addr = cpu.ResolveOperandAddressWithCycles(CpuInstruction.STX, mode);
+        ushort addr = cpu.Addr(CpuInstruction.STX, mode);
         cpu.Mem[addr] = cpu.Reg.X;
     }
 
     internal void Sty(CpuAddressingMode mode)
     {
-        ushort addr = cpu.ResolveOperandAddressWithCycles(CpuInstruction.STY, mode);
+        ushort addr = cpu.Addr(CpuInstruction.STY, mode);
         cpu.Mem[addr] = cpu.Reg.Y;
     }
 

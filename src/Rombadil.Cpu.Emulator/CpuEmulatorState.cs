@@ -12,6 +12,9 @@ internal class CpuEmulatorState(Memory<byte> memory)
     internal void Push(byte value) => memory.Span[0x0100 + reg.SP--] = value;
     internal byte Pop() => memory.Span[0x0100 + ++reg.SP];
 
+    internal ushort ReadWord() => ReadWord(reg.PC);
+    internal ushort ReadWord(ushort pc) => (ushort)(memory.Span[pc] | (memory.Span[pc + 1] << 8));
+
     internal void UpdateZeroNegativeFlags(byte value)
     {
         SetFlag(CpuStatus.Zero, value == 0);
@@ -24,74 +27,81 @@ internal class CpuEmulatorState(Memory<byte> memory)
         else reg.SR &= ~flag;
     }
 
-    internal ushort ReadWord()
+    internal ushort Addr(CpuInstruction instr, CpuAddressingMode mode)
     {
-        ushort value = (ushort)(memory.Span[reg.PC] | (memory.Span[reg.PC + 1] << 8));
-        reg.PC += 2;
-        return value;
-    }
-
-    internal ushort ResolveOperandAddressWithCycles(CpuInstruction instr, CpuAddressingMode mode)
-    {
-        var mem = memory.Span;
-
-        ushort? baseAddr = null;
-        ushort? effectiveAddr = null;
-        ushort resolved = 0;
-
-        switch (mode)
-        {
-            case CpuAddressingMode.Immediate:
-                resolved = reg.PC++;
-                break;
-
-            case CpuAddressingMode.ZeroPage:
-                resolved = mem[reg.PC++];
-                break;
-
-            case CpuAddressingMode.ZeroPageX:
-                resolved = (byte)(mem[reg.PC++] + reg.X);
-                break;
-
-            case CpuAddressingMode.ZeroPageY:
-                resolved = (byte)(mem[reg.PC++] + reg.Y);
-                break;
-
-            case CpuAddressingMode.Absolute:
-                resolved = ReadWord();
-                break;
-
-            case CpuAddressingMode.AbsoluteX:
-                baseAddr = ReadWord();
-                effectiveAddr = (ushort)(baseAddr.Value + reg.X);
-                resolved = effectiveAddr.Value;
-                break;
-
-            case CpuAddressingMode.AbsoluteY:
-                baseAddr = ReadWord();
-                effectiveAddr = (ushort)(baseAddr.Value + reg.Y);
-                resolved = effectiveAddr.Value;
-                break;
-
-            case CpuAddressingMode.IndirectX:
-                byte zpx = (byte)(mem[reg.PC++] + reg.X);
-                resolved = (ushort)(mem[zpx] | (mem[(byte)(zpx + 1)] << 8));
-                break;
-
-            case CpuAddressingMode.IndirectY:
-                byte zpy = mem[reg.PC++];
-                baseAddr = (ushort)(mem[zpy] | (mem[(byte)(zpy + 1)] << 8));
-                effectiveAddr = (ushort)(baseAddr.Value + reg.Y);
-                resolved = effectiveAddr.Value;
-                break;
-        }
+        var (addr, baseAddr) = ResolveAddr(reg.PC, mode);
+        reg.PC += (ushort)CpuAddressingModeSize.Get(mode);
 
         var timing = CpuEmulatorTimings.Get(instr, mode);
 
         cycles += timing.Cycles;
-        if (baseAddr.HasValue && effectiveAddr.HasValue && (baseAddr.Value & 0xFF00) != (effectiveAddr.Value & 0xFF00))
+        if ((baseAddr & 0xFF00) != (addr & 0xFF00))
             cycles += timing.PagePenalty;
 
-        return resolved;
+        return addr;
+    }
+
+    internal (ushort addr, ushort baseAddr) ResolveAddr(ushort pc, CpuAddressingMode mode)
+    {
+        var mem = memory.Span;
+
+        if (mode == CpuAddressingMode.Immediate)
+            return (pc, pc);
+        else if (mode == CpuAddressingMode.ZeroPage)
+        {
+            ushort b = mem[pc];
+            return (b, b);
+        }
+        else if (mode == CpuAddressingMode.ZeroPageX)
+        {
+            ushort b = mem[pc];
+            ushort e = (byte)(b + reg.X);
+            return (e, b);
+        }
+        else if (mode == CpuAddressingMode.ZeroPageY)
+        {
+            ushort b = mem[pc];
+            ushort e = (byte)(b + reg.Y);
+            return (e, b);
+        }
+        else if (mode == CpuAddressingMode.Absolute)
+        {
+            ushort b = ReadWord(pc);
+            return (b, b);
+        }
+        else if (mode == CpuAddressingMode.AbsoluteX)
+        {
+            ushort b = ReadWord(pc);
+            ushort e = (ushort)(b + reg.X);
+            return (e, b);
+        }
+        else if (mode == CpuAddressingMode.AbsoluteY)
+        {
+            ushort b = ReadWord(pc);
+            ushort e = (ushort)(b + reg.Y);
+            return (e, b);
+        }
+        else if (mode == CpuAddressingMode.IndirectX)
+        {
+            ushort b = mem[pc];
+            byte zpx = (byte)(b + reg.X);
+            ushort e = (ushort)(mem[zpx] | (mem[(byte)(zpx + 1)] << 8));
+            return (e, b);
+        }
+        else if (mode == CpuAddressingMode.IndirectY)
+        {
+            ushort b = mem[pc];
+            ushort indirect = (ushort)(mem[b] | (mem[(byte)(b + 1)] << 8));
+            ushort e = (ushort)(indirect + reg.Y);
+            return (e, indirect);
+        }
+        else if (mode == CpuAddressingMode.Indirect)
+        {
+            ushort b = ReadWord(pc);
+            ushort addr = (ushort)((b & 0xFF00) | ((b + 1) & 0x00FF));
+            ushort e = (ushort)(mem[b] | (mem[addr] << 8));
+            return (e, b);
+        }
+        else return (0, 0);
     }
 }

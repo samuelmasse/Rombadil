@@ -1,42 +1,31 @@
-using Rombadil.Assembler;
 using Rombadil.Cpu.Emulator;
 
 var mem = new byte[80000];
 var cpu = new CpuEmulator6502(mem);
 var logger = new CpuEmulatorLogger(mem, cpu);
-var assembler = new Assembler6502();
 
-var source =
-"""
-LDA #$01
-STA $0200
-LDA #$05
-STA $0201
-TAX
-INX
-DEX
-DEX
-DEX
-DEX
-DEX
-DEX
-BEQ $0F
-""";
+var nestest = File.ReadAllBytes("nestest.nes");
+var nestestlog = File.ReadAllLines("nestest.log");
 
-var program = assembler.Assemble(source.Split(['\n', '\r']));
+var prg = nestest.AsSpan().Slice(0x10, 0x4000);
 
-ushort start = 5000;
-mem[0xFFFC] = (byte)(start & 0xFF);
-mem[0xFFFD] = (byte)(start >> 8);
-program.AsSpan().CopyTo(mem.AsSpan()[start..]);
+prg.CopyTo(mem.AsSpan()[0x8000..]);
+prg.CopyTo(mem.AsSpan()[0xC000..]);
 
-cpu.Reset();
+cpu.Reset(0xC000);
 
-for (int i = 0; i < 32; i++)
+for (int i = 0; i < nestestlog.Length; i++)
 {
-    logger.Log();
+    string log = logger.Log();
+
+    if (nestestlog[i] != log)
+    {
+        Console.WriteLine($"{i + 1,-8} Expected : {nestestlog[i]}");
+        Console.WriteLine($"{i + 1,-8} But got  : {log}");
+        return;
+    }
+
+    Console.WriteLine($"{i + 1,-8} {log}");
+
     cpu.Step();
 }
-
-Console.WriteLine($"Should be 1 : {mem[0x0200]}");
-Console.WriteLine($"Should be 5 : {mem[0x0201]}");

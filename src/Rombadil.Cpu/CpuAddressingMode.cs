@@ -3,6 +3,7 @@ namespace Rombadil.Cpu;
 public enum CpuAddressingMode
 {
     Implied,
+    Accumulator,
     Immediate,
     Relative,
     Indirect,
