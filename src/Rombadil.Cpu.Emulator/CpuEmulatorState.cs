@@ -29,10 +29,20 @@ internal class CpuEmulatorState(Memory<byte> memory)
 
     internal ushort Addr(CpuInstruction instr, CpuAddressingMode mode)
     {
+        var timing = CpuEmulatorTimings.Get(instr, mode);
+        return Addr(timing, mode);
+    }
+
+    internal ushort AddrIllegal(CpuEmulatorIllegalInstruction instr, CpuAddressingMode mode)
+    {
+        var timing = CpuEmulatorIllegalTimings.Get(instr, mode);
+        return Addr(timing, mode);
+    }
+
+    internal ushort Addr((byte Cycles, byte PagePenalty) timing, CpuAddressingMode mode)
+    {
         var (addr, baseAddr) = ResolveAddr(reg.PC, mode);
         reg.PC += (ushort)CpuAddressingModeSize.Get(mode);
-
-        var timing = CpuEmulatorTimings.Get(instr, mode);
 
         cycles += timing.Cycles;
         if ((baseAddr & 0xFF00) != (addr & 0xFF00))

@@ -7,6 +7,9 @@ var logger = new CpuEmulatorLogger(mem, cpu);
 var nestest = File.ReadAllBytes("nestest.nes");
 var nestestlog = File.ReadAllLines("nestest.log");
 
+for (int i = 0; i <= 0x17; i++)
+    mem[0x4000 + i] = 0xFF;
+
 var prg = nestest.AsSpan().Slice(0x10, 0x4000);
 
 prg.CopyTo(mem.AsSpan()[0x8000..]);

@@ -4,6 +4,7 @@ public class CpuEmulator6502
 {
     private readonly CpuEmulatorState state;
     private readonly CpuEmulatorExecutor exec;
+    private readonly CpuEmulatorIllegalExecutor illegalExec;
 
     public CpuEmulatorRegisters Reg => state.Reg;
     public long Cycles => state.Cycles;
@@ -14,6 +15,7 @@ public class CpuEmulator6502
     {
         state = new(memory);
         exec = new(state);
+        illegalExec = new(state, exec);
     }
 
     public void Reset(ushort? pc = null)
@@ -32,12 +34,17 @@ public class CpuEmulator6502
 
     public void Step()
     {
-        var opcode = (CpuOpcode)state.Mem[state.Reg.PC++];
-        if (!CpuOpcodeMap.TryDecodeOpcode(opcode, out var decode))
-            throw new Exception(); // TODO
+        var b = state.Mem[state.Reg.PC++];
 
-        var (instruction, mode) = decode;
+        if (CpuOpcodeMap.TryDecodeOpcode((CpuOpcode)b, out var decode))
+            StepLegal(decode.Item1, decode.Item2);
+        else if (CpuEmulatorIllegalOpcodeMap.TryDecodeOpcode((CpuEmulatorIllegalOpcode)b, out var illegal))
+            StepIllegal(illegal.Item1, illegal.Item2);
+        else throw new Exception();
+    }
 
+    private void StepLegal(CpuInstruction instruction, CpuAddressingMode mode)
+    {
         switch (instruction)
         {
             case CpuInstruction.ADC: exec.Adc(mode); break;
@@ -96,6 +103,23 @@ public class CpuEmulator6502
             case CpuInstruction.PLP: exec.Plp(); break;
             case CpuInstruction.STX: exec.Stx(mode); break;
             case CpuInstruction.STY: exec.Sty(mode); break;
+        }
+    }
+
+    private void StepIllegal(CpuEmulatorIllegalInstruction instruction, CpuAddressingMode mode)
+    {
+        switch (instruction)
+        {
+            case CpuEmulatorIllegalInstruction.NOP: illegalExec.Nop(mode); break;
+            case CpuEmulatorIllegalInstruction.LAX: illegalExec.Lax(mode); break;
+            case CpuEmulatorIllegalInstruction.SAX: illegalExec.Sax(mode); break;
+            case CpuEmulatorIllegalInstruction.SBC: illegalExec.Sbc(); break;
+            case CpuEmulatorIllegalInstruction.DCP: illegalExec.Dcp(mode); break;
+            case CpuEmulatorIllegalInstruction.ISB: illegalExec.Isb(mode); break;
+            case CpuEmulatorIllegalInstruction.SLO: illegalExec.Slo(mode); break;
+            case CpuEmulatorIllegalInstruction.RLA: illegalExec.Rla(mode); break;
+            case CpuEmulatorIllegalInstruction.SRE: illegalExec.Sre(mode); break;
+            case CpuEmulatorIllegalInstruction.RRA: illegalExec.Rra(mode); break;
         }
     }
 }
