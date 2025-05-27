@@ -41,14 +41,14 @@ internal class CpuEmulatorTimings
             (CpuAddressingMode.Absolute, 4, 0)
         );
 
-        Register(CpuInstruction.BPL, (CpuAddressingMode.Relative, 2, 1));
-        Register(CpuInstruction.BMI, (CpuAddressingMode.Relative, 2, 1));
-        Register(CpuInstruction.BVC, (CpuAddressingMode.Relative, 2, 1));
-        Register(CpuInstruction.BVS, (CpuAddressingMode.Relative, 2, 1));
-        Register(CpuInstruction.BCC, (CpuAddressingMode.Relative, 2, 1));
-        Register(CpuInstruction.BCS, (CpuAddressingMode.Relative, 2, 1));
-        Register(CpuInstruction.BNE, (CpuAddressingMode.Relative, 2, 1));
-        Register(CpuInstruction.BEQ, (CpuAddressingMode.Relative, 2, 1));
+        Register(CpuInstruction.BPL, (CpuAddressingMode.Relative, 2, 0));
+        Register(CpuInstruction.BMI, (CpuAddressingMode.Relative, 2, 0));
+        Register(CpuInstruction.BVC, (CpuAddressingMode.Relative, 2, 0));
+        Register(CpuInstruction.BVS, (CpuAddressingMode.Relative, 2, 0));
+        Register(CpuInstruction.BCC, (CpuAddressingMode.Relative, 2, 0));
+        Register(CpuInstruction.BCS, (CpuAddressingMode.Relative, 2, 0));
+        Register(CpuInstruction.BNE, (CpuAddressingMode.Relative, 2, 0));
+        Register(CpuInstruction.BEQ, (CpuAddressingMode.Relative, 2, 0));
 
         Register(CpuInstruction.BRK, (CpuAddressingMode.Implied, 7, 0));
 

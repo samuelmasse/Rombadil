@@ -1,6 +1,6 @@
 namespace Rombadil.Cpu.Emulator;
 
-internal class CpuEmulatorIllegalExecutor(CpuEmulatorState cpu, CpuEmulatorExecutor exec)
+internal readonly ref struct CpuEmulatorIllegalExecutor(CpuEmulatorState cpu, CpuAddressingMode mode)
 {
     internal void Nop(CpuAddressingMode mode) => cpu.AddrIllegal(CpuEmulatorIllegalInstruction.NOP, mode);
 
@@ -17,7 +17,7 @@ internal class CpuEmulatorIllegalExecutor(CpuEmulatorState cpu, CpuEmulatorExecu
         value = (byte)(cpu.AC & cpu.X);
     }
 
-    internal void Sbc() => exec.Sbc(CpuAddressingMode.Immediate);
+    internal void Sbc() => new CpuEmulatorExecutor(cpu, mode).Sbc();
 
     internal void Dcp(CpuAddressingMode mode)
     {

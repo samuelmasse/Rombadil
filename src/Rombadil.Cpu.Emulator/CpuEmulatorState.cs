@@ -188,22 +188,19 @@ internal class CpuEmulatorState(Memory<byte> memory)
         return ref memory.Span[addr];
     }
 
-    internal void Branch(CpuInstruction instr, bool condition)
+    internal void Branch(bool condition)
     {
-        var timing = CpuEmulatorTimings.Get(instr, CpuAddressingMode.Relative);
-        cycles += timing.Cycles;
-
-        sbyte offset = (sbyte)memory.Span[reg.PC++];
+        sbyte offset = (sbyte)memory.Span[reg.PC - 1];
         if (!condition)
             return;
 
-        cycles += 1;
+        cycles++;
 
         ushort originalPC = reg.PC;
         reg.PC = (ushort)(reg.PC + offset);
 
         if ((originalPC & 0xFF00) != (reg.PC & 0xFF00))
-            cycles += timing.PagePenalty;
+            cycles++;
     }
 
     internal (ushort addr, ushort baseAddr) ResolveAddr(ushort pc, CpuAddressingMode mode)
