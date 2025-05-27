@@ -9,6 +9,40 @@ internal class CpuEmulatorState(Memory<byte> memory)
     internal ref CpuEmulatorRegisters Reg => ref reg;
     internal ref long Cycles => ref cycles;
 
+    internal ref ushort PC => ref reg.PC;
+    internal ref CpuStatus SR => ref reg.SR;
+    internal ref byte SP => ref reg.SP;
+
+    internal byte AC
+    {
+        get => reg.AC;
+        set
+        {
+            reg.AC = value;
+            SetZN(value);
+        }
+    }
+
+    internal byte X
+    {
+        get => reg.X;
+        set
+        {
+            reg.X = value;
+            SetZN(value);
+        }
+    }
+
+    internal byte Y
+    {
+        get => reg.Y;
+        set
+        {
+            reg.Y = value;
+            SetZN(value);
+        }
+    }
+
     internal bool HasFlag(CpuStatus flag) => (reg.SR & flag) != 0;
     internal void Push(byte value) => memory.Span[0x0100 + reg.SP--] = value;
     internal byte Pop() => memory.Span[0x0100 + ++reg.SP];
@@ -50,9 +84,9 @@ internal class CpuEmulatorState(Memory<byte> memory)
 
     internal byte AddWithCarry(byte value)
     {
-        int a = Reg.AC;
+        int a = reg.AC;
         int m = value;
-        int carryIn = Reg.SR.HasFlag(CpuStatus.Carry) ? 1 : 0;
+        int carryIn = reg.SR.HasFlag(CpuStatus.Carry) ? 1 : 0;
 
         int sum = a + m + carryIn;
         byte result = (byte)sum;
@@ -145,6 +179,12 @@ internal class CpuEmulatorState(Memory<byte> memory)
     internal ref byte ReadAddr(CpuInstruction instr, CpuAddressingMode mode)
     {
         ushort addr = Addr(instr, mode);
+        return ref memory.Span[addr];
+    }
+
+    internal ref byte ReadAddrIllegal(CpuEmulatorIllegalInstruction instr, CpuAddressingMode mode)
+    {
+        ushort addr = AddrIllegal(instr, mode);
         return ref memory.Span[addr];
     }
 

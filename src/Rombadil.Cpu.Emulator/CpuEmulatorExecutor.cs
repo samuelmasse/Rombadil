@@ -5,16 +5,13 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
     internal void Adc(CpuAddressingMode mode)
     {
         byte value = cpu.ReadAddr(CpuInstruction.ADC, mode);
-        byte result = cpu.AddWithCarry(value);
-        cpu.Reg.AC = result;
-        cpu.SetZN(result);
+        cpu.AC = cpu.AddWithCarry(value);
     }
 
     internal void And(CpuAddressingMode mode)
     {
-        ushort addr = cpu.Addr(CpuInstruction.AND, mode);
-        cpu.Reg.AC &= cpu.Mem[addr];
-        cpu.SetZN(cpu.Reg.AC);
+        byte value = cpu.ReadAddr(CpuInstruction.AND, mode);
+        cpu.AC &= value;
     }
 
     internal void Asl(CpuAddressingMode mode)
@@ -27,7 +24,7 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
     internal void Bit(CpuAddressingMode mode)
     {
         byte value = cpu.ReadAddr(CpuInstruction.BIT, mode);
-        cpu.SetFlag(CpuStatus.Zero, (cpu.Reg.AC & value) == 0);
+        cpu.SetFlag(CpuStatus.Zero, (cpu.AC & value) == 0);
         cpu.SetFlag(CpuStatus.Negative, (value & 0b1000_0000) != 0);
         cpu.SetFlag(CpuStatus.Overflow, (value & 0b0100_0000) != 0);
     }
@@ -46,32 +43,32 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 
     internal void Brk()
     {
-        cpu.Reg.PC++;
+        cpu.PC++;
 
-        cpu.PushWord(cpu.Reg.PC);
-        cpu.Push((byte)(cpu.Reg.SR | CpuStatus.Break | CpuStatus.Unused));
+        cpu.PushWord(cpu.PC);
+        cpu.Push((byte)(cpu.SR | CpuStatus.Break | CpuStatus.Unused));
         cpu.SetFlag(CpuStatus.Interrupt, true);
 
-        cpu.Reg.PC = cpu.ReadWord(0xFFFE);
+        cpu.PC = cpu.ReadWord(0xFFFE);
         cpu.Tick(CpuInstruction.BRK);
     }
 
     internal void Cmp(CpuAddressingMode mode)
     {
         byte value = cpu.ReadAddr(CpuInstruction.CMP, mode);
-        cpu.Compare(cpu.Reg.AC, value);
+        cpu.Compare(cpu.AC, value);
     }
 
     internal void Cpx(CpuAddressingMode mode)
     {
         byte value = cpu.ReadAddr(CpuInstruction.CPX, mode);
-        cpu.Compare(cpu.Reg.X, value);
+        cpu.Compare(cpu.X, value);
     }
 
     internal void Cpy(CpuAddressingMode mode)
     {
         byte value = cpu.ReadAddr(CpuInstruction.CPY, mode);
-        cpu.Compare(cpu.Reg.Y, value);
+        cpu.Compare(cpu.Y, value);
     }
 
     internal void Dec(CpuAddressingMode mode)
@@ -84,8 +81,7 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
     internal void Eor(CpuAddressingMode mode)
     {
         byte value = cpu.ReadAddr(CpuInstruction.EOR, mode);
-        cpu.Reg.AC ^= value;
-        cpu.SetZN(cpu.Reg.AC);
+        cpu.AC ^= value;
     }
 
     internal void Clc()
@@ -140,36 +136,19 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
     internal void Jmp(CpuAddressingMode mode)
     {
         ushort addr = cpu.Addr(CpuInstruction.JMP, mode);
-        cpu.Reg.PC = addr;
+        cpu.PC = addr;
     }
 
     internal void Jsr()
     {
         ushort target = cpu.Addr(CpuInstruction.JSR, CpuAddressingMode.Absolute);
-        cpu.PushWord((ushort)(cpu.Reg.PC - 1));
-        cpu.Reg.PC = target;
+        cpu.PushWord((ushort)(cpu.PC - 1));
+        cpu.PC = target;
     }
 
-    internal void Lda(CpuAddressingMode mode)
-    {
-        byte value = cpu.ReadAddr(CpuInstruction.LDA, mode);
-        cpu.Reg.AC = value;
-        cpu.SetZN(cpu.Reg.AC);
-    }
-
-    internal void Ldx(CpuAddressingMode mode)
-    {
-        byte value = cpu.ReadAddr(CpuInstruction.LDX, mode);
-        cpu.Reg.X = value;
-        cpu.SetZN(cpu.Reg.X);
-    }
-
-    internal void Ldy(CpuAddressingMode mode)
-    {
-        byte value = cpu.ReadAddr(CpuInstruction.LDY, mode);
-        cpu.Reg.Y = value;
-        cpu.SetZN(cpu.Reg.Y);
-    }
+    internal void Lda(CpuAddressingMode mode) => cpu.AC = cpu.ReadAddr(CpuInstruction.LDA, mode);
+    internal void Ldx(CpuAddressingMode mode) => cpu.X = cpu.ReadAddr(CpuInstruction.LDX, mode);
+    internal void Ldy(CpuAddressingMode mode) => cpu.Y = cpu.ReadAddr(CpuInstruction.LDY, mode);
 
     internal void Lsr(CpuAddressingMode mode)
     {
@@ -183,64 +162,55 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
     internal void Ora(CpuAddressingMode mode)
     {
         byte value = cpu.ReadAddr(CpuInstruction.ORA, mode);
-        cpu.Reg.AC |= value;
-        cpu.SetZN(cpu.Reg.AC);
+        cpu.AC |= value;
     }
 
     internal void Tax()
     {
         cpu.Tick(CpuInstruction.TAX);
-        cpu.Reg.X = cpu.Reg.AC;
-        cpu.SetZN(cpu.Reg.X);
+        cpu.X = cpu.AC;
     }
 
     internal void Txa()
     {
         cpu.Tick(CpuInstruction.TXA);
-        cpu.Reg.AC = cpu.Reg.X;
-        cpu.SetZN(cpu.Reg.AC);
+        cpu.AC = cpu.X;
     }
 
     internal void Tay()
     {
         cpu.Tick(CpuInstruction.TAY);
-        cpu.Reg.Y = cpu.Reg.AC;
-        cpu.SetZN(cpu.Reg.Y);
+        cpu.Y = cpu.AC;
     }
 
     internal void Tya()
     {
         cpu.Tick(CpuInstruction.TYA);
-        cpu.Reg.AC = cpu.Reg.Y;
-        cpu.SetZN(cpu.Reg.AC);
+        cpu.AC = cpu.Y;
     }
 
     internal void Dex()
     {
         cpu.Tick(CpuInstruction.DEX);
-        cpu.Reg.X--;
-        cpu.SetZN(cpu.Reg.X);
+        cpu.X--;
     }
 
     internal void Inx()
     {
         cpu.Tick(CpuInstruction.INX);
-        cpu.Reg.X++;
-        cpu.SetZN(cpu.Reg.X);
+        cpu.X++;
     }
 
     internal void Dey()
     {
         cpu.Tick(CpuInstruction.DEY);
-        cpu.Reg.Y--;
-        cpu.SetZN(cpu.Reg.Y);
+        cpu.Y--;
     }
 
     internal void Iny()
     {
         cpu.Tick(CpuInstruction.INY);
-        cpu.Reg.Y++;
-        cpu.SetZN(cpu.Reg.Y);
+        cpu.Y++;
     }
 
     internal void Rol(CpuAddressingMode mode)
@@ -260,61 +230,57 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
     internal void Rti()
     {
         byte flags = cpu.Pop();
-        cpu.Reg.SR = (CpuStatus)((flags & ~(byte)CpuStatus.Break) | (byte)CpuStatus.Unused);
-        cpu.Reg.PC = cpu.PopWord();
+        cpu.SR = (CpuStatus)((flags & ~(byte)CpuStatus.Break) | (byte)CpuStatus.Unused);
+        cpu.PC = cpu.PopWord();
         cpu.Tick(CpuInstruction.RTI);
     }
 
     internal void Rts()
     {
-        cpu.Reg.PC = (ushort)(cpu.PopWord() + 1);
+        cpu.PC = (ushort)(cpu.PopWord() + 1);
         cpu.Tick(CpuInstruction.RTS);
     }
 
     internal void Sbc(CpuAddressingMode mode)
     {
         byte value = cpu.ReadAddr(CpuInstruction.SBC, mode);
-        byte result = cpu.SubWithBorrow(value);
-        cpu.Reg.AC = result;
-        cpu.SetZN(result);
+        cpu.AC = cpu.SubWithBorrow(value);
     }
 
     internal void Sta(CpuAddressingMode mode)
     {
-        ushort addr = cpu.Addr(CpuInstruction.STA, mode);
-        cpu.Mem[addr] = cpu.Reg.AC;
+        ref byte value = ref cpu.ReadAddr(CpuInstruction.STA, mode);
+        value = cpu.AC;
     }
 
     internal void Txs()
     {
         cpu.Tick(CpuInstruction.TXS);
-        cpu.Reg.SP = cpu.Reg.X;
+        cpu.SP = cpu.X;
     }
 
     internal void Tsx()
     {
         cpu.Tick(CpuInstruction.TSX);
-        cpu.Reg.X = cpu.Reg.SP;
-        cpu.SetZN(cpu.Reg.X);
+        cpu.X = cpu.SP;
     }
 
     internal void Pha()
     {
         cpu.Tick(CpuInstruction.PHA);
-        cpu.Push(cpu.Reg.AC);
+        cpu.Push(cpu.AC);
     }
 
     internal void Pla()
     {
         cpu.Tick(CpuInstruction.PLA);
-        cpu.Reg.AC = cpu.Pop();
-        cpu.SetZN(cpu.Reg.AC);
+        cpu.AC = cpu.Pop();
     }
 
     internal void Php()
     {
         cpu.Tick(CpuInstruction.PHP);
-        byte flags = (byte)(cpu.Reg.SR | CpuStatus.Break | CpuStatus.Unused);
+        byte flags = (byte)(cpu.SR | CpuStatus.Break | CpuStatus.Unused);
         cpu.Push(flags);
     }
 
@@ -322,18 +288,18 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
     {
         cpu.Tick(CpuInstruction.PLP);
         byte flags = cpu.Pop();
-        cpu.Reg.SR = (CpuStatus)((flags & ~(byte)CpuStatus.Break) | (byte)CpuStatus.Unused);
+        cpu.SR = (CpuStatus)((flags & ~(byte)CpuStatus.Break) | (byte)CpuStatus.Unused);
     }
 
     internal void Stx(CpuAddressingMode mode)
     {
-        ushort addr = cpu.Addr(CpuInstruction.STX, mode);
-        cpu.Mem[addr] = cpu.Reg.X;
+        ref byte value = ref cpu.ReadAddr(CpuInstruction.STX, mode);
+        value = cpu.X;
     }
 
     internal void Sty(CpuAddressingMode mode)
     {
-        ushort addr = cpu.Addr(CpuInstruction.STY, mode);
-        cpu.Mem[addr] = cpu.Reg.Y;
+        ref byte value = ref cpu.ReadAddr(CpuInstruction.STY, mode);
+        value = cpu.Y;
     }
 }

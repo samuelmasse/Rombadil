@@ -20,21 +20,21 @@ public class CpuEmulator6502
 
     public void Reset(ushort? pc = null)
     {
-        state.Reg.PC = pc ?? (ushort)(state.Mem[0xFFFC] | (state.Mem[0xFFFD] << 8));
+        state.PC = pc ?? (ushort)(state.Mem[0xFFFC] | (state.Mem[0xFFFD] << 8));
 
-        state.Reg.AC = 0;
-        state.Reg.X = 0;
-        state.Reg.Y = 0;
+        state.AC = 0;
+        state.X = 0;
+        state.Y = 0;
 
-        state.Reg.SR = CpuStatus.Interrupt | CpuStatus.Unused;
-        state.Reg.SP = 0xFD;
+        state.SR = CpuStatus.Interrupt | CpuStatus.Unused;
+        state.SP = 0xFD;
 
         state.Cycles = 7;
     }
 
     public void Step()
     {
-        var b = state.Mem[state.Reg.PC++];
+        var b = state.Mem[state.PC++];
 
         if (CpuOpcodeMap.TryDecodeOpcode((CpuOpcode)b, out var decode))
             StepLegal(decode.Item1, decode.Item2);
