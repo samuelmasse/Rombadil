@@ -12,6 +12,19 @@ internal class CpuEmulatorState(Memory<byte> memory)
     internal void Push(byte value) => memory.Span[0x0100 + reg.SP--] = value;
     internal byte Pop() => memory.Span[0x0100 + ++reg.SP];
 
+    internal void PushWord(ushort value)
+    {
+        Push((byte)((value >> 8) & 0xFF));
+        Push((byte)(value & 0xFF));
+    }
+
+    internal ushort PopWord()
+    {
+        byte low = Pop();
+        byte high = Pop();
+        return (ushort)(low | (high << 8));
+    }
+
     internal ushort ReadWord() => ReadWord(reg.PC);
     internal ushort ReadWord(ushort pc) => (ushort)(memory.Span[pc] | (memory.Span[pc + 1] << 8));
 
@@ -25,6 +38,11 @@ internal class CpuEmulatorState(Memory<byte> memory)
     {
         if (on) reg.SR |= flag;
         else reg.SR &= ~flag;
+    }
+
+    internal void Tick(CpuInstruction instr)
+    {
+        cycles += CpuEmulatorTimings.Get(instr, CpuAddressingMode.Implied).Cycles;
     }
 
     internal ushort Addr(CpuInstruction instr, CpuAddressingMode mode)
@@ -113,5 +131,23 @@ internal class CpuEmulatorState(Memory<byte> memory)
             return (e, b);
         }
         else return (0, 0);
+    }
+
+    internal void Branch(CpuInstruction instr, bool condition)
+    {
+        var timing = CpuEmulatorTimings.Get(instr, CpuAddressingMode.Relative);
+        cycles += timing.Cycles;
+
+        sbyte offset = (sbyte)memory.Span[reg.PC++];
+        if (!condition)
+            return;
+
+        cycles += 1;
+
+        ushort originalPC = reg.PC;
+        reg.PC = (ushort)(reg.PC + offset);
+
+        if ((originalPC & 0xFF00) != (reg.PC & 0xFF00))
+            cycles += timing.PagePenalty;
     }
 }

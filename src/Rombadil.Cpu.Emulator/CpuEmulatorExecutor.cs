@@ -30,21 +30,16 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 
     internal void Asl(CpuAddressingMode mode)
     {
-        if (mode == CpuAddressingMode.Accumulator)
-        {
-            cpu.SetFlag(CpuStatus.Carry, (cpu.Reg.AC & 0x80) != 0);
-            cpu.Reg.AC <<= 1;
-            cpu.UpdateZeroNegativeFlags(cpu.Reg.AC);
-            cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.ASL, mode).Cycles;
-            return;
-        }
-
         ushort addr = cpu.Addr(CpuInstruction.ASL, mode);
-        ref byte value = ref cpu.Mem[addr];
+        byte value = mode == CpuAddressingMode.Accumulator ? cpu.Reg.AC : cpu.Mem[addr];
 
         cpu.SetFlag(CpuStatus.Carry, (value & 0x80) != 0);
         value <<= 1;
         cpu.UpdateZeroNegativeFlags(value);
+
+        if (mode == CpuAddressingMode.Accumulator)
+            cpu.Reg.AC = value;
+        else cpu.Mem[addr] = value;
     }
 
     internal void Bit(CpuAddressingMode mode)
@@ -57,34 +52,30 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
         cpu.SetFlag(CpuStatus.Overflow, (value & 0b0100_0000) != 0);
     }
 
-    internal void Bpl() => Branch(CpuInstruction.BPL, (cpu.Reg.SR & CpuStatus.Negative) == 0);
-    internal void Bmi() => Branch(CpuInstruction.BMI, (cpu.Reg.SR & CpuStatus.Negative) != 0);
+    internal void Bpl() => cpu.Branch(CpuInstruction.BPL, (cpu.Reg.SR & CpuStatus.Negative) == 0);
+    internal void Bmi() => cpu.Branch(CpuInstruction.BMI, (cpu.Reg.SR & CpuStatus.Negative) != 0);
 
-    internal void Bvc() => Branch(CpuInstruction.BVC, (cpu.Reg.SR & CpuStatus.Overflow) == 0);
-    internal void Bvs() => Branch(CpuInstruction.BVS, (cpu.Reg.SR & CpuStatus.Overflow) != 0);
+    internal void Bvc() => cpu.Branch(CpuInstruction.BVC, (cpu.Reg.SR & CpuStatus.Overflow) == 0);
+    internal void Bvs() => cpu.Branch(CpuInstruction.BVS, (cpu.Reg.SR & CpuStatus.Overflow) != 0);
 
-    internal void Bcc() => Branch(CpuInstruction.BCC, (cpu.Reg.SR & CpuStatus.Carry) == 0);
-    internal void Bcs() => Branch(CpuInstruction.BCS, (cpu.Reg.SR & CpuStatus.Carry) != 0);
+    internal void Bcc() => cpu.Branch(CpuInstruction.BCC, (cpu.Reg.SR & CpuStatus.Carry) == 0);
+    internal void Bcs() => cpu.Branch(CpuInstruction.BCS, (cpu.Reg.SR & CpuStatus.Carry) != 0);
 
-    internal void Bne() => Branch(CpuInstruction.BNE, (cpu.Reg.SR & CpuStatus.Zero) == 0);
-    internal void Beq() => Branch(CpuInstruction.BEQ, (cpu.Reg.SR & CpuStatus.Zero) != 0);
+    internal void Bne() => cpu.Branch(CpuInstruction.BNE, (cpu.Reg.SR & CpuStatus.Zero) == 0);
+    internal void Beq() => cpu.Branch(CpuInstruction.BEQ, (cpu.Reg.SR & CpuStatus.Zero) != 0);
 
     internal void Brk()
     {
-        cpu.Reg.PC++; // Skip padding byte after $00 opcode (even if unused)
+        cpu.Reg.PC++;
 
-        // cpu.Push PC high then low (return address = PC + 1)
         cpu.Push((byte)((cpu.Reg.PC >> 8) & 0xFF));
         cpu.Push((byte)(cpu.Reg.PC & 0xFF));
 
-        // cpu.Push status with Break flag set (bit 4 = 1), bit 5 always set
         byte flags = (byte)(cpu.Reg.SR | CpuStatus.Break | CpuStatus.Unused);
         cpu.Push(flags);
 
-        // Set Interrupt disable
         cpu.SetFlag(CpuStatus.Interrupt, true);
 
-        // Jump to vector at $FFFE-$FFFF
         ushort vector = (ushort)(cpu.Mem[0xFFFE] | (cpu.Mem[0xFFFF] << 8));
         cpu.Reg.PC = vector;
         cpu.Cycles += 7;
@@ -144,44 +135,44 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 
     internal void Clc()
     {
+        cpu.Tick(CpuInstruction.CLC);
         cpu.SetFlag(CpuStatus.Carry, false);
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.CLC, CpuAddressingMode.Implied).Cycles;
     }
 
     internal void Sec()
     {
+        cpu.Tick(CpuInstruction.SEC);
         cpu.SetFlag(CpuStatus.Carry, true);
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.SEC, CpuAddressingMode.Implied).Cycles;
     }
 
     internal void Cli()
     {
+        cpu.Tick(CpuInstruction.CLI);
         cpu.SetFlag(CpuStatus.Interrupt, false);
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.CLI, CpuAddressingMode.Implied).Cycles;
     }
 
     internal void Sei()
     {
+        cpu.Tick(CpuInstruction.SEI);
         cpu.SetFlag(CpuStatus.Interrupt, true);
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.SEI, CpuAddressingMode.Implied).Cycles;
     }
 
     internal void Clv()
     {
+        cpu.Tick(CpuInstruction.CLV);
         cpu.SetFlag(CpuStatus.Overflow, false);
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.CLV, CpuAddressingMode.Implied).Cycles;
     }
 
     internal void Cld()
     {
+        cpu.Tick(CpuInstruction.CLD);
         cpu.SetFlag(CpuStatus.Decimal, false);
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.CLD, CpuAddressingMode.Implied).Cycles;
     }
 
     internal void Sed()
     {
+        cpu.Tick(CpuInstruction.SED);
         cpu.SetFlag(CpuStatus.Decimal, true);
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.SED, CpuAddressingMode.Implied).Cycles;
     }
 
     internal void Inc(CpuAddressingMode mode)
@@ -201,15 +192,9 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 
     internal void Jsr()
     {
-        ushort target = cpu.ReadWord();
-        cpu.Reg.PC += 2;
-
-        ushort returnAddr = (ushort)(cpu.Reg.PC - 1);
-        cpu.Push((byte)((returnAddr >> 8) & 0xFF));
-        cpu.Push((byte)(returnAddr & 0xFF));
-
+        ushort target = cpu.Addr(CpuInstruction.JSR, CpuAddressingMode.Absolute);
+        cpu.PushWord((ushort)(cpu.Reg.PC - 1));
         cpu.Reg.PC = target;
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.JSR, CpuAddressingMode.Absolute).Cycles;
     }
 
     internal void Lda(CpuAddressingMode mode)
@@ -235,29 +220,22 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 
     internal void Lsr(CpuAddressingMode mode)
     {
-        if (mode == CpuAddressingMode.Accumulator)
-        {
-            cpu.SetFlag(CpuStatus.Carry, (cpu.Reg.AC & 0x01) != 0);
-            cpu.Reg.AC >>= 1;
-            cpu.SetFlag(CpuStatus.Negative, false);
-            cpu.SetFlag(CpuStatus.Zero, cpu.Reg.AC == 0);
-
-            cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.LSR, mode).Cycles;
-            return;
-        }
-
         ushort addr = cpu.Addr(CpuInstruction.LSR, mode);
-        ref byte value = ref cpu.Mem[addr];
+        byte value = mode == CpuAddressingMode.Accumulator ? cpu.Reg.AC : cpu.Mem[addr];
 
         cpu.SetFlag(CpuStatus.Carry, (value & 0x01) != 0);
         value >>= 1;
         cpu.SetFlag(CpuStatus.Negative, false);
         cpu.SetFlag(CpuStatus.Zero, value == 0);
+
+        if (mode == CpuAddressingMode.Accumulator)
+            cpu.Reg.AC = value;
+        else cpu.Mem[addr] = value;
     }
 
     internal void Nop()
     {
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.NOP, CpuAddressingMode.Implied).Cycles;
+        cpu.Tick(CpuInstruction.NOP);
     }
 
     internal void Ora(CpuAddressingMode mode)
@@ -269,138 +247,108 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 
     internal void Tax()
     {
+        cpu.Tick(CpuInstruction.TAX);
         cpu.Reg.X = cpu.Reg.AC;
         cpu.UpdateZeroNegativeFlags(cpu.Reg.X);
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.TAX, CpuAddressingMode.Implied).Cycles;
     }
 
     internal void Txa()
     {
+        cpu.Tick(CpuInstruction.TXA);
         cpu.Reg.AC = cpu.Reg.X;
         cpu.UpdateZeroNegativeFlags(cpu.Reg.AC);
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.TXA, CpuAddressingMode.Implied).Cycles;
     }
 
     internal void Tay()
     {
+        cpu.Tick(CpuInstruction.TAY);
         cpu.Reg.Y = cpu.Reg.AC;
         cpu.UpdateZeroNegativeFlags(cpu.Reg.Y);
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.TAY, CpuAddressingMode.Implied).Cycles;
     }
 
     internal void Tya()
     {
+        cpu.Tick(CpuInstruction.TYA);
         cpu.Reg.AC = cpu.Reg.Y;
         cpu.UpdateZeroNegativeFlags(cpu.Reg.AC);
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.TYA, CpuAddressingMode.Implied).Cycles;
     }
 
     internal void Dex()
     {
+        cpu.Tick(CpuInstruction.DEX);
         cpu.Reg.X--;
         cpu.UpdateZeroNegativeFlags(cpu.Reg.X);
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.DEX, CpuAddressingMode.Implied).Cycles;
     }
 
     internal void Inx()
     {
+        cpu.Tick(CpuInstruction.INX);
         cpu.Reg.X++;
         cpu.UpdateZeroNegativeFlags(cpu.Reg.X);
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.INX, CpuAddressingMode.Implied).Cycles;
     }
 
     internal void Dey()
     {
+        cpu.Tick(CpuInstruction.DEY);
         cpu.Reg.Y--;
         cpu.UpdateZeroNegativeFlags(cpu.Reg.Y);
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.DEY, CpuAddressingMode.Implied).Cycles;
     }
 
     internal void Iny()
     {
+        cpu.Tick(CpuInstruction.INY);
         cpu.Reg.Y++;
         cpu.UpdateZeroNegativeFlags(cpu.Reg.Y);
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.INY, CpuAddressingMode.Implied).Cycles;
     }
 
     internal void Rol(CpuAddressingMode mode)
     {
-        if (mode == CpuAddressingMode.Accumulator)
-        {
-            int carryIn = (cpu.Reg.SR & CpuStatus.Carry) != 0 ? 1 : 0;
-            bool carryOut = (cpu.Reg.AC & 0x80) != 0;
-
-            cpu.Reg.AC = (byte)((cpu.Reg.AC << 1) | carryIn);
-
-            cpu.SetFlag(CpuStatus.Carry, carryOut);
-            cpu.UpdateZeroNegativeFlags(cpu.Reg.AC);
-
-            cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.ROL, mode).Cycles;
-            return;
-        }
-
         ushort addr = cpu.Addr(CpuInstruction.ROL, mode);
-        ref byte value = ref cpu.Mem[addr];
+        byte value = mode == CpuAddressingMode.Accumulator ? cpu.Reg.AC : cpu.Mem[addr];
 
-        int carryInMem = (cpu.Reg.SR & CpuStatus.Carry) != 0 ? 1 : 0;
-        bool carryOutMem = (value & 0x80) != 0;
+        int carryIn = (cpu.Reg.SR & CpuStatus.Carry) != 0 ? 1 : 0;
+        bool carryOut = (value & 0x80) != 0;
 
-        value = (byte)((value << 1) | carryInMem);
+        value = (byte)((value << 1) | carryIn);
 
-        cpu.SetFlag(CpuStatus.Carry, carryOutMem);
+        cpu.SetFlag(CpuStatus.Carry, carryOut);
         cpu.UpdateZeroNegativeFlags(value);
+
+        if (mode == CpuAddressingMode.Accumulator)
+            cpu.Reg.AC = value;
+        else cpu.Mem[addr] = value;
     }
 
     internal void Ror(CpuAddressingMode mode)
     {
-        if (mode == CpuAddressingMode.Accumulator)
-        {
-            int carryIn = (cpu.Reg.SR & CpuStatus.Carry) != 0 ? 1 : 0;
-            bool carryOut = (cpu.Reg.AC & 0x01) != 0;
+        ushort addr = cpu.Addr(CpuInstruction.ROL, mode);
+        byte value = mode == CpuAddressingMode.Accumulator ? cpu.Reg.AC : cpu.Mem[addr];
 
-            cpu.Reg.AC = (byte)((cpu.Reg.AC >> 1) | (carryIn << 7));
+        int carryIn = (cpu.Reg.SR & CpuStatus.Carry) != 0 ? 1 : 0;
+        bool carryOut = (value & 0x01) != 0;
 
-            cpu.SetFlag(CpuStatus.Carry, carryOut);
-            cpu.UpdateZeroNegativeFlags(cpu.Reg.AC);
+        value = (byte)((value >> 1) | (carryIn << 7));
 
-            cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.ROR, mode).Cycles;
-            return;
-        }
-
-        ushort addr = cpu.Addr(CpuInstruction.ROR, mode);
-        ref byte value = ref cpu.Mem[addr];
-
-        int carryInMem = (cpu.Reg.SR & CpuStatus.Carry) != 0 ? 1 : 0;
-        bool carryOutMem = (value & 0x01) != 0;
-
-        value = (byte)((value >> 1) | (carryInMem << 7));
-
-        cpu.SetFlag(CpuStatus.Carry, carryOutMem);
+        cpu.SetFlag(CpuStatus.Carry, carryOut);
         cpu.UpdateZeroNegativeFlags(value);
+
+        if (mode == CpuAddressingMode.Accumulator)
+            cpu.Reg.AC = value;
+        else cpu.Mem[addr] = value;
     }
 
     internal void Rti()
     {
-        // Pull status first (flags)
         byte flags = cpu.Pop();
-        cpu.Reg.SR = (CpuStatus)((flags & ~(byte)CpuStatus.Break) | (byte)CpuStatus.Unused); // B is cleared, bit 5 stays set
-
-        // Pull PC low, then high
-        byte pcl = cpu.Pop();
-        byte pch = cpu.Pop();
-        cpu.Reg.PC = (ushort)(pcl | (pch << 8));
-
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.RTI, CpuAddressingMode.Implied).Cycles;
+        cpu.Reg.SR = (CpuStatus)((flags & ~(byte)CpuStatus.Break) | (byte)CpuStatus.Unused);
+        cpu.Reg.PC = cpu.PopWord();
+        cpu.Tick(CpuInstruction.RTI);
     }
 
     internal void Rts()
     {
-        // Pull PC low, then high
-        byte pcl = cpu.Pop();
-        byte pch = cpu.Pop();
-        cpu.Reg.PC = (ushort)((pcl | (pch << 8)) + 1);
-
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.RTS, CpuAddressingMode.Implied).Cycles;
+        cpu.Reg.PC = (ushort)(cpu.PopWord() + 1);
+        cpu.Tick(CpuInstruction.RTS);
     }
 
     internal void Sbc(CpuAddressingMode mode)
@@ -411,12 +359,10 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
         int carry = (cpu.Reg.SR & CpuStatus.Carry) != 0 ? 1 : 0;
         int result = cpu.Reg.AC - value - (1 - carry);
 
-        // Set Carry: set if no borrow occurred (i.e., A ≥ value + (1 - C))
         cpu.SetFlag(CpuStatus.Carry, result >= 0);
 
         byte resultByte = (byte)result;
 
-        // Set Overflow: if sign bit flipped incorrectly during subtraction
         bool overflow = ((cpu.Reg.AC ^ value) & (cpu.Reg.AC ^ resultByte) & 0x80) != 0;
         cpu.SetFlag(CpuStatus.Overflow, overflow);
 
@@ -432,42 +378,42 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
 
     internal void Txs()
     {
+        cpu.Tick(CpuInstruction.TXS);
         cpu.Reg.SP = cpu.Reg.X;
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.TXS, CpuAddressingMode.Implied).Cycles;
     }
 
     internal void Tsx()
     {
+        cpu.Tick(CpuInstruction.TSX);
         cpu.Reg.X = cpu.Reg.SP;
         cpu.UpdateZeroNegativeFlags(cpu.Reg.X);
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.TSX, CpuAddressingMode.Implied).Cycles;
     }
 
     internal void Pha()
     {
+        cpu.Tick(CpuInstruction.PHA);
         cpu.Push(cpu.Reg.AC);
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.PHA, CpuAddressingMode.Implied).Cycles;
     }
 
     internal void Pla()
     {
+        cpu.Tick(CpuInstruction.PLA);
         cpu.Reg.AC = cpu.Pop();
         cpu.UpdateZeroNegativeFlags(cpu.Reg.AC);
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.PLA, CpuAddressingMode.Implied).Cycles;
     }
 
     internal void Php()
     {
+        cpu.Tick(CpuInstruction.PHP);
         byte flags = (byte)(cpu.Reg.SR | CpuStatus.Break | CpuStatus.Unused);
         cpu.Push(flags);
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.PHP, CpuAddressingMode.Implied).Cycles;
     }
 
     internal void Plp()
     {
+        cpu.Tick(CpuInstruction.PLP);
         byte flags = cpu.Pop();
         cpu.Reg.SR = (CpuStatus)((flags & ~(byte)CpuStatus.Break) | (byte)CpuStatus.Unused);
-        cpu.Cycles += CpuEmulatorTimings.Get(CpuInstruction.PLP, CpuAddressingMode.Implied).Cycles;
     }
 
     internal void Stx(CpuAddressingMode mode)
@@ -480,23 +426,5 @@ internal class CpuEmulatorExecutor(CpuEmulatorState cpu)
     {
         ushort addr = cpu.Addr(CpuInstruction.STY, mode);
         cpu.Mem[addr] = cpu.Reg.Y;
-    }
-
-    private void Branch(CpuInstruction instr, bool condition)
-    {
-        var timing = CpuEmulatorTimings.Get(instr, CpuAddressingMode.Relative);
-        cpu.Cycles += timing.Cycles;
-
-        sbyte offset = (sbyte)cpu.Mem[cpu.Reg.PC++];
-        if (!condition)
-            return;
-
-        cpu.Cycles += 1;
-
-        ushort originalPC = cpu.Reg.PC;
-        cpu.Reg.PC = (ushort)(cpu.Reg.PC + offset);
-
-        if ((originalPC & 0xFF00) != (cpu.Reg.PC & 0xFF00))
-            cpu.Cycles += timing.PagePenalty;
     }
 }
