@@ -9,8 +9,12 @@ internal class CpuEmulatorState(Memory<byte> memory)
     internal ref CpuEmulatorRegisters Reg => ref reg;
     internal ref long Cycles => ref cycles;
 
+    internal bool HasFlag(CpuStatus flag) => (reg.SR & flag) != 0;
     internal void Push(byte value) => memory.Span[0x0100 + reg.SP--] = value;
     internal byte Pop() => memory.Span[0x0100 + ++reg.SP];
+    internal ushort ReadWord() => ReadWord(reg.PC);
+    internal ushort ReadWord(ushort pc) => (ushort)(memory.Span[pc] | (memory.Span[pc + 1] << 8));
+    internal void Tick(CpuInstruction instr) => cycles += CpuEmulatorTimings.Get(instr, CpuAddressingMode.Implied).Cycles;
 
     internal void PushWord(ushort value)
     {
@@ -25,10 +29,7 @@ internal class CpuEmulatorState(Memory<byte> memory)
         return (ushort)(low | (high << 8));
     }
 
-    internal ushort ReadWord() => ReadWord(reg.PC);
-    internal ushort ReadWord(ushort pc) => (ushort)(memory.Span[pc] | (memory.Span[pc + 1] << 8));
-
-    internal void UpdateZeroNegativeFlags(byte value)
+    internal void SetZN(byte value)
     {
         SetFlag(CpuStatus.Zero, value == 0);
         SetFlag(CpuStatus.Negative, (value & 0b1000_0000) != 0);
@@ -40,9 +41,67 @@ internal class CpuEmulatorState(Memory<byte> memory)
         else reg.SR &= ~flag;
     }
 
-    internal void Tick(CpuInstruction instr)
+    internal void Compare(byte a, byte b)
     {
-        cycles += CpuEmulatorTimings.Get(instr, CpuAddressingMode.Implied).Cycles;
+        SetFlag(CpuStatus.Carry, a >= b);
+        SetFlag(CpuStatus.Zero, a == b);
+        SetFlag(CpuStatus.Negative, ((a - b) & 0x80) != 0);
+    }
+
+    internal byte AddWithCarry(byte value)
+    {
+        int a = Reg.AC;
+        int m = value;
+        int carryIn = Reg.SR.HasFlag(CpuStatus.Carry) ? 1 : 0;
+
+        int sum = a + m + carryIn;
+        byte result = (byte)sum;
+
+        SetFlag(CpuStatus.Carry, sum > 0xFF);
+        SetFlag(CpuStatus.Overflow, (~(a ^ m) & (a ^ result) & 0x80) != 0);
+
+        return result;
+    }
+
+    internal byte SubWithBorrow(byte value) => AddWithCarry((byte)(value ^ 0xFF));
+
+    internal byte ShiftLeft(byte value)
+    {
+        SetFlag(CpuStatus.Carry, (value & 0x80) != 0);
+        byte result = (byte)(value << 1);
+        SetZN(result);
+        return result;
+    }
+
+    internal byte ShiftRight(byte value)
+    {
+        SetFlag(CpuStatus.Carry, (value & 0x01) != 0);
+        byte result = (byte)(value >> 1);
+        SetFlag(CpuStatus.Negative, false);
+        SetFlag(CpuStatus.Zero, result == 0);
+        return result;
+    }
+
+    internal byte RotateLeft(byte value)
+    {
+        int carryIn = HasFlag(CpuStatus.Carry) ? 1 : 0;
+        bool carryOut = (value & 0x80) != 0;
+        byte result = (byte)((value << 1) | carryIn);
+
+        SetFlag(CpuStatus.Carry, carryOut);
+        SetZN(result);
+        return result;
+    }
+
+    internal byte RotateRight(byte value)
+    {
+        int carryIn = HasFlag(CpuStatus.Carry) ? 1 : 0;
+        bool carryOut = (value & 0x01) != 0;
+        byte result = (byte)((value >> 1) | (carryIn << 7));
+
+        SetFlag(CpuStatus.Carry, carryOut);
+        SetZN(result);
+        return result;
     }
 
     internal ushort Addr(CpuInstruction instr, CpuAddressingMode mode)
@@ -67,6 +126,44 @@ internal class CpuEmulatorState(Memory<byte> memory)
             cycles += timing.PagePenalty;
 
         return addr;
+    }
+
+    internal (ushort, byte) AccAddr(CpuInstruction instr, CpuAddressingMode mode)
+    {
+        ushort addr = Addr(instr, mode);
+        byte value = mode == CpuAddressingMode.Accumulator ? reg.AC : memory.Span[addr];
+        return (addr, value);
+    }
+
+    internal void WriteAccAddr(CpuAddressingMode mode, ushort addr, byte value)
+    {
+        if (mode == CpuAddressingMode.Accumulator)
+            reg.AC = value;
+        else memory.Span[addr] = value;
+    }
+
+    internal ref byte ReadAddr(CpuInstruction instr, CpuAddressingMode mode)
+    {
+        ushort addr = Addr(instr, mode);
+        return ref memory.Span[addr];
+    }
+
+    internal void Branch(CpuInstruction instr, bool condition)
+    {
+        var timing = CpuEmulatorTimings.Get(instr, CpuAddressingMode.Relative);
+        cycles += timing.Cycles;
+
+        sbyte offset = (sbyte)memory.Span[reg.PC++];
+        if (!condition)
+            return;
+
+        cycles += 1;
+
+        ushort originalPC = reg.PC;
+        reg.PC = (ushort)(reg.PC + offset);
+
+        if ((originalPC & 0xFF00) != (reg.PC & 0xFF00))
+            cycles += timing.PagePenalty;
     }
 
     internal (ushort addr, ushort baseAddr) ResolveAddr(ushort pc, CpuAddressingMode mode)
@@ -131,23 +228,5 @@ internal class CpuEmulatorState(Memory<byte> memory)
             return (e, b);
         }
         else return (0, 0);
-    }
-
-    internal void Branch(CpuInstruction instr, bool condition)
-    {
-        var timing = CpuEmulatorTimings.Get(instr, CpuAddressingMode.Relative);
-        cycles += timing.Cycles;
-
-        sbyte offset = (sbyte)memory.Span[reg.PC++];
-        if (!condition)
-            return;
-
-        cycles += 1;
-
-        ushort originalPC = reg.PC;
-        reg.PC = (ushort)(reg.PC + offset);
-
-        if ((originalPC & 0xFF00) != (reg.PC & 0xFF00))
-            cycles += timing.PagePenalty;
     }
 }
