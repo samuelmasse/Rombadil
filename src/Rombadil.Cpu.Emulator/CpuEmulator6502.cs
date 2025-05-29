@@ -1,6 +1,6 @@
 namespace Rombadil.Cpu.Emulator;
 
-public class CpuEmulator6502(Memory<byte> memory)
+public class CpuEmulator6502(CpuEmulatorMemory memory)
 {
     private readonly CpuEmulatorState state = new(memory);
 
@@ -11,7 +11,7 @@ public class CpuEmulator6502(Memory<byte> memory)
 
     public void Reset(ushort? pc = null)
     {
-        state.PC = pc ?? (ushort)(state.Mem[0xFFFC] | (state.Mem[0xFFFD] << 8));
+        state.PC = pc ?? (ushort)(memory[0xFFFC] | (memory[0xFFFD] << 8));
 
         state.AC = 0;
         state.X = 0;
@@ -25,11 +25,11 @@ public class CpuEmulator6502(Memory<byte> memory)
 
     public void Step()
     {
-        var b = state.Mem[state.PC++];
+        var code = memory[state.PC++];
 
-        if (CpuOpcodeMap.TryDecodeOpcode((CpuOpcode)b, out var decode))
+        if (CpuOpcodeMap.TryDecodeOpcode((CpuOpcode)code, out var decode))
             StepLegal(decode.Item1, decode.Item2);
-        else if (CpuEmulatorIllegalOpcodeMap.TryDecodeOpcode((CpuEmulatorIllegalOpcode)b, out var illegal))
+        else if (CpuEmulatorIllegalOpcodeMap.TryDecodeOpcode((CpuEmulatorIllegalOpcode)code, out var illegal))
             StepIllegal(illegal.Item1, illegal.Item2);
         else throw new Exception();
     }
@@ -39,7 +39,7 @@ public class CpuEmulator6502(Memory<byte> memory)
         var timing = CpuEmulatorTimings.Get(instruction, mode);
         var addr = state.Addr(timing, mode);
 
-        ref var value = ref (mode == CpuAddressingMode.Accumulator ? ref state.Reg.AC : ref state.Mem[addr]);
+        ref var value = ref (mode == CpuAddressingMode.Accumulator ? ref state.Reg.AC : ref memory[addr]);
         var exec = new CpuEmulatorExecutor(state, addr, ref value);
 
         switch (instruction)
@@ -108,21 +108,21 @@ public class CpuEmulator6502(Memory<byte> memory)
         var timing = CpuEmulatorIllegalTimings.Get(instruction, mode);
         var addr = state.Addr(timing, mode);
 
-        ref var value = ref state.Mem[addr];
-        var iexec = new CpuEmulatorIllegalExecutor(state, addr, ref value);
+        ref var value = ref memory[addr];
+        var ixec = new CpuEmulatorIllegalExecutor(state, addr, ref value);
 
         switch (instruction)
         {
-            case CpuEmulatorIllegalInstruction.NOP: iexec.Nop(); break;
-            case CpuEmulatorIllegalInstruction.LAX: iexec.Lax(); break;
-            case CpuEmulatorIllegalInstruction.SAX: iexec.Sax(); break;
-            case CpuEmulatorIllegalInstruction.SBC: iexec.Sbc(); break;
-            case CpuEmulatorIllegalInstruction.DCP: iexec.Dcp(); break;
-            case CpuEmulatorIllegalInstruction.ISB: iexec.Isb(); break;
-            case CpuEmulatorIllegalInstruction.SLO: iexec.Slo(); break;
-            case CpuEmulatorIllegalInstruction.RLA: iexec.Rla(); break;
-            case CpuEmulatorIllegalInstruction.SRE: iexec.Sre(); break;
-            case CpuEmulatorIllegalInstruction.RRA: iexec.Rra(); break;
+            case CpuEmulatorIllegalInstruction.NOP: ixec.Nop(); break;
+            case CpuEmulatorIllegalInstruction.LAX: ixec.Lax(); break;
+            case CpuEmulatorIllegalInstruction.SAX: ixec.Sax(); break;
+            case CpuEmulatorIllegalInstruction.SBC: ixec.Sbc(); break;
+            case CpuEmulatorIllegalInstruction.DCP: ixec.Dcp(); break;
+            case CpuEmulatorIllegalInstruction.ISB: ixec.Isb(); break;
+            case CpuEmulatorIllegalInstruction.SLO: ixec.Slo(); break;
+            case CpuEmulatorIllegalInstruction.RLA: ixec.Rla(); break;
+            case CpuEmulatorIllegalInstruction.SRE: ixec.Sre(); break;
+            case CpuEmulatorIllegalInstruction.RRA: ixec.Rra(); break;
         }
     }
 }

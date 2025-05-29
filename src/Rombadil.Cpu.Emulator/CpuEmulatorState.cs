@@ -1,11 +1,10 @@
 namespace Rombadil.Cpu.Emulator;
 
-internal class CpuEmulatorState(Memory<byte> memory)
+internal class CpuEmulatorState(CpuEmulatorMemory memory)
 {
     private CpuEmulatorRegisters reg;
     private long cycles;
 
-    internal Span<byte> Mem => memory.Span;
     internal ref CpuEmulatorRegisters Reg => ref reg;
     internal ref long Cycles => ref cycles;
 
@@ -44,9 +43,9 @@ internal class CpuEmulatorState(Memory<byte> memory)
     }
 
     internal bool HasFlag(CpuStatus flag) => (reg.SR & flag) != 0;
-    internal void Push(byte value) => memory.Span[0x0100 + reg.SP--] = value;
-    internal byte Pop() => memory.Span[0x0100 + ++reg.SP];
-    internal ushort ReadWord(ushort pc) => (ushort)(memory.Span[pc] | (memory.Span[pc + 1] << 8));
+    internal void Push(byte value) => memory[(ushort)(0x0100 + reg.SP--)] = value;
+    internal byte Pop() => memory[(ushort)(0x0100 + ++reg.SP)];
+    internal ushort ReadWord(ushort pc) => (ushort)(memory[pc] | (memory[(ushort)(pc + 1)] << 8));
 
     internal void PushWord(ushort value)
     {
@@ -150,7 +149,7 @@ internal class CpuEmulatorState(Memory<byte> memory)
 
     internal void Branch(bool condition)
     {
-        sbyte offset = (sbyte)memory.Span[reg.PC - 1];
+        sbyte offset = (sbyte)memory[(ushort)(reg.PC - 1)];
         if (!condition)
             return;
 
@@ -165,24 +164,22 @@ internal class CpuEmulatorState(Memory<byte> memory)
 
     internal (ushort addr, ushort baseAddr) ResolveAddr(ushort pc, CpuAddressingMode mode)
     {
-        var mem = memory.Span;
-
         if (mode == CpuAddressingMode.Immediate)
             return (pc, pc);
         else if (mode == CpuAddressingMode.ZeroPage)
         {
-            ushort b = mem[pc];
+            ushort b = memory[pc];
             return (b, b);
         }
         else if (mode == CpuAddressingMode.ZeroPageX)
         {
-            ushort b = mem[pc];
+            ushort b = memory[pc];
             ushort e = (byte)(b + reg.X);
             return (e, b);
         }
         else if (mode == CpuAddressingMode.ZeroPageY)
         {
-            ushort b = mem[pc];
+            ushort b = memory[pc];
             ushort e = (byte)(b + reg.Y);
             return (e, b);
         }
@@ -205,15 +202,15 @@ internal class CpuEmulatorState(Memory<byte> memory)
         }
         else if (mode == CpuAddressingMode.IndirectX)
         {
-            ushort b = mem[pc];
+            ushort b = memory[pc];
             byte zpx = (byte)(b + reg.X);
-            ushort e = (ushort)(mem[zpx] | (mem[(byte)(zpx + 1)] << 8));
+            ushort e = (ushort)(memory[zpx] | (memory[(byte)(zpx + 1)] << 8));
             return (e, b);
         }
         else if (mode == CpuAddressingMode.IndirectY)
         {
-            ushort b = mem[pc];
-            ushort indirect = (ushort)(mem[b] | (mem[(byte)(b + 1)] << 8));
+            ushort b = memory[pc];
+            ushort indirect = (ushort)(memory[b] | (memory[(byte)(b + 1)] << 8));
             ushort e = (ushort)(indirect + reg.Y);
             return (e, indirect);
         }
@@ -221,7 +218,7 @@ internal class CpuEmulatorState(Memory<byte> memory)
         {
             ushort b = ReadWord(pc);
             ushort addr = (ushort)((b & 0xFF00) | ((b + 1) & 0x00FF));
-            ushort e = (ushort)(mem[b] | (mem[addr] << 8));
+            ushort e = (ushort)(memory[b] | (memory[addr] << 8));
             return (e, b);
         }
         else return (0, 0);

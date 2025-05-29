@@ -1,34 +1,39 @@
 using Rombadil.Cpu.Emulator;
 
-var mem = new byte[80000];
-var cpu = new CpuEmulator6502(mem);
-var logger = new CpuEmulatorLogger(mem, cpu);
-
-var nestest = File.ReadAllBytes("nestest.nes");
-var nestestlog = File.ReadAllLines("nestest.log");
-
+var bytes = new byte[0x10000];
 for (int i = 0; i <= 0x17; i++)
-    mem[0x4000 + i] = 0xFF;
+    bytes[0x4000 + i] = 0xFF;
 
-var prg = nestest.AsSpan().Slice(0x10, 0x4000);
+var map = new ushort[0x10000];
+for (int i = 0; i < map.Length; i++)
+    map[i] = (ushort)i;
+for (int i = 0; i < 0x4000; i++)
+    map[0xC000 + i] = (ushort)(0x8000 + i);
 
-prg.CopyTo(mem.AsSpan()[0x8000..]);
-prg.CopyTo(mem.AsSpan()[0xC000..]);
+var rom = File.ReadAllBytes("nestest.nes");
+var prgArea = bytes.AsSpan().Slice(0x8000, 0x4000);
+var prgRom = rom.AsSpan().Slice(0x10, 0x4000);
+prgRom.CopyTo(prgArea);
 
+var memory = new CpuEmulatorMemory(bytes, map);
+var cpu = new CpuEmulator6502(memory);
+var logger = new CpuEmulatorLogger(memory, cpu);
 cpu.Reset(0xC000);
 
-for (int i = 0; i < nestestlog.Length; i++)
-{
-    string log = logger.Log();
+var log = File.ReadAllLines("nestest.log");
 
-    if (nestestlog[i] != log)
+for (int i = 0; i < log.Length; i++)
+{
+    string msg = logger.Log();
+
+    if (log[i] != msg)
     {
-        Console.WriteLine($"{i + 1,-8} Expected : {nestestlog[i]}");
-        Console.WriteLine($"{i + 1,-8} But got  : {log}");
+        Console.WriteLine($"{i + 1,-8} Expected : {log[i]}");
+        Console.WriteLine($"{i + 1,-8} But got  : {msg}");
         return;
     }
 
-    Console.WriteLine($"{i + 1,-8} {log}");
+    Console.WriteLine($"{i + 1,-8} {msg}");
 
     cpu.Step();
 }

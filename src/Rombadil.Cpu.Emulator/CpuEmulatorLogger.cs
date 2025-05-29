@@ -1,21 +1,21 @@
 namespace Rombadil.Cpu.Emulator;
 
-public class CpuEmulatorLogger(Memory<byte> memory, CpuEmulator6502 cpu)
+public class CpuEmulatorLogger(CpuEmulatorMemory memory, CpuEmulator6502 cpu)
 {
     public string Log()
     {
         var reg = cpu.Reg;
-        var opcode = (CpuOpcode)memory.Span[reg.PC];
-        var low = memory.Span[reg.PC + 1];
-        var high = memory.Span[reg.PC + 2];
+        var opcode = (CpuOpcode)memory[reg.PC];
+        var low = memory[(ushort)(reg.PC + 1)];
+        var high = memory[(ushort)(reg.PC + 2)];
 
         CpuInstruction? instruction = null;
         CpuEmulatorIllegalInstruction? illegalInstruction = null;
         CpuAddressingMode mode;
 
-        if (CpuOpcodeMap.TryDecodeOpcode((CpuOpcode)memory.Span[reg.PC], out var decode))
+        if (CpuOpcodeMap.TryDecodeOpcode((CpuOpcode)memory[reg.PC], out var decode))
             (instruction, mode) = decode;
-        else if (CpuEmulatorIllegalOpcodeMap.TryDecodeOpcode((CpuEmulatorIllegalOpcode)memory.Span[reg.PC], out var illegal))
+        else if (CpuEmulatorIllegalOpcodeMap.TryDecodeOpcode((CpuEmulatorIllegalOpcode)memory[reg.PC], out var illegal))
             (illegalInstruction, mode) = illegal;
         else return string.Empty;
 
@@ -57,7 +57,7 @@ public class CpuEmulatorLogger(Memory<byte> memory, CpuEmulator6502 cpu)
 
         if ((instruction == null || !ShouldShowMemoryValue(instruction.Value)) && ShouldShowMemoryValue(mode))
         {
-            var display = $"{memory.Span[addr]:X2}";
+            var display = $"{memory[addr]:X2}";
             dissassemble += $" = {display}";
         }
 
