@@ -45,7 +45,7 @@ internal ref struct CpuEmulatorExecutor(CpuEmulatorHelper cpu, CpuEmulatorState 
     internal readonly void Clv() => s.SetFlag(CpuStatus.Overflow, false);
     internal readonly void Cld() => s.SetFlag(CpuStatus.Decimal, false);
     internal readonly void Sed() => s.SetFlag(CpuStatus.Decimal, true);
-    internal readonly void Jmp() => cpu.PC = addr;
+    internal readonly void Jmp() => s.PC = addr;
     internal readonly void Lda() => p.AC = value;
     internal readonly void Ldx() => p.X = value;
     internal readonly void Ldy() => p.Y = value;
@@ -59,10 +59,10 @@ internal ref struct CpuEmulatorExecutor(CpuEmulatorHelper cpu, CpuEmulatorState 
     internal readonly void Inx() => p.X++;
     internal readonly void Dey() => p.Y--;
     internal readonly void Iny() => p.Y++;
-    internal readonly void Rts() => cpu.PC = (ushort)(cpu.PopWord() + 1);
+    internal readonly void Rts() => s.PC = (ushort)(cpu.PopWord() + 1);
     internal readonly void Sbc() => p.AC = p.SubWithBorrow(value);
-    internal readonly void Txs() => cpu.SP = p.X;
-    internal readonly void Tsx() => p.X = cpu.SP;
+    internal readonly void Txs() => s.SP = p.X;
+    internal readonly void Tsx() => p.X = s.SP;
     internal readonly void Pha() => cpu.Push(p.AC);
     internal readonly void Pla() => p.AC = cpu.Pop();
 
@@ -75,35 +75,35 @@ internal ref struct CpuEmulatorExecutor(CpuEmulatorHelper cpu, CpuEmulatorState 
 
     internal readonly void Brk()
     {
-        cpu.PC++;
-        cpu.PushWord(cpu.PC);
-        cpu.Push((byte)(cpu.SR | CpuStatus.Break | CpuStatus.Unused));
+        s.PC++;
+        cpu.PushWord(s.PC);
+        cpu.Push((byte)(s.SR | CpuStatus.Break | CpuStatus.Unused));
         s.SetFlag(CpuStatus.Interrupt, true);
-        cpu.PC = cpu.ReadWord(0xFFFE);
+        s.PC = cpu.ReadWord(0xFFFE);
     }
 
     internal readonly void Jsr()
     {
-        cpu.PushWord((ushort)(cpu.PC - 1));
-        cpu.PC = addr;
+        cpu.PushWord((ushort)(s.PC - 1));
+        s.PC = addr;
     }
 
     internal readonly void Rti()
     {
         byte flags = cpu.Pop();
-        cpu.SR = (CpuStatus)((flags & ~(byte)CpuStatus.Break) | (byte)CpuStatus.Unused);
-        cpu.PC = cpu.PopWord();
+        s.SR = (CpuStatus)((flags & ~(byte)CpuStatus.Break) | (byte)CpuStatus.Unused);
+        s.PC = cpu.PopWord();
     }
 
     internal readonly void Php()
     {
-        byte flags = (byte)(cpu.SR | CpuStatus.Break | CpuStatus.Unused);
+        byte flags = (byte)(s.SR | CpuStatus.Break | CpuStatus.Unused);
         cpu.Push(flags);
     }
 
     internal readonly void Plp()
     {
         byte flags = cpu.Pop();
-        cpu.SR = (CpuStatus)((flags & ~(byte)CpuStatus.Break) | (byte)CpuStatus.Unused);
+        s.SR = (CpuStatus)((flags & ~(byte)CpuStatus.Break) | (byte)CpuStatus.Unused);
     }
 }

@@ -4,30 +4,30 @@ internal class CpuEmulatorProcessor(CpuEmulatorState s)
 {
     internal byte AC
     {
-        get => s.Reg.AC;
+        get => s.AC;
         set
         {
-            s.Reg.AC = value;
+            s.AC = value;
             SetZN(value);
         }
     }
 
     internal byte X
     {
-        get => s.Reg.X;
+        get => s.X;
         set
         {
-            s.Reg.X = value;
+            s.X = value;
             SetZN(value);
         }
     }
 
     internal byte Y
     {
-        get => s.Reg.Y;
+        get => s.Y;
         set
         {
-            s.Reg.Y = value;
+            s.Y = value;
             SetZN(value);
         }
     }
@@ -47,9 +47,9 @@ internal class CpuEmulatorProcessor(CpuEmulatorState s)
 
     internal byte AddWithCarry(byte value)
     {
-        int a = s.Reg.AC;
+        int a = s.AC;
         int m = value;
-        int carryIn = s.Reg.SR.HasFlag(CpuStatus.Carry) ? 1 : 0;
+        int carryIn = s.SR.HasFlag(CpuStatus.Carry) ? 1 : 0;
 
         int sum = a + m + carryIn;
         byte result = (byte)sum;

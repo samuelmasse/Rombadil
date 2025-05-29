@@ -21,21 +21,21 @@ public class CpuEmulator6502
 
     public void Reset(ushort? pc = null)
     {
-        state.Reg.PC = pc ?? (ushort)(memory[0xFFFC] | (memory[0xFFFD] << 8));
+        state.PC = pc ?? (ushort)(memory[0xFFFC] | (memory[0xFFFD] << 8));
 
-        state.Reg.AC = 0;
-        state.Reg.X = 0;
-        state.Reg.Y = 0;
+        state.AC = 0;
+        state.X = 0;
+        state.Y = 0;
 
-        state.Reg.SR = CpuStatus.Interrupt | CpuStatus.Unused;
-        state.Reg.SP = 0xFD;
+        state.SR = CpuStatus.Interrupt | CpuStatus.Unused;
+        state.SP = 0xFD;
 
         state.Cycles = 7;
     }
 
     public void Step()
     {
-        var code = memory[state.Reg.PC++];
+        var code = memory[state.PC++];
 
         if (CpuOpcodeMap.TryDecodeOpcode((CpuOpcode)code, out var decode))
             StepLegal(decode.Item1, decode.Item2);
@@ -49,7 +49,7 @@ public class CpuEmulator6502
         var timing = CpuEmulatorTimings.Get(instruction, mode);
         var addr = helper.Addr(timing, mode);
 
-        ref var value = ref (mode == CpuAddressingMode.Accumulator ? ref state.Reg.AC : ref memory[addr]);
+        ref var value = ref (mode == CpuAddressingMode.Accumulator ? ref state.AC : ref memory[addr]);
         var exec = new CpuEmulatorExecutor(helper, state, processor, addr, ref value);
 
         switch (instruction)
