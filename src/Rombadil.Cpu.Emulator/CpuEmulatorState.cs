@@ -46,9 +46,7 @@ internal class CpuEmulatorState(Memory<byte> memory)
     internal bool HasFlag(CpuStatus flag) => (reg.SR & flag) != 0;
     internal void Push(byte value) => memory.Span[0x0100 + reg.SP--] = value;
     internal byte Pop() => memory.Span[0x0100 + ++reg.SP];
-    internal ushort ReadWord() => ReadWord(reg.PC);
     internal ushort ReadWord(ushort pc) => (ushort)(memory.Span[pc] | (memory.Span[pc + 1] << 8));
-    internal void Tick(CpuInstruction instr) => cycles += CpuEmulatorTimings.Get(instr, CpuAddressingMode.Implied).Cycles;
 
     internal void PushWord(ushort value)
     {
@@ -138,18 +136,6 @@ internal class CpuEmulatorState(Memory<byte> memory)
         return result;
     }
 
-    internal ushort Addr(CpuInstruction instr, CpuAddressingMode mode)
-    {
-        var timing = CpuEmulatorTimings.Get(instr, mode);
-        return Addr(timing, mode);
-    }
-
-    internal ushort AddrIllegal(CpuEmulatorIllegalInstruction instr, CpuAddressingMode mode)
-    {
-        var timing = CpuEmulatorIllegalTimings.Get(instr, mode);
-        return Addr(timing, mode);
-    }
-
     internal ushort Addr((byte Cycles, byte PagePenalty) timing, CpuAddressingMode mode)
     {
         var (addr, baseAddr) = ResolveAddr(reg.PC, mode);
@@ -160,32 +146,6 @@ internal class CpuEmulatorState(Memory<byte> memory)
             cycles += timing.PagePenalty;
 
         return addr;
-    }
-
-    internal (ushort, byte) AccAddr(CpuInstruction instr, CpuAddressingMode mode)
-    {
-        ushort addr = Addr(instr, mode);
-        byte value = mode == CpuAddressingMode.Accumulator ? reg.AC : memory.Span[addr];
-        return (addr, value);
-    }
-
-    internal void WriteAccAddr(CpuAddressingMode mode, ushort addr, byte value)
-    {
-        if (mode == CpuAddressingMode.Accumulator)
-            reg.AC = value;
-        else memory.Span[addr] = value;
-    }
-
-    internal ref byte ReadAddr(CpuInstruction instr, CpuAddressingMode mode)
-    {
-        ushort addr = Addr(instr, mode);
-        return ref memory.Span[addr];
-    }
-
-    internal ref byte ReadAddrIllegal(CpuEmulatorIllegalInstruction instr, CpuAddressingMode mode)
-    {
-        ushort addr = AddrIllegal(instr, mode);
-        return ref memory.Span[addr];
     }
 
     internal void Branch(bool condition)
