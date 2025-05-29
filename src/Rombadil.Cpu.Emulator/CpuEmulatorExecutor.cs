@@ -26,25 +26,25 @@ internal ref struct CpuEmulatorExecutor(CpuEmulatorHelper cpu, CpuEmulatorState 
 
     internal readonly void Adc() => p.AC = p.AddWithCarry(value);
     internal readonly void And() => p.AC &= value;
-    internal readonly void Bpl() => cpu.Branch(!s.HasFlag(CpuStatus.Negative));
-    internal readonly void Bmi() => cpu.Branch(s.HasFlag(CpuStatus.Negative));
-    internal readonly void Bvc() => cpu.Branch(!s.HasFlag(CpuStatus.Overflow));
-    internal readonly void Bvs() => cpu.Branch(s.HasFlag(CpuStatus.Overflow));
-    internal readonly void Bcc() => cpu.Branch(!s.HasFlag(CpuStatus.Carry));
-    internal readonly void Bcs() => cpu.Branch(s.HasFlag(CpuStatus.Carry));
-    internal readonly void Bne() => cpu.Branch(!s.HasFlag(CpuStatus.Zero));
-    internal readonly void Beq() => cpu.Branch(s.HasFlag(CpuStatus.Zero));
+    internal readonly void Bpl() => cpu.Branch(!s.Negative);
+    internal readonly void Bmi() => cpu.Branch(s.Negative);
+    internal readonly void Bvc() => cpu.Branch(!s.Overflow);
+    internal readonly void Bvs() => cpu.Branch(s.Overflow);
+    internal readonly void Bcc() => cpu.Branch(!s.Carry);
+    internal readonly void Bcs() => cpu.Branch(s.Carry);
+    internal readonly void Bne() => cpu.Branch(!s.Zero);
+    internal readonly void Beq() => cpu.Branch(s.Zero);
     internal readonly void Cmp() => p.Compare(p.AC, value);
     internal readonly void Cpx() => p.Compare(p.X, value);
     internal readonly void Cpy() => p.Compare(p.Y, value);
     internal readonly void Eor() => p.AC ^= value;
-    internal readonly void Clc() => s.SetFlag(CpuStatus.Carry, false);
-    internal readonly void Sec() => s.SetFlag(CpuStatus.Carry, true);
-    internal readonly void Cli() => s.SetFlag(CpuStatus.Interrupt, false);
-    internal readonly void Sei() => s.SetFlag(CpuStatus.Interrupt, true);
-    internal readonly void Clv() => s.SetFlag(CpuStatus.Overflow, false);
-    internal readonly void Cld() => s.SetFlag(CpuStatus.Decimal, false);
-    internal readonly void Sed() => s.SetFlag(CpuStatus.Decimal, true);
+    internal readonly void Clc() => s.Carry = false;
+    internal readonly void Sec() => s.Carry = true;
+    internal readonly void Cli() => s.Interrupt = false;
+    internal readonly void Sei() => s.Interrupt = true;
+    internal readonly void Clv() => s.Overflow = false;
+    internal readonly void Cld() => s.Decimal = false;
+    internal readonly void Sed() => s.Decimal = true;
     internal readonly void Jmp() => s.PC = addr;
     internal readonly void Lda() => p.AC = value;
     internal readonly void Ldx() => p.X = value;
@@ -68,9 +68,9 @@ internal ref struct CpuEmulatorExecutor(CpuEmulatorHelper cpu, CpuEmulatorState 
 
     internal readonly void Bit()
     {
-        s.SetFlag(CpuStatus.Zero, (p.AC & value) == 0);
-        s.SetFlag(CpuStatus.Negative, (value & 0b1000_0000) != 0);
-        s.SetFlag(CpuStatus.Overflow, (value & 0b0100_0000) != 0);
+        s.Zero = (p.AC & value) == 0;
+        s.Negative = (value & 0b1000_0000) != 0;
+        s.Overflow = (value & 0b0100_0000) != 0;
     }
 
     internal readonly void Brk()
@@ -78,7 +78,7 @@ internal ref struct CpuEmulatorExecutor(CpuEmulatorHelper cpu, CpuEmulatorState 
         s.PC++;
         cpu.PushWord(s.PC);
         cpu.Push((byte)(s.SR | CpuStatus.Break | CpuStatus.Unused));
-        s.SetFlag(CpuStatus.Interrupt, true);
+        s.Interrupt = true;
         s.PC = cpu.ReadWord(0xFFFE);
     }
 

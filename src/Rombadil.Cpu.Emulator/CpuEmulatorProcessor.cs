@@ -34,70 +34,63 @@ internal class CpuEmulatorProcessor(CpuEmulatorState s)
 
     internal void SetZN(byte value)
     {
-        s.SetFlag(CpuStatus.Zero, value == 0);
-        s.SetFlag(CpuStatus.Negative, (value & 0b1000_0000) != 0);
+        s.Zero = value == 0;
+        s.Negative = HighBitSet(value);
     }
 
     internal void Compare(byte a, byte b)
     {
-        s.SetFlag(CpuStatus.Carry, a >= b);
-        s.SetFlag(CpuStatus.Zero, a == b);
-        s.SetFlag(CpuStatus.Negative, ((a - b) & 0x80) != 0);
+        s.Carry = a >= b;
+        s.Zero = a == b;
+        s.Negative = HighBitSet((byte)(a - b));
     }
 
     internal byte AddWithCarry(byte value)
     {
-        int a = s.AC;
-        int m = value;
-        int carryIn = s.SR.HasFlag(CpuStatus.Carry) ? 1 : 0;
-
-        int sum = a + m + carryIn;
-        byte result = (byte)sum;
-
-        s.SetFlag(CpuStatus.Carry, sum > 0xFF);
-        s.SetFlag(CpuStatus.Overflow, (~(a ^ m) & (a ^ result) & 0x80) != 0);
-
-        return result;
+        int carry = s.Carry ? 1 : 0;
+        int sum = s.AC + value + carry;
+        byte res = (byte)sum;
+        s.Carry = sum > 0xFF;
+        s.Overflow = HighBitSet((byte)(~(s.AC ^ value) & (s.AC ^ res)));
+        return res;
     }
 
     internal byte SubWithBorrow(byte value) => AddWithCarry((byte)(value ^ 0xFF));
 
     internal byte ShiftLeft(byte value)
     {
-        s.SetFlag(CpuStatus.Carry, (value & 0x80) != 0);
-        byte result = (byte)(value << 1);
-        SetZN(result);
-        return result;
+        byte res = (byte)(value << 1);
+        s.Carry = HighBitSet(value);
+        SetZN(res);
+        return res;
     }
 
     internal byte ShiftRight(byte value)
     {
-        s.SetFlag(CpuStatus.Carry, (value & 0x01) != 0);
-        byte result = (byte)(value >> 1);
-        s.SetFlag(CpuStatus.Negative, false);
-        s.SetFlag(CpuStatus.Zero, result == 0);
-        return result;
+        byte res = (byte)(value >> 1);
+        s.Carry = LowBitSet(value);
+        SetZN(res);
+        return res;
     }
 
     internal byte RotateLeft(byte value)
     {
-        int carryIn = s.HasFlag(CpuStatus.Carry) ? 1 : 0;
-        bool carryOut = (value & 0x80) != 0;
-        byte result = (byte)((value << 1) | carryIn);
-
-        s.SetFlag(CpuStatus.Carry, carryOut);
-        SetZN(result);
-        return result;
+        int carry = s.Carry ? 1 : 0;
+        byte res = (byte)((value << 1) | carry);
+        s.Carry = HighBitSet(value);
+        SetZN(res);
+        return res;
     }
 
     internal byte RotateRight(byte value)
     {
-        int carryIn = s.HasFlag(CpuStatus.Carry) ? 1 : 0;
-        bool carryOut = (value & 0x01) != 0;
-        byte result = (byte)((value >> 1) | (carryIn << 7));
-
-        s.SetFlag(CpuStatus.Carry, carryOut);
-        SetZN(result);
-        return result;
+        int carry = s.Carry ? 1 : 0;
+        byte res = (byte)((value >> 1) | (carry << 7));
+        s.Carry = LowBitSet(value);
+        SetZN(res);
+        return res;
     }
+
+    private bool HighBitSet(byte value) => (value & 0b1000_0000) != 0;
+    private bool LowBitSet(byte value) => (value & 0b0000_0001) != 0;
 }
