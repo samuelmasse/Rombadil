@@ -18,6 +18,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rombadil.Script.Coverage", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rombadil.Assembler.Cli", "src\Rombadil.Assembler.Cli\Rombadil.Assembler.Cli.csproj", "{485965BC-0C81-43B0-9B55-B4B4D47D53DA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rombadil.Cpu.Emulator.Test", "tests\Rombadil.Cpu.Emulator.Test\Rombadil.Cpu.Emulator.Test.csproj", "{6453CC1D-DF9B-4CD8-9CE4-42DF02751AC8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -56,6 +58,10 @@ Global
 		{485965BC-0C81-43B0-9B55-B4B4D47D53DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{485965BC-0C81-43B0-9B55-B4B4D47D53DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{485965BC-0C81-43B0-9B55-B4B4D47D53DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6453CC1D-DF9B-4CD8-9CE4-42DF02751AC8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6453CC1D-DF9B-4CD8-9CE4-42DF02751AC8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6453CC1D-DF9B-4CD8-9CE4-42DF02751AC8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6453CC1D-DF9B-4CD8-9CE4-42DF02751AC8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
