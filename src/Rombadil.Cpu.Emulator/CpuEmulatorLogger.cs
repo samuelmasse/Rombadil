@@ -19,7 +19,7 @@ public class CpuEmulatorLogger(CpuEmulatorMemory memory, CpuEmulator6502 cpu)
             (illegalInstruction, mode) = illegal;
         else return string.Empty;
 
-        var (addr, baseAddr) = cpu.Helper.ResolveAddr((ushort)(reg.PC + 1), mode);
+        var (addr, baseAddr) = cpu.Helper.Resolve((ushort)(reg.PC + 1), mode);
 
         string operand = string.Empty;
 

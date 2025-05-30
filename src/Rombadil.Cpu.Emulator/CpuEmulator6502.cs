@@ -6,6 +6,8 @@ public class CpuEmulator6502
     private readonly CpuEmulatorState state;
     private readonly CpuEmulatorProcessor processor;
     private readonly CpuEmulatorHelper helper;
+    private readonly CpuEmulatorTimings timings;
+    private readonly CpuEmulatorIllegalTimings illegalTimings;
 
     public CpuEmulatorRegisters Reg => state.Reg;
     public long Cycles => state.Cycles;
@@ -17,6 +19,8 @@ public class CpuEmulator6502
         state = new();
         processor = new(state);
         helper = new(state, memory);
+        timings = new();
+        illegalTimings = new();
     }
 
     public void Reset(ushort? pc = null)
@@ -38,19 +42,23 @@ public class CpuEmulator6502
         var code = memory[state.PC++];
 
         if (CpuOpcodeMap.TryDecodeOpcode((CpuOpcode)code, out var decode))
-            StepLegal(decode.Item1, decode.Item2);
+        {
+            var (instruction, mode) = decode;
+            Step(instruction, mode);
+        }
         else if (CpuEmulatorIllegalOpcodeMap.TryDecodeOpcode((CpuEmulatorIllegalOpcode)code, out var illegal))
-            StepIllegal(illegal.Item1, illegal.Item2);
+        {
+            var (instruction, mode) = illegal;
+            Step(instruction, mode);
+        }
         else throw new Exception();
     }
 
-    private void StepLegal(CpuInstruction instruction, CpuAddressingMode mode)
+    private void Step(CpuInstruction instruction, CpuAddressingMode mode)
     {
-        var timing = CpuEmulatorTimings.Get(instruction, mode);
-        var addr = helper.Addr(timing, mode);
-
-        ref var value = ref (mode == CpuAddressingMode.Accumulator ? ref state.AC : ref memory[addr]);
-        var exec = new CpuEmulatorExecutor(helper, state, processor, addr, ref value);
+        var addr = Step(timings[instruction, mode], mode);
+        var exec = new CpuEmulatorExecutor(memory, helper, state, processor, addr,
+            ref mode == CpuAddressingMode.Accumulator ? ref state.AC : ref memory[addr]);
 
         switch (instruction)
         {
@@ -113,13 +121,10 @@ public class CpuEmulator6502
         }
     }
 
-    private void StepIllegal(CpuEmulatorIllegalInstruction instruction, CpuAddressingMode mode)
+    private void Step(CpuEmulatorIllegalInstruction instruction, CpuAddressingMode mode)
     {
-        var timing = CpuEmulatorIllegalTimings.Get(instruction, mode);
-        var addr = helper.Addr(timing, mode);
-
-        ref var value = ref memory[addr];
-        var ixec = new CpuEmulatorIllegalExecutor(helper, state, processor, addr, ref value);
+        var addr = Step(illegalTimings[instruction, mode], mode);
+        var ixec = new CpuEmulatorIllegalExecutor(memory, helper, state, processor, addr, ref memory[addr]);
 
         switch (instruction)
         {
@@ -134,6 +139,19 @@ public class CpuEmulator6502
             case CpuEmulatorIllegalInstruction.SRE: ixec.Sre(); break;
             case CpuEmulatorIllegalInstruction.RRA: ixec.Rra(); break;
         }
+    }
+
+    internal ushort Step((byte, byte) timing, CpuAddressingMode mode)
+    {
+        var (addr, baseAddr) = helper.Resolve(state.PC, mode);
+        var (cycles, pagePenalty) = timing;
+
+        state.PC += (ushort)CpuAddressingModeSize.Get(mode);
+        state.Cycles += cycles;
+        if ((baseAddr & 0xFF00) != (addr & 0xFF00))
+            state.Cycles += pagePenalty;
+
+        return addr;
     }
 }
 

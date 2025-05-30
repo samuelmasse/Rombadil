@@ -1,11 +1,17 @@
 namespace Rombadil.Cpu.Emulator;
 
-internal ref struct CpuEmulatorIllegalExecutor(CpuEmulatorHelper cpu, CpuEmulatorState s, CpuEmulatorProcessor p, ushort addr, ref byte cvalue)
+internal ref struct CpuEmulatorIllegalExecutor(
+    CpuEmulatorMemory m,
+    CpuEmulatorHelper cpu,
+    CpuEmulatorState s,
+    CpuEmulatorProcessor p,
+    ushort addr,
+    ref byte cvalue)
 {
     private ref byte value = ref cvalue;
 
     internal void Sax() => value = (byte)(p.AC & p.X);
-    internal void Sbc() => new CpuEmulatorExecutor(cpu, s, p, addr, ref value).Sbc();
+    internal void Sbc() => new CpuEmulatorExecutor(m, cpu, s, p, addr, ref value).Sbc();
 
     internal void Dcp()
     {

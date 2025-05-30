@@ -1,6 +1,12 @@
 namespace Rombadil.Cpu.Emulator;
 
-internal ref struct CpuEmulatorExecutor(CpuEmulatorHelper cpu, CpuEmulatorState s, CpuEmulatorProcessor p, ushort addr, ref byte cvalue)
+internal ref struct CpuEmulatorExecutor(
+    CpuEmulatorMemory m,
+    CpuEmulatorHelper cpu,
+    CpuEmulatorState s,
+    CpuEmulatorProcessor p,
+    ushort addr,
+    ref byte cvalue)
 {
     private ref byte value = ref cvalue;
 
@@ -79,7 +85,7 @@ internal ref struct CpuEmulatorExecutor(CpuEmulatorHelper cpu, CpuEmulatorState 
         cpu.PushWord(s.PC);
         cpu.Push((byte)(s.SR | CpuStatus.Break | CpuStatus.Unused));
         s.Interrupt = true;
-        s.PC = cpu.ReadWord(0xFFFE);
+        s.PC = m.Word(0xFFFE);
     }
 
     internal readonly void Jsr()
