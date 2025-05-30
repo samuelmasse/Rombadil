@@ -1,6 +1,6 @@
 namespace Rombadil.Cpu.Emulator;
 
-internal class CpuEmulatorProcessor(CpuEmulatorState s)
+internal readonly struct CpuEmulatorProcessor(CpuEmulatorState s, CpuEmulatorMemory m)
 {
     internal byte AC
     {
@@ -89,6 +89,37 @@ internal class CpuEmulatorProcessor(CpuEmulatorState s)
         s.Carry = LowBitSet(value);
         SetZN(res);
         return res;
+    }
+
+    internal void Push(byte value) => m[(ushort)(0x0100 + s.SP--)] = value;
+    internal byte Pop() => m[(ushort)(0x0100 + ++s.SP)];
+
+    internal void PushWord(ushort value)
+    {
+        Push((byte)((value >> 8) & 0xFF));
+        Push((byte)(value & 0xFF));
+    }
+
+    internal ushort PopWord()
+    {
+        byte low = Pop();
+        byte high = Pop();
+        return (ushort)(low | (high << 8));
+    }
+
+    internal void Branch(bool condition)
+    {
+        sbyte offset = (sbyte)m[(ushort)(s.PC - 1)];
+        if (!condition)
+            return;
+
+        s.Cycles++;
+
+        ushort originalPC = s.PC;
+        s.PC = (ushort)(s.PC + offset);
+
+        if ((originalPC & 0xFF00) != (s.PC & 0xFF00))
+            s.Cycles++;
     }
 
     private bool HighBitSet(byte value) => (value & 0b1000_0000) != 0;

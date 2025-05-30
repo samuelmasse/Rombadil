@@ -1,6 +1,6 @@
 namespace Rombadil.Cpu.Emulator;
 
-internal class CpuEmulatorState
+public class CpuEmulatorState
 {
     private CpuEmulatorRegisters reg;
     private long cycles;

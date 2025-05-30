@@ -1,12 +1,10 @@
 namespace Rombadil.Cpu.Emulator;
 
-internal class CpuEmulatorTimings
+internal static class CpuEmulatorTimings
 {
-    private readonly Dictionary<(CpuInstruction, CpuAddressingMode), (byte, byte)> timings = [];
+    private readonly static Dictionary<(CpuInstruction, CpuAddressingMode), (byte, byte)> timings = [];
 
-    internal (byte, byte) this[CpuInstruction op, CpuAddressingMode mode] => timings[(op, mode)];
-
-    internal CpuEmulatorTimings()
+    static CpuEmulatorTimings()
     {
         Register(CpuInstruction.ADC,
             (CpuAddressingMode.Immediate, 2, 0),
@@ -235,7 +233,9 @@ internal class CpuEmulatorTimings
         );
     }
 
-    private void Register(CpuInstruction instr, params (CpuAddressingMode, byte, byte)[] variants)
+    internal static (byte, byte) Get(CpuInstruction op, CpuAddressingMode mode) => timings[(op, mode)];
+
+    private static void Register(CpuInstruction instr, params (CpuAddressingMode, byte, byte)[] variants)
     {
         foreach (var (mode, cycles, pagePenalty) in variants)
             timings.Add((instr, mode), (cycles, pagePenalty));

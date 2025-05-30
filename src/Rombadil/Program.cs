@@ -15,9 +15,10 @@ var prgArea = bytes.AsSpan().Slice(0x8000, 0x4000);
 var prgRom = rom.AsSpan().Slice(0x10, 0x4000);
 prgRom.CopyTo(prgArea);
 
+var state = new CpuEmulatorState();
 var memory = new CpuEmulatorMemory(bytes, map);
-var cpu = new CpuEmulator6502(memory);
-var logger = new CpuEmulatorLogger(memory, cpu);
+var cpu = new CpuEmulator6502(state, memory);
+var logger = new CpuEmulatorLogger(state, memory, cpu);
 cpu.Reset(0xC000);
 
 var log = File.ReadAllLines("nestest.log");

@@ -1,14 +1,8 @@
 namespace Rombadil.Cpu.Emulator;
 
-internal ref struct CpuEmulatorExecutor(
-    CpuEmulatorMemory m,
-    CpuEmulatorHelper cpu,
-    CpuEmulatorState s,
-    CpuEmulatorProcessor p,
-    ushort addr,
-    ref byte cvalue)
+internal ref struct CpuEmulatorExecutor(CpuEmulatorState s, CpuEmulatorMemory m, CpuEmulatorProcessor p, ushort addr, ref byte v)
 {
-    private ref byte value = ref cvalue;
+    private ref byte value = ref v;
 
     internal void Asl() => value = p.ShiftLeft(value);
     internal void Lsr() => value = p.ShiftRight(value);
@@ -32,14 +26,14 @@ internal ref struct CpuEmulatorExecutor(
 
     internal readonly void Adc() => p.AC = p.AddWithCarry(value);
     internal readonly void And() => p.AC &= value;
-    internal readonly void Bpl() => cpu.Branch(!s.Negative);
-    internal readonly void Bmi() => cpu.Branch(s.Negative);
-    internal readonly void Bvc() => cpu.Branch(!s.Overflow);
-    internal readonly void Bvs() => cpu.Branch(s.Overflow);
-    internal readonly void Bcc() => cpu.Branch(!s.Carry);
-    internal readonly void Bcs() => cpu.Branch(s.Carry);
-    internal readonly void Bne() => cpu.Branch(!s.Zero);
-    internal readonly void Beq() => cpu.Branch(s.Zero);
+    internal readonly void Bpl() => p.Branch(!s.Negative);
+    internal readonly void Bmi() => p.Branch(s.Negative);
+    internal readonly void Bvc() => p.Branch(!s.Overflow);
+    internal readonly void Bvs() => p.Branch(s.Overflow);
+    internal readonly void Bcc() => p.Branch(!s.Carry);
+    internal readonly void Bcs() => p.Branch(s.Carry);
+    internal readonly void Bne() => p.Branch(!s.Zero);
+    internal readonly void Beq() => p.Branch(s.Zero);
     internal readonly void Cmp() => p.Compare(p.AC, value);
     internal readonly void Cpx() => p.Compare(p.X, value);
     internal readonly void Cpy() => p.Compare(p.Y, value);
@@ -65,12 +59,12 @@ internal ref struct CpuEmulatorExecutor(
     internal readonly void Inx() => p.X++;
     internal readonly void Dey() => p.Y--;
     internal readonly void Iny() => p.Y++;
-    internal readonly void Rts() => s.PC = (ushort)(cpu.PopWord() + 1);
+    internal readonly void Rts() => s.PC = (ushort)(p.PopWord() + 1);
     internal readonly void Sbc() => p.AC = p.SubWithBorrow(value);
     internal readonly void Txs() => s.SP = p.X;
     internal readonly void Tsx() => p.X = s.SP;
-    internal readonly void Pha() => cpu.Push(p.AC);
-    internal readonly void Pla() => p.AC = cpu.Pop();
+    internal readonly void Pha() => p.Push(p.AC);
+    internal readonly void Pla() => p.AC = p.Pop();
 
     internal readonly void Bit()
     {
@@ -82,34 +76,34 @@ internal ref struct CpuEmulatorExecutor(
     internal readonly void Brk()
     {
         s.PC++;
-        cpu.PushWord(s.PC);
-        cpu.Push((byte)(s.SR | CpuStatus.Break | CpuStatus.Unused));
+        p.PushWord(s.PC);
+        p.Push((byte)(s.SR | CpuStatus.Break | CpuStatus.Unused));
         s.Interrupt = true;
         s.PC = m.Word(0xFFFE);
     }
 
     internal readonly void Jsr()
     {
-        cpu.PushWord((ushort)(s.PC - 1));
+        p.PushWord((ushort)(s.PC - 1));
         s.PC = addr;
     }
 
     internal readonly void Rti()
     {
-        byte flags = cpu.Pop();
+        byte flags = p.Pop();
         s.SR = (CpuStatus)((flags & ~(byte)CpuStatus.Break) | (byte)CpuStatus.Unused);
-        s.PC = cpu.PopWord();
+        s.PC = p.PopWord();
     }
 
     internal readonly void Php()
     {
         byte flags = (byte)(s.SR | CpuStatus.Break | CpuStatus.Unused);
-        cpu.Push(flags);
+        p.Push(flags);
     }
 
     internal readonly void Plp()
     {
-        byte flags = cpu.Pop();
+        byte flags = p.Pop();
         s.SR = (CpuStatus)((flags & ~(byte)CpuStatus.Break) | (byte)CpuStatus.Unused);
     }
 }

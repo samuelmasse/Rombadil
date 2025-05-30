@@ -1,10 +1,10 @@
 namespace Rombadil.Cpu.Emulator;
 
-public class CpuEmulatorLogger(CpuEmulatorMemory memory, CpuEmulator6502 cpu)
+public class CpuEmulatorLogger(CpuEmulatorState state, CpuEmulatorMemory memory, CpuEmulator6502 cpu)
 {
     public string Log()
     {
-        var reg = cpu.Reg;
+        var reg = state.Reg;
         var opcode = (CpuOpcode)memory[reg.PC];
         var low = memory[(ushort)(reg.PC + 1)];
         var high = memory[(ushort)(reg.PC + 2)];
@@ -19,7 +19,7 @@ public class CpuEmulatorLogger(CpuEmulatorMemory memory, CpuEmulator6502 cpu)
             (illegalInstruction, mode) = illegal;
         else return string.Empty;
 
-        var (addr, baseAddr) = cpu.Helper.Resolve((ushort)(reg.PC + 1), mode);
+        var (addr, baseAddr) = cpu.Addr((ushort)(reg.PC + 1), mode);
 
         string operand = string.Empty;
 
@@ -70,13 +70,13 @@ public class CpuEmulatorLogger(CpuEmulatorMemory memory, CpuEmulator6502 cpu)
                 directOp += $" {high:X2}";
         }
 
-        long totalPpuCycles = cpu.Cycles * 3;
+        long totalPpuCycles = state.Cycles * 3;
         long scanline = totalPpuCycles / 341;
         long dot = totalPpuCycles % 341;
 
         string ppuText = $"PPU:{scanline,3},{dot,3}";
         return string.Format("{0:X4}  {1, -8} {2, -33}A:{3:X2} X:{4:X2} Y:{5:X2} P:{6:X2} SP:{7:X2} {8} CYC:{9}",
-            reg.PC, directOp, dissassemble, reg.AC, reg.X, reg.Y, (byte)reg.SR, reg.SP, ppuText, cpu.Cycles);
+            reg.PC, directOp, dissassemble, reg.AC, reg.X, reg.Y, (byte)reg.SR, reg.SP, ppuText, state.Cycles);
     }
 
     private static bool ShouldShowMemoryValue(CpuInstruction instruction)
@@ -92,5 +92,4 @@ public class CpuEmulatorLogger(CpuEmulatorMemory memory, CpuEmulator6502 cpu)
             CpuAddressingMode.Absolute or CpuAddressingMode.AbsoluteX or CpuAddressingMode.AbsoluteY or
             CpuAddressingMode.IndirectX or CpuAddressingMode.IndirectY;
     }
-
 }

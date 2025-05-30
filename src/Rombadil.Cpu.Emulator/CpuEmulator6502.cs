@@ -1,31 +1,10 @@
 namespace Rombadil.Cpu.Emulator;
 
-public class CpuEmulator6502
+public class CpuEmulator6502(CpuEmulatorState state, CpuEmulatorMemory memory)
 {
-    private readonly CpuEmulatorMemory memory;
-    private readonly CpuEmulatorState state;
-    private readonly CpuEmulatorProcessor processor;
-    private readonly CpuEmulatorHelper helper;
-    private readonly CpuEmulatorTimings timings;
-    private readonly CpuEmulatorIllegalTimings illegalTimings;
-
-    public CpuEmulatorRegisters Reg => state.Reg;
-    public long Cycles => state.Cycles;
-    internal CpuEmulatorHelper Helper => helper;
-
-    public CpuEmulator6502(CpuEmulatorMemory memory)
-    {
-        this.memory = memory;
-        state = new();
-        processor = new(state);
-        helper = new(state, memory);
-        timings = new();
-        illegalTimings = new();
-    }
-
     public void Reset(ushort? pc = null)
     {
-        state.PC = pc ?? (ushort)(memory[0xFFFC] | (memory[0xFFFD] << 8));
+        state.PC = pc ?? memory.Word(0xFFFC);
 
         state.AC = 0;
         state.X = 0;
@@ -56,8 +35,8 @@ public class CpuEmulator6502
 
     private void Step(CpuInstruction instruction, CpuAddressingMode mode)
     {
-        var addr = Step(timings[instruction, mode], mode);
-        var exec = new CpuEmulatorExecutor(memory, helper, state, processor, addr,
+        var addr = Step(CpuEmulatorTimings.Get(instruction, mode), mode);
+        var exec = new CpuEmulatorExecutor(state, memory, new(state, memory), addr,
             ref mode == CpuAddressingMode.Accumulator ? ref state.AC : ref memory[addr]);
 
         switch (instruction)
@@ -123,27 +102,27 @@ public class CpuEmulator6502
 
     private void Step(CpuEmulatorIllegalInstruction instruction, CpuAddressingMode mode)
     {
-        var addr = Step(illegalTimings[instruction, mode], mode);
-        var ixec = new CpuEmulatorIllegalExecutor(memory, helper, state, processor, addr, ref memory[addr]);
+        var addr = Step(CpuEmulatorIllegalTimings.Get(instruction, mode), mode);
+        var exec = new CpuEmulatorIllegalExecutor(new(state, memory), ref memory[addr]);
 
         switch (instruction)
         {
-            case CpuEmulatorIllegalInstruction.NOP: ixec.Nop(); break;
-            case CpuEmulatorIllegalInstruction.LAX: ixec.Lax(); break;
-            case CpuEmulatorIllegalInstruction.SAX: ixec.Sax(); break;
-            case CpuEmulatorIllegalInstruction.SBC: ixec.Sbc(); break;
-            case CpuEmulatorIllegalInstruction.DCP: ixec.Dcp(); break;
-            case CpuEmulatorIllegalInstruction.ISB: ixec.Isb(); break;
-            case CpuEmulatorIllegalInstruction.SLO: ixec.Slo(); break;
-            case CpuEmulatorIllegalInstruction.RLA: ixec.Rla(); break;
-            case CpuEmulatorIllegalInstruction.SRE: ixec.Sre(); break;
-            case CpuEmulatorIllegalInstruction.RRA: ixec.Rra(); break;
+            case CpuEmulatorIllegalInstruction.NOP: exec.Nop(); break;
+            case CpuEmulatorIllegalInstruction.LAX: exec.Lax(); break;
+            case CpuEmulatorIllegalInstruction.SAX: exec.Sax(); break;
+            case CpuEmulatorIllegalInstruction.SBC: exec.Sbc(); break;
+            case CpuEmulatorIllegalInstruction.DCP: exec.Dcp(); break;
+            case CpuEmulatorIllegalInstruction.ISB: exec.Isb(); break;
+            case CpuEmulatorIllegalInstruction.SLO: exec.Slo(); break;
+            case CpuEmulatorIllegalInstruction.RLA: exec.Rla(); break;
+            case CpuEmulatorIllegalInstruction.SRE: exec.Sre(); break;
+            case CpuEmulatorIllegalInstruction.RRA: exec.Rra(); break;
         }
     }
 
-    internal ushort Step((byte, byte) timing, CpuAddressingMode mode)
+    private ushort Step((byte, byte) timing, CpuAddressingMode mode)
     {
-        var (addr, baseAddr) = helper.Resolve(state.PC, mode);
+        var (addr, baseAddr) = Addr(state.PC, mode);
         var (cycles, pagePenalty) = timing;
 
         state.PC += (ushort)CpuAddressingModeSize.Get(mode);
@@ -153,5 +132,20 @@ public class CpuEmulator6502
 
         return addr;
     }
+
+    public (ushort, ushort) Addr(ushort pc, CpuAddressingMode mode) => mode switch
+    {
+        CpuAddressingMode.Immediate => (pc, pc),
+        CpuAddressingMode.ZeroPage => (memory[pc], memory[pc]),
+        CpuAddressingMode.ZeroPageX => ((byte)(memory[pc] + state.X), memory[pc]),
+        CpuAddressingMode.ZeroPageY => ((byte)(memory[pc] + state.Y), memory[pc]),
+        CpuAddressingMode.Absolute => (memory.Word(pc), memory.Word(pc)),
+        CpuAddressingMode.AbsoluteX => ((ushort)(memory.Word(pc) + state.X), memory.Word(pc)),
+        CpuAddressingMode.AbsoluteY => ((ushort)(memory.Word(pc) + state.Y), memory.Word(pc)),
+        CpuAddressingMode.Indirect => (memory.WordPageWrap(memory.Word(pc)), memory.Word(pc)),
+        CpuAddressingMode.IndirectX => (memory.WordZP((byte)(memory[pc] + state.X)), memory[pc]),
+        CpuAddressingMode.IndirectY => ((ushort)(memory.WordZP(memory[pc]) + state.Y), memory.WordZP(memory[pc])),
+        _ => (0, 0)
+    };
 }
 
