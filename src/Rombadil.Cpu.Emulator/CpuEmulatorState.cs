@@ -5,59 +5,59 @@ public class CpuEmulatorState
     private CpuEmulatorRegisters reg;
     private long cycles;
 
-    internal ref CpuEmulatorRegisters Reg => ref reg;
-    internal ref long Cycles => ref cycles;
+    public ref CpuEmulatorRegisters Reg => ref reg;
+    public ref long Cycles => ref cycles;
 
-    internal ref ushort PC => ref reg.PC;
-    internal ref byte AC => ref reg.AC;
-    internal ref byte X => ref reg.X;
-    internal ref byte Y => ref reg.Y;
-    internal ref CpuStatus SR => ref reg.SR;
-    internal ref byte SP => ref reg.SP;
+    public ref ushort PC => ref reg.PC;
+    public ref byte AC => ref reg.AC;
+    public ref byte X => ref reg.X;
+    public ref byte Y => ref reg.Y;
+    public ref CpuStatus SR => ref reg.SR;
+    public ref byte SP => ref reg.SP;
 
-    internal bool Carry
+    public bool Carry
     {
         get => HasFlag(CpuStatus.Carry);
         set => SetFlag(CpuStatus.Carry, value);
     }
 
-    internal bool Zero
+    public bool Zero
     {
         get => HasFlag(CpuStatus.Zero);
         set => SetFlag(CpuStatus.Zero, value);
     }
 
-    internal bool Interrupt
+    public bool Interrupt
     {
         get => HasFlag(CpuStatus.Interrupt);
         set => SetFlag(CpuStatus.Interrupt, value);
     }
 
-    internal bool Decimal
+    public bool Decimal
     {
         get => HasFlag(CpuStatus.Decimal);
         set => SetFlag(CpuStatus.Decimal, value);
     }
 
-    internal bool Break
+    public bool Break
     {
         get => HasFlag(CpuStatus.Break);
         set => SetFlag(CpuStatus.Break, value);
     }
 
-    internal bool Unused
+    public bool Unused
     {
         get => HasFlag(CpuStatus.Unused);
         set => SetFlag(CpuStatus.Unused, value);
     }
 
-    internal bool Overflow
+    public bool Overflow
     {
         get => HasFlag(CpuStatus.Overflow);
         set => SetFlag(CpuStatus.Overflow, value);
     }
 
-    internal bool Negative
+    public bool Negative
     {
         get => HasFlag(CpuStatus.Negative);
         set => SetFlag(CpuStatus.Negative, value);

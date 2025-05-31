@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <AssemblyName>rmdl</AssemblyName>
+        <AssemblyName>em65</AssemblyName>
     </PropertyGroup>
 
     <ItemGroup>
@@ -11,12 +11,14 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Rombadil.Assembler\Rombadil.Assembler.csproj" />
+        <ProjectReference Include="..\Rombadil.Cpu.Emulator\Rombadil.Cpu.Emulator.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <Using Include="Rombadil.Assembler" />
+        <Using Include="Rombadil.Cpu" />
+        <Using Include="Rombadil.Cpu.Emulator" />
         <Using Include="System.CommandLine" />
+        <Using Include="System.CommandLine.Parsing" />
         <Using Include="Tomlyn" />
         <Using Include="Tomlyn.Model" />
     </ItemGroup>

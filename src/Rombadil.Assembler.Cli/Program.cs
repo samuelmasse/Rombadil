@@ -1,6 +1,3 @@
-using System.CommandLine;
-using Rombadil.Assembler;
-
 var inputArgument = new Argument<FileInfo>("input", "Input source file");
 var outputOption = new Option<FileInfo>(["--output", "-o"], "Output binary file");
 var configOption = new Option<FileInfo>(["--config", "-c"], "Config file");
@@ -14,7 +11,7 @@ var rootCommand = new RootCommand("Rombadil Assembler (rmdl)")
 
 int exitCode = 1;
 
-rootCommand.SetHandler((FileInfo input, FileInfo? output, FileInfo? config) =>
+rootCommand.SetHandler((input, output, config) =>
 {
     if (!input.Exists)
     {
