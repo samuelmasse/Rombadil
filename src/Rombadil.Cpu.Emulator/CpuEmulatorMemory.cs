@@ -6,5 +6,5 @@ public class CpuEmulatorMemory(Memory<byte> bytes, Memory<ushort> map)
 
     public ushort Word(ushort index) => (ushort)(this[index] | (this[(ushort)(index + 1)] << 8));
     public ushort WordZP(byte index) => (ushort)(this[index] | (this[(byte)(index + 1)] << 8));
-    public ushort WordPageWrap(ushort pc) => (ushort)(this[pc] | (this[(ushort)((pc & 0xFF00) | ((pc + 1) & 0x00FF))] << 8));
+    public ushort WordPageWrap(ushort index) => (ushort)(this[index] | (this[(ushort)((index & 0xFF00) | ((index + 1) & 0x00FF))] << 8));
 }

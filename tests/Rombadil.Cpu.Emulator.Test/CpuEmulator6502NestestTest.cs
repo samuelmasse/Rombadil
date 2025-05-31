@@ -1,7 +1,7 @@
 namespace Rombadil.Cpu.Emulator.Test;
 
 [TestClass]
-public sealed class CpuEmulator6502Nestest
+public sealed class CpuEmulator6502NestestTest
 {
     [TestMethod]
     public void Nestest()
