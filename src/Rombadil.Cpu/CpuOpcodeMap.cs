@@ -3,7 +3,7 @@ namespace Rombadil.Cpu;
 public static class CpuOpcodeMap
 {
     private static readonly Dictionary<(CpuInstruction, CpuAddressingMode), CpuOpcode> toOpcode = [];
-    private static readonly Dictionary<CpuOpcode, (CpuInstruction, CpuAddressingMode)> fromOpcode = [];
+    private static readonly (CpuInstruction, CpuAddressingMode)?[] fromOpcode = new (CpuInstruction, CpuAddressingMode)?[0x100];
 
     static CpuOpcodeMap()
     {
@@ -237,8 +237,12 @@ public static class CpuOpcodeMap
     public static bool TryEncodeOpcode(CpuInstruction op, CpuAddressingMode mode, out CpuOpcode opcode) =>
         toOpcode.TryGetValue((op, mode), out opcode);
 
-    public static bool TryDecodeOpcode(CpuOpcode opcode, out (CpuInstruction, CpuAddressingMode) decode) =>
-        fromOpcode.TryGetValue(opcode, out decode);
+    public static bool TryDecodeOpcode(CpuOpcode opcode, out (CpuInstruction, CpuAddressingMode) decode)
+    {
+        var val = fromOpcode[(byte)opcode];
+        decode = val.GetValueOrDefault();
+        return val != null;
+    }
 
     private static void Register(CpuInstruction instr, params (CpuAddressingMode mode, CpuOpcode opcode)[] variants)
     {
@@ -249,7 +253,7 @@ public static class CpuOpcodeMap
     private static void Register(CpuInstruction CpuInstruction, CpuAddressingMode mode, CpuOpcode opcode)
     {
         toOpcode[(CpuInstruction, mode)] = opcode;
-        fromOpcode[opcode] = (CpuInstruction, mode);
+        fromOpcode[(byte)opcode] = (CpuInstruction, mode);
     }
 }
 

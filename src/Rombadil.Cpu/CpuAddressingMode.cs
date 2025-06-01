@@ -1,6 +1,6 @@
 namespace Rombadil.Cpu;
 
-public enum CpuAddressingMode
+public enum CpuAddressingMode : byte
 {
     Implied,
     Accumulator,

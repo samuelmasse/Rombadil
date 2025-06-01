@@ -1,6 +1,6 @@
 namespace Rombadil.Cpu;
 
-public enum CpuInstruction
+public enum CpuInstruction : byte
 {
     ADC,
     AND,

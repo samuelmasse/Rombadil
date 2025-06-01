@@ -2,7 +2,7 @@ namespace Rombadil.Cpu.Emulator;
 
 internal static class CpuEmulatorIllegalTimings
 {
-    private readonly static Dictionary<(CpuEmulatorIllegalInstruction, CpuAddressingMode), (byte, byte)> timings = [];
+    private readonly static (byte, byte)[] timings = new (byte, byte)[0x10000];
 
     static CpuEmulatorIllegalTimings()
     {
@@ -94,11 +94,11 @@ internal static class CpuEmulatorIllegalTimings
         );
     }
 
-    internal static (byte, byte) Get(CpuEmulatorIllegalInstruction op, CpuAddressingMode mode) => timings[(op, mode)];
+    internal static (byte, byte) Get(CpuEmulatorIllegalInstruction op, CpuAddressingMode mode) => timings[(byte)op << 8 | (byte)mode];
 
     private static void Register(CpuEmulatorIllegalInstruction instr, params (CpuAddressingMode, byte, byte)[] variants)
     {
         foreach (var (mode, cycles, pagePenalty) in variants)
-            timings[(instr, mode)] = (cycles, pagePenalty);
+            timings[(byte)instr << 8 | (byte)mode] = (cycles, pagePenalty);
     }
 }

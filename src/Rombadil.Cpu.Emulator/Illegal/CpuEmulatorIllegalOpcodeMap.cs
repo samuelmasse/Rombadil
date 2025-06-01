@@ -2,7 +2,8 @@ namespace Rombadil.Cpu.Emulator;
 
 public static class CpuEmulatorIllegalOpcodeMap
 {
-    private static readonly Dictionary<CpuEmulatorIllegalOpcode, (CpuEmulatorIllegalInstruction, CpuAddressingMode)> fromOpcode = [];
+    private static readonly (CpuEmulatorIllegalInstruction, CpuAddressingMode)?[] fromOpcode =
+        new (CpuEmulatorIllegalInstruction, CpuAddressingMode)?[0x100];
 
     static CpuEmulatorIllegalOpcodeMap()
     {
@@ -120,12 +121,16 @@ public static class CpuEmulatorIllegalOpcodeMap
         );
     }
 
-    public static bool TryDecodeOpcode(CpuEmulatorIllegalOpcode opcode, out (CpuEmulatorIllegalInstruction, CpuAddressingMode) decode) =>
-        fromOpcode.TryGetValue(opcode, out decode);
+    public static bool TryDecodeOpcode(CpuEmulatorIllegalOpcode opcode, out (CpuEmulatorIllegalInstruction, CpuAddressingMode) decode)
+    {
+        var val = fromOpcode[(byte)opcode];
+        decode = val.GetValueOrDefault();
+        return val != null;
+    }
 
     private static void Register(CpuEmulatorIllegalInstruction instr, params (CpuAddressingMode, CpuEmulatorIllegalOpcode)[] variants)
     {
         foreach (var (mode, opcode) in variants)
-            fromOpcode[opcode] = (instr, mode);
+            fromOpcode[(byte)opcode] = (instr, mode);
     }
 }

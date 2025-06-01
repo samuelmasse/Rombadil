@@ -9,4 +9,10 @@
         <ProjectReference Include="..\Rombadil.Cpu.Emulator\Rombadil.Cpu.Emulator.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <None Update="nestest.nes">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
 </Project>

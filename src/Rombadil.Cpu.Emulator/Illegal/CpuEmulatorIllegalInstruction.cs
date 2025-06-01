@@ -1,6 +1,6 @@
 namespace Rombadil.Cpu.Emulator;
 
-public enum CpuEmulatorIllegalInstruction
+public enum CpuEmulatorIllegalInstruction : byte
 {
     NOP,
     LAX,
