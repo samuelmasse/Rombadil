@@ -1,6 +1,6 @@
 namespace Rombadil.Cpu.Emulator;
 
-public class CpuEmulator6502(CpuEmulatorState state, CpuEmulatorMemory memory)
+public class CpuEmulator6502(CpuEmulatorState state, CpuEmulatorMemory memory, CpuEmulatorMemoryBus bus)
 {
     public void Reset(ushort? pc = null)
     {
@@ -33,11 +33,23 @@ public class CpuEmulator6502(CpuEmulatorState state, CpuEmulatorMemory memory)
         else throw new Exception();
     }
 
+    public void Nmi()
+    {
+        var s = state;
+        var p = new CpuEmulatorProcessor(state, memory);
+        var m = memory;
+
+        p.PushWord(s.PC);
+        p.Push((byte)(s.SR & ~CpuStatus.Break | CpuStatus.Unused));
+        s.Interrupt = true;
+        s.PC = m.Word(0xFFFA);
+        s.Cycles += 7;
+    }
+
     private void Step(CpuInstruction instruction, CpuAddressingMode mode)
     {
         var addr = Step(CpuEmulatorTimings.Get(instruction, mode), mode);
-        var exec = new CpuEmulatorExecutor(state, memory, new(state, memory), addr,
-            ref mode == CpuAddressingMode.Accumulator ? ref state.AC : ref memory[addr]);
+        var exec = new CpuEmulatorExecutor(state, memory, new(state, memory), new(state, bus, addr, mode));
 
         switch (instruction)
         {
@@ -103,7 +115,7 @@ public class CpuEmulator6502(CpuEmulatorState state, CpuEmulatorMemory memory)
     private void Step(CpuEmulatorIllegalInstruction instruction, CpuAddressingMode mode)
     {
         var addr = Step(CpuEmulatorIllegalTimings.Get(instruction, mode), mode);
-        var exec = new CpuEmulatorIllegalExecutor(new(state, memory), ref memory[addr]);
+        var exec = new CpuEmulatorIllegalExecutor(new(state, memory), new(state, bus, addr, mode));
 
         switch (instruction)
         {

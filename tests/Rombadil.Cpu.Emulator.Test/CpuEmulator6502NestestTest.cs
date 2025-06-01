@@ -27,7 +27,7 @@ public sealed class CpuEmulator6502NestestTest
 
         var state = new CpuEmulatorState();
         var memory = new CpuEmulatorMemory(bytes, map);
-        var cpu = new CpuEmulator6502(state, memory);
+        var cpu = new CpuEmulator6502(state, memory, new(memory));
         var logger = new CpuEmulatorLogger(state, memory, cpu);
         cpu.Reset(0xC000);
 

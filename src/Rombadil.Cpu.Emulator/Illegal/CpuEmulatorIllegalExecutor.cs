@@ -1,54 +1,47 @@
 namespace Rombadil.Cpu.Emulator;
 
-internal ref struct CpuEmulatorIllegalExecutor(CpuEmulatorProcessor p, ref byte v)
+internal readonly struct CpuEmulatorIllegalExecutor(CpuEmulatorProcessor p, CpuEmulatorOperand op)
 {
-    private ref byte value = ref v;
-
-    internal void Sax() => value = (byte)(p.AC & p.X);
-
-    internal void Dcp()
-    {
-        value--;
-        p.Compare(p.AC, value);
-    }
-
-    internal void Isb()
-    {
-        value++;
-        p.AC = p.SubWithBorrow(value);
-    }
+    internal void Sax() => op.V = (byte)(p.AC & p.X);
+    internal void Dcp() => p.Compare(p.AC, --op.V);
+    internal void Isb() => p.AC = p.SubWithBorrow(++op.V);
 
     internal void Slo()
     {
-        value = p.ShiftLeft(value);
-        p.AC |= value;
+        byte v = p.ShiftLeft(op.V);
+        op.V = v;
+        p.AC |= v;
     }
 
     internal void Rla()
     {
-        value = p.RotateLeft(value);
-        p.AC &= value;
+        byte v = p.RotateLeft(op.V);
+        op.V = v;
+        p.AC &= v;
     }
 
     internal void Sre()
     {
-        value = p.ShiftRight(value);
-        p.AC ^= value;
+        byte v = p.ShiftRight(op.V);
+        op.V = v;
+        p.AC ^= v;
     }
 
     internal void Rra()
     {
-        value = p.RotateRight(value);
-        p.AC = p.AddWithCarry(value);
+        byte v = p.RotateRight(op.V);
+        op.V = v;
+        p.AC = p.AddWithCarry(v);
     }
 
-    internal readonly void Sbc() => p.AC = p.SubWithBorrow(value);
+    internal void Sbc() => p.AC = p.SubWithBorrow(op.V);
 
-    internal readonly void Nop() { }
+    internal void Nop() { }
 
-    internal readonly void Lax()
+    internal void Lax()
     {
-        p.AC = value;
-        p.X = value;
+        byte v = op.V;
+        p.AC = v;
+        p.X = v;
     }
 }

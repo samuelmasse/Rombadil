@@ -166,7 +166,7 @@ rootCommand.SetHandler((input, start, length, mem, pc, remap, byteValues, wordVa
 
     var state = new CpuEmulatorState();
     var memory = new CpuEmulatorMemory(bytes, map);
-    var cpu = new CpuEmulator6502(state, memory);
+    var cpu = new CpuEmulator6502(state, memory, new(memory));
     var logger = new CpuEmulatorLogger(state, memory, cpu);
 
     foreach (var value in byteValues)
