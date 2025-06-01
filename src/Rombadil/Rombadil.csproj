@@ -5,6 +5,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="OpenTK" Version="4.9.4" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\Rombadil.Assembler\Rombadil.Assembler.csproj" />
         <ProjectReference Include="..\Rombadil.Cpu.Emulator\Rombadil.Cpu.Emulator.csproj" />
     </ItemGroup>
@@ -13,6 +17,19 @@
         <None Update="nestest.nes">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <None Update="Shader.frag">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Shader.vert">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="OpenTK.Graphics.OpenGL4" />
+        <Using Include="OpenTK.Mathematics" />
+        <Using Include="OpenTK.Windowing.Common" />
+        <Using Include="OpenTK.Windowing.Desktop" />
     </ItemGroup>
 
 </Project>

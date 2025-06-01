@@ -1,6 +1,25 @@
-using Rombadil.Assembler;
-using Rombadil.Cpu.Emulator;
+using Rombadil;
 
+var pixels = new Pixels((256, 240));
+using var canvas = new Canvas(pixels);
+
+int s = 0;
+canvas.Render += (delta) =>
+{
+    for (int i = 0; i < 1000; i++)
+    {
+        s++;
+        pixels[s % pixels.Data.Length] = (byte)(s % 255);
+        s++;
+        pixels[s % pixels.Data.Length] = (byte)(s % 255);
+        s++;
+        pixels[s % pixels.Data.Length] = (byte)(s % 255);
+    }
+};
+
+canvas.Run();
+
+/*
 var bytes = new byte[0x10000];
 for (int i = 0; i <= 0x17; i++)
     bytes[0x4000 + i] = 0xFF;
@@ -55,3 +74,4 @@ while (true)
         lastElapsedMs = stopwatch.ElapsedMilliseconds;
     }
 }
+*/
