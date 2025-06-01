@@ -23,11 +23,14 @@ public class Canvas : IDisposable
         int correctedWidth = (int)(pixels.Size.X * ntscPixelAspect) * scale;
         int correctedHeight = pixels.Size.Y * scale;
 
-        window = new GameWindow(new(), new()
+        window = new(new(), new()
         {
             Title = "Rombadil",
-            ClientSize = (correctedWidth, correctedHeight)
-        });
+            ClientSize = (correctedWidth, correctedHeight),
+        })
+        {
+            UpdateFrequency = 60
+        };
 
         window.Load += () =>
         {
@@ -56,7 +59,7 @@ public class Canvas : IDisposable
 
         GL.BindTexture(TextureTarget.Texture2D, texture);
         GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, pixels.Size.X, pixels.Size.Y,
-                         PixelFormat.Rgb, PixelType.UnsignedByte, pixels.Data);
+            PixelFormat.Rgb, PixelType.UnsignedByte, pixels.Data);
 
         GL.UseProgram(program);
         GL.BindVertexArray(vao);
@@ -134,7 +137,7 @@ public class Canvas : IDisposable
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
 
         GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb,
-                      pixels.Size.X, pixels.Size.Y, 0, PixelFormat.Rgb, PixelType.UnsignedByte, pixels.Data);
+            pixels.Size.X, pixels.Size.Y, 0, PixelFormat.Rgb, PixelType.UnsignedByte, pixels.Data);
     }
 
     public void Dispose() => window.Dispose();
