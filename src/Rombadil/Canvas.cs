@@ -54,6 +54,7 @@ public class Canvas : IDisposable
     }
 
     public bool IsKeyDown(Keys keys) => window.IsKeyDown(keys);
+    public bool IsKeyPressed(Keys keys) => window.IsKeyPressed(keys);
 
     private void Present()
     {

@@ -36,6 +36,25 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
     public byte Ctrl => ctrl;
     public ref int Cycles => ref cycles;
 
+    public void Reset()
+    {
+        cycles = 0;
+        cycle = 0;
+        scanline = 0;
+        writeToggle = false;
+        v = 0;
+        t = 0;
+        x = 0;
+        ctrl = 0;
+        mask = 0;
+        status = 0;
+        buffer = 0;
+        oamAddr = 0;
+        Array.Clear(vram, 0, vram.Length);
+        Array.Clear(palette, 0, palette.Length);
+        Array.Clear(oam, 0, oam.Length);
+    }
+
     public bool Step()
     {
         bool triggerNmi = false;
@@ -57,6 +76,9 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
             RenderPixel(cycle - 1, scanline);
             RenderSpritePixel(cycle - 1, scanline);
         }
+
+        if (scanline < 240 && cycle == 257 && (mask & 0x18) != 0)
+            v = (ushort)((v & 0xFBE0) | (t & 0x041F));
 
         cycle++;
         cycles++;
@@ -100,27 +122,30 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
 
     public void WriteOam(int index, byte value) => oam[index] = value;
 
-    private void RenderPixel(int x, int y)
+    private void RenderPixel(int xScreen, int yScreen)
     {
-        int tileX = x / 8;
-        int tileY = y / 8;
+        int scrolledX = (xScreen + x) & 0x1FF;
+        int coarseX = (v & 0x1F) + (scrolledX >> 3);
+        int fineX = 7 - (scrolledX & 0x07);
 
-        int nametableBase = 0x2000 + 0x400 * (ctrl & 0x03);
-        int attrTableBase = nametableBase + 0x3C0;
+        int tileX = coarseX & 0x1F;
+        int nametableX = ((v >> 10) & 0x01) ^ ((coarseX >> 5) & 0x01);
+        int nametableBase = 0x2000 + nametableX * 0x400;
+
+        int tileY = yScreen / 8;
+        int fineY = yScreen % 8;
 
         int tileIndex = ReadPpuMemory((ushort)(nametableBase + tileY * 32 + tileX));
-
         int patternTableBase = (ctrl & 0x10) != 0 ? 0x1000 : 0x0000;
         int tileAddr = patternTableBase + tileIndex * 16;
-        int fineY = y % 8;
+
         byte plane0 = chrRom.Span[tileAddr + fineY];
         byte plane1 = chrRom.Span[tileAddr + fineY + 8];
 
-        int fineX = 7 - (x % 8);
         int bit0 = (plane0 >> fineX) & 1;
         int bit1 = (plane1 >> fineX) & 1;
         int colorIndex = (bit1 << 1) | bit0;
-        bgOpaque[y, x] = colorIndex != 0;
+        bgOpaque[yScreen, xScreen] = colorIndex != 0;
 
         int paletteNum = 0;
         if (colorIndex != 0)
@@ -128,7 +153,7 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
             int attrX = tileX / 4;
             int attrY = tileY / 4;
             int attrIndex = attrY * 8 + attrX;
-            byte attr = ReadPpuMemory((ushort)(attrTableBase + attrIndex));
+            byte attr = ReadPpuMemory((ushort)(nametableBase + 0x3C0 + attrIndex));
 
             int shift = ((tileY % 4) / 2) * 4 + ((tileX % 4) / 2) * 2;
             paletteNum = (attr >> shift) & 0x03;
@@ -137,11 +162,12 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
         ushort paletteAddr = (ushort)(0x3F00 + (paletteNum << 2) + colorIndex);
         var (r, g, b) = ReadPaletteColor(paletteAddr);
 
-        int index = (y * 256 + x) * 3;
+        int index = (yScreen * 256 + xScreen) * 3;
         pixels[index + 0] = r;
         pixels[index + 1] = g;
         pixels[index + 2] = b;
     }
+
 
     private void RenderSpritePixel(int x, int y)
     {

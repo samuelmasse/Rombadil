@@ -27,16 +27,24 @@ var controller2 = new NesController();
 var bus = new NesMemoryBus(memory, state, ppu, controller1, controller2);
 var cpu = new CpuEmulator6502(state, memory, bus);
 var logger = new CpuEmulatorLogger(state, memory, cpu);
+var sw = Stopwatch.StartNew();
 
 cpu.Reset();
 
 canvas.Render += (delta) =>
 {
+    sw.Restart();
     NesButtons b = 0;
 
-    if (canvas.IsKeyDown(Keys.Z))
+    if (canvas.IsKeyDown(Keys.LeftControl) && canvas.IsKeyPressed(Keys.R))
+    {
+        ppu.Reset();
+        cpu.Reset();
+    }
+
+    if (canvas.IsKeyDown(Keys.S))
         b |= NesButtons.A;
-    if (canvas.IsKeyDown(Keys.X))
+    if (canvas.IsKeyDown(Keys.A))
         b |= NesButtons.B;
     if (canvas.IsKeyDown(Keys.W))
         b |= NesButtons.Start;
@@ -64,6 +72,8 @@ canvas.Render += (delta) =>
                 cpu.Nmi();
         }
     }
+
+    Console.WriteLine($"time {sw.Elapsed.TotalMilliseconds}");
 };
 
 canvas.Run();
