@@ -53,6 +53,8 @@ public class Canvas : IDisposable
         window.Run();
     }
 
+    public bool IsKeyDown(Keys keys) => window.IsKeyDown(keys);
+
     private void Present()
     {
         GL.Viewport(0, 0, window.ClientSize.X, window.ClientSize.Y);

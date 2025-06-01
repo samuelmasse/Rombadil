@@ -30,6 +30,9 @@
         <Using Include="OpenTK.Mathematics" />
         <Using Include="OpenTK.Windowing.Common" />
         <Using Include="OpenTK.Windowing.Desktop" />
+        <Using Include="OpenTK.Windowing.GraphicsLibraryFramework" />
+        <Using Include="Rombadil.Cpu" />
+        <Using Include="Rombadil.Cpu.Emulator" />
     </ItemGroup>
 
 </Project>

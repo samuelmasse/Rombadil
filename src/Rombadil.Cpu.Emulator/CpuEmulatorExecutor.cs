@@ -55,9 +55,10 @@ internal readonly struct CpuEmulatorExecutor(CpuEmulatorState s, CpuEmulatorMemo
 
     internal void Bit()
     {
-        s.Zero = (p.AC & op.V) == 0;
-        s.Negative = (op.V & 0b1000_0000) != 0;
-        s.Overflow = (op.V & 0b0100_0000) != 0;
+        var v = op.V;
+        s.Zero = (p.AC & v) == 0;
+        s.Negative = (v & 0b1000_0000) != 0;
+        s.Overflow = (v & 0b0100_0000) != 0;
     }
 
     internal void Brk()
