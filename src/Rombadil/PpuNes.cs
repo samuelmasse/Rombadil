@@ -232,9 +232,11 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
 
         int blockX = x / 16;
         int blockY = y / 16;
+        var list = spriteBlocks[blockY, blockX].Keys;
 
-        foreach (byte spriteIndex in spriteBlocks[blockY, blockX].Keys)
+        for (int i = list.Count - 1; i >= 0; i--)
         {
+            int spriteIndex = list[i];
             int baseIndex = spriteIndex * 4;
             int spriteY = oam[baseIndex + 0] + 1;
             byte tileIndex = oam[baseIndex + 1];
@@ -268,6 +270,10 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
 
                 if (spriteIndex == 0 && bgOpaque[y, x])
                     status |= 0x40;
+
+                bool behindBg = (attr & 0x20) != 0;
+                if (behindBg && bgOpaque[y, x])
+                    continue;
 
                 int paletteNum = attr & 0x03;
                 ushort paletteAddr = (ushort)(0x3F10 + (paletteNum << 2) + colorIndex);
