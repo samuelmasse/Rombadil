@@ -14,6 +14,10 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
         (204, 210, 120), (180, 222, 120), (168, 226, 144), (152, 226, 180), (160, 214, 228), (160, 162, 160), (0, 0, 0), (0, 0, 0)
     ];
 
+    private readonly SortedList<byte, byte>[,] spriteBlocks = new SortedList<byte, byte>[15, 16];
+    private readonly byte[] prevSpriteX = new byte[64];
+    private readonly byte[] prevSpriteY = new byte[64];
+
     private int cycles;
     private int cycle;
     private int scanline;
@@ -38,6 +42,10 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
 
     public void Reset()
     {
+        for (int y = 0; y < 15; y++)
+            for (int x = 0; x < 16; x++)
+                spriteBlocks[y, x] = new(32);
+
         cycles = 0;
         cycle = 0;
         scanline = 0;
@@ -111,7 +119,7 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
             case 1: mask = value; break;
             case 3: oamAddr = value; break;
             case 4:
-                oam[oamAddr] = value;
+                WriteOam(oamAddr, value);
                 oamAddr++;
                 break;
             case 5: WriteScroll(value); break;
@@ -120,7 +128,55 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
         }
     }
 
-    public void WriteOam(int index, byte value) => oam[index] = value;
+    public void WriteOam(int index, byte value)
+    {
+        int field = index % 4;
+        int sprite = index / 4;
+
+        if (field == 0 || field == 3)
+            RemoveSpriteFromBlocks(sprite);
+
+        oam[index] = value;
+
+        if (field == 0 || field == 3)
+            AddSpriteToBlocks(sprite);
+    }
+
+    private void AddSpriteToBlocks(int i)
+    {
+        int baseIndex = i * 4;
+        int spriteY = oam[baseIndex + 0] + 1;
+        int spriteX = oam[baseIndex + 3];
+
+        prevSpriteX[i] = (byte)spriteX;
+        prevSpriteY[i] = (byte)spriteY;
+
+        int bx0 = spriteX / 16;
+        int by0 = spriteY / 16;
+        int bx1 = (spriteX + 7) / 16;
+        int by1 = (spriteY + 7) / 16;
+
+        if (bx0 < 16 && by0 < 15) spriteBlocks[by0, bx0].Add((byte)i, 0); // top-left
+        if (bx1 < 16 && by0 < 15 && bx1 != bx0) spriteBlocks[by0, bx1].Add((byte)i, 0); // top-right
+        if (bx0 < 16 && by1 < 15 && by1 != by0) spriteBlocks[by1, bx0].Add((byte)i, 0); // bottom-left
+        if (bx1 < 16 && by1 < 15 && bx1 != bx0 && by1 != by0) spriteBlocks[by1, bx1].Add((byte)i, 0); // bottom-right
+    }
+
+    private void RemoveSpriteFromBlocks(int i)
+    {
+        int spriteX = prevSpriteX[i];
+        int spriteY = prevSpriteY[i];
+
+        int bx0 = spriteX / 16;
+        int by0 = spriteY / 16;
+        int bx1 = (spriteX + 7) / 16;
+        int by1 = (spriteY + 7) / 16;
+
+        if (bx0 < 16 && by0 < 15) spriteBlocks[by0, bx0].Remove((byte)i);
+        if (bx1 < 16 && by0 < 15 && bx1 != bx0) spriteBlocks[by0, bx1].Remove((byte)i);
+        if (bx0 < 16 && by1 < 15 && by1 != by0) spriteBlocks[by1, bx0].Remove((byte)i);
+        if (bx1 < 16 && by1 < 15 && bx1 != bx0 && by1 != by0) spriteBlocks[by1, bx1].Remove((byte)i);
+    }
 
     private void RenderPixel(int xScreen, int yScreen)
     {
@@ -174,9 +230,12 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
         if ((mask & 0x10) == 0)
             return;
 
-        for (int i = 0; i < 64; i++)
+        int blockX = x / 16;
+        int blockY = y / 16;
+
+        foreach (byte spriteIndex in spriteBlocks[blockY, blockX].Keys)
         {
-            int baseIndex = i * 4;
+            int baseIndex = spriteIndex * 4;
             int spriteY = oam[baseIndex + 0] + 1;
             byte tileIndex = oam[baseIndex + 1];
             byte attr = oam[baseIndex + 2];
@@ -207,7 +266,7 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
                 if (px != x)
                     continue;
 
-                if (i == 0 && bgOpaque[y, x])
+                if (spriteIndex == 0 && bgOpaque[y, x])
                     status |= 0x40;
 
                 int paletteNum = attr & 0x03;

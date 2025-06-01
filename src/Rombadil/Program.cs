@@ -30,6 +30,7 @@ var logger = new CpuEmulatorLogger(state, memory, cpu);
 var sw = Stopwatch.StartNew();
 
 cpu.Reset();
+ppu.Reset();
 
 canvas.Render += (delta) =>
 {
@@ -61,15 +62,19 @@ canvas.Render += (delta) =>
 
     controller1.SetButtons(b);
 
-    long cs = state.Cycles;
-    while (state.Cycles - cs < 29780)
+    bool nmiFired = false;
+    while (!nmiFired)
     {
         cpu.Step();
 
         while (ppu.Cycles < state.Cycles * 3)
         {
-            if (ppu.Step() && (ppu.Ctrl & 0x80) != 0)
-                cpu.Nmi();
+            if (ppu.Step())
+            {
+                if ((ppu.Ctrl & 0x80) != 0)
+                    cpu.Nmi();
+                nmiFired = true;
+            }
         }
     }
 
