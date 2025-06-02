@@ -45,6 +45,7 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
 
     private int nmiDelay = 0;
     private bool nmiPending;
+    private bool nmiSuppressed;
 
     public bool PendingNmi => nmiPending;
 
@@ -82,22 +83,25 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
         if (scanline == 241 && cycle == 1)
         {
             status |= 0x80;
-
             if ((ctrl & 0x80) != 0)
-                nmiDelay = 9; // Delay by ~15 PPU cycles (~5 CPU cycles)
+                nmiDelay = 9;
         }
 
         if (nmiDelay > 0)
         {
             nmiDelay--;
             if (nmiDelay == 0)
-                nmiPending = true;
+            {
+                if (!nmiSuppressed)
+                    nmiPending = true;
+            }
         }
 
         if (scanline == 261 && cycle == 1)
         {
             status &= 0x1F;
             writeToggle = false;
+            nmiSuppressed = false;
         }
 
         if (scanline < 240 && cycle > 0 && cycle <= 256)
@@ -331,6 +335,8 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
 
     private byte ReadStatus()
     {
+        if (scanline == 241 && cycle <= 3 && cycle > 0)
+            nmiSuppressed = true;
         byte result = (byte)(status & 0xE0);
         writeToggle = false;
         status &= 0x7F;
@@ -428,7 +434,7 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
         ctrl = value;
         t = (ushort)((t & 0xF3FF) | ((value & 0x03) << 10));
 
-        if (!prevNmiEnable && (ctrl & 0x80) != 0 && (status & 0x80) != 0)
+        if (!prevNmiEnable && (value & 0x80) != 0 && (scanline > 240 && !(scanline == 261 && cycle >= 1)))
             nmiDelay = 9;
     }
 
