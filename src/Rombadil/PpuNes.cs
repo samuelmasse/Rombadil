@@ -38,6 +38,7 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
     private byte x;
     private byte oamAddr;
     private int scheduledNmi = -1;
+    private bool evenFrame = true;
 
     public byte Ctrl => ctrl;
     public ref long Cycles => ref cycles;
@@ -119,7 +120,18 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
         if (cycle == 341)
         {
             cycle = 0;
+
+            if (scanline == 261)
+            {
+                bool renderingEnabled = (mask & 0x18) != 0;
+                if (evenFrame && renderingEnabled)
+                    cycle = 1;
+            }
+
             scanline = (scanline + 1) % 262;
+
+            if (scanline == 0)
+                evenFrame = !evenFrame;
         }
 
         if (scanline == 261 && cycle == 340)

@@ -3,7 +3,7 @@ using Rombadil;
 var pixels = new Pixels((256, 240));
 using var canvas = new Canvas(pixels);
 
-var rom = File.ReadAllBytes(@"C:\Users\Samuel\Documents\Repos\nes-test-roms\ppu_vbl_nmi\rom_singles\07-nmi_on_timing.nes");
+var rom = File.ReadAllBytes(@"C:\Users\Samuel\Documents\Repos\nes-test-roms\ppu_vbl_nmi\rom_singles\09-even_odd_frames.nes");
 // var rom = File.ReadAllBytes(@"C:\Users\Samuel\Desktop\NES\Super Mario Bros. (World).nes");
 
 
