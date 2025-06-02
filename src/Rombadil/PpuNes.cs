@@ -46,6 +46,7 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
 
     public ref long Cycles => ref cycles;
     public bool PendingNmi => nmiPending;
+    public byte OamAddr => oamAddr;
 
     public void Reset()
     {
@@ -181,6 +182,12 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
     }
 
     public void ClearPendingNmi() => nmiPending = false;
+
+    public void DmaCopy(Span<byte> source)
+    {
+        for (int i = 0; i < 256; i++)
+            oam[(oamAddr + i) & 0xFF] = source[i];
+    }
 
     private void AddSpriteToBlocks(int i)
     {

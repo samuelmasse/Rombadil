@@ -70,8 +70,8 @@ public class PpuVblNmiTest
 
     [TestMethod]
     public void EvenOddTiming() => RunTest("10-even_odd_timing",
-        """
-        08 07
+        $"""
+        08 07{' '}
         Clock is skipped too late, relative to enabling BG
 
         10-even_odd_timing

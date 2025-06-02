@@ -23,13 +23,12 @@ public class NesMemoryBus(
         if (addr == 0x4014)
         {
             ushort baseAddr = (ushort)(value << 8);
+            byte start = ppu.OamAddr;
             for (int i = 0; i < 256; i++)
             {
                 byte b = memory[(ushort)(baseAddr + i)];
-                ppu.WriteOam(i, b);
+                ppu.WriteOam((start + i) & 0xFF, b);
             }
-
-            state.Cycles += 513 + (state.Cycles % 2);
         }
         else if (addr == 0x4016)
             controller1.Write(value);
