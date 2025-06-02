@@ -37,24 +37,15 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
     private ushort t;
     private byte x;
     private byte oamAddr;
-    private int scheduledNmi = -1;
     private bool evenFrame = true;
-
-    public byte Ctrl => ctrl;
-    public ref long Cycles => ref cycles;
-    public ref int ScheduledNmi => ref scheduledNmi;
 
     private int nmiDelay = 0;
     private bool nmiPending;
     private bool nmiSuppressed;
     private bool vblankSuppressed;
 
+    public ref long Cycles => ref cycles;
     public bool PendingNmi => nmiPending;
-
-    public void ClearPendingNmi()
-    {
-        nmiPending = false;
-    }
 
     public void Reset()
     {
@@ -92,7 +83,7 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
             }
         }
 
-            if (nmiDelay > 0)
+        if (nmiDelay > 0)
         {
             nmiDelay--;
             if (nmiDelay == 0)
@@ -188,6 +179,8 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
         if (field == 0 || field == 3)
             AddSpriteToBlocks(sprite);
     }
+
+    public void ClearPendingNmi() => nmiPending = false;
 
     private void AddSpriteToBlocks(int i)
     {
