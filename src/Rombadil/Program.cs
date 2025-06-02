@@ -3,7 +3,9 @@ using Rombadil;
 var pixels = new Pixels((256, 240));
 using var canvas = new Canvas(pixels);
 
-var rom = File.ReadAllBytes(@"C:\Users\Samuel\Desktop\NES\Super Mario Bros. (World).nes");
+var rom = File.ReadAllBytes(@"C:\Users\Samuel\Documents\Repos\nes-test-roms\ppu_vbl_nmi\rom_singles\06-suppression.nes");
+// var rom = File.ReadAllBytes(@"C:\Users\Samuel\Desktop\NES\Super Mario Bros. (World).nes");
+
 
 var bytes = new byte[0x10000];
 for (int i = 0; i <= 0x17; i++)
@@ -67,9 +69,16 @@ canvas.Render += (delta) =>
     {
         cpu.Step();
 
+        if (ppu.PendingNmi)
+        {
+            cpu.Nmi();
+            ppu.ClearPendingNmi();
+        }
+
         while (ppu.Cycles < state.Cycles * 3)
         {
             var (post, nmi) = ppu.Step();
+
             if (nmi && (ppu.Ctrl & 0x80) != 0)
                 cpu.Nmi();
 
@@ -78,7 +87,7 @@ canvas.Render += (delta) =>
         }
     }
 
-    Console.WriteLine($"time {sw.Elapsed.TotalMilliseconds}");
+    // Console.WriteLine($"time {sw.Elapsed.TotalMilliseconds}");
 };
 
 canvas.Run();

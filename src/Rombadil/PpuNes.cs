@@ -37,9 +37,21 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
     private ushort t;
     private byte x;
     private byte oamAddr;
+    private int scheduledNmi = -1;
 
     public byte Ctrl => ctrl;
     public ref long Cycles => ref cycles;
+    public ref int ScheduledNmi => ref scheduledNmi;
+
+    private int nmiDelay = 0;
+    private bool nmiPending;
+
+    public bool PendingNmi => nmiPending;
+
+    public void ClearPendingNmi()
+    {
+        nmiPending = false;
+    }
 
     public void Reset()
     {
@@ -73,7 +85,16 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
         if (scanline == 241 && cycle == 1)
         {
             status |= 0x80;
-            nmi = true;
+
+            if ((ctrl & 0x80) != 0)
+                nmiDelay = 9; // Delay by ~15 PPU cycles (~5 CPU cycles)
+        }
+
+        if (nmiDelay > 0)
+        {
+            nmiDelay--;
+            if (nmiDelay == 0)
+                nmiPending = true;
         }
 
         if (scanline == 261 && cycle == 1)
@@ -407,8 +428,12 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
 
     private void WriteCtrl(byte value)
     {
+        bool prevNmiEnable = (ctrl & 0x80) != 0;
         ctrl = value;
         t = (ushort)((t & 0xF3FF) | ((value & 0x03) << 10));
+
+        if (!prevNmiEnable && (ctrl & 0x80) != 0 && (status & 0x80) != 0)
+            nmiDelay = 9;
     }
 
     private void WriteScroll(byte value)
