@@ -62,19 +62,19 @@ canvas.Render += (delta) =>
 
     controller1.SetButtons(b);
 
-    bool nmiFired = false;
-    while (!nmiFired)
+    bool done = false;
+    while (!done)
     {
         cpu.Step();
 
         while (ppu.Cycles < state.Cycles * 3)
         {
-            if (ppu.Step())
-            {
-                if ((ppu.Ctrl & 0x80) != 0)
-                    cpu.Nmi();
-                nmiFired = true;
-            }
+            var (post, nmi) = ppu.Step();
+            if (nmi && (ppu.Ctrl & 0x80) != 0)
+                cpu.Nmi();
+
+            if (post)
+                done = true;
         }
     }
 

@@ -14,11 +14,12 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
         (204, 210, 120), (180, 222, 120), (168, 226, 144), (152, 226, 180), (160, 214, 228), (160, 162, 160), (0, 0, 0), (0, 0, 0)
     ];
 
+    private readonly byte[] backBuffer = new byte[256 * 240 * 3];
     private readonly SortedList<byte, byte>[,] spriteBlocks = new SortedList<byte, byte>[15, 16];
     private readonly byte[] prevSpriteX = new byte[64];
     private readonly byte[] prevSpriteY = new byte[64];
 
-    private int cycles;
+    private long cycles;
     private int cycle;
     private int scanline;
     private readonly bool[,] bgOpaque = new bool[240, 256];
@@ -38,7 +39,7 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
     private byte oamAddr;
 
     public byte Ctrl => ctrl;
-    public ref int Cycles => ref cycles;
+    public ref long Cycles => ref cycles;
 
     public void Reset()
     {
@@ -58,19 +59,21 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
         status = 0;
         buffer = 0;
         oamAddr = 0;
-        Array.Clear(vram, 0, vram.Length);
-        Array.Clear(palette, 0, palette.Length);
-        Array.Clear(oam, 0, oam.Length);
+        Array.Clear(vram);
+        Array.Clear(palette);
+        Array.Clear(oam);
+        Array.Clear(backBuffer);
     }
 
-    public bool Step()
+    public (bool, bool) Step()
     {
-        bool triggerNmi = false;
+        bool nmi = false;
+        bool post = false;
 
         if (scanline == 241 && cycle == 1)
         {
             status |= 0x80;
-            triggerNmi = true;
+            nmi = true;
         }
 
         if (scanline == 261 && cycle == 1)
@@ -85,7 +88,7 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
             RenderSpritePixel(cycle - 1, scanline);
         }
 
-        if (scanline < 240 && cycle == 257 && (mask & 0x18) != 0)
+        if ((scanline < 240 || scanline == 261) && cycle == 257 && (mask & 0x18) != 0)
             v = (ushort)((v & 0xFBE0) | (t & 0x041F));
 
         cycle++;
@@ -97,7 +100,13 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
             scanline = (scanline + 1) % 262;
         }
 
-        return triggerNmi;
+        if (scanline == 261 && cycle == 340)
+        {
+            Array.Copy(backBuffer, pixels.Data, pixels.Data.Length);
+            post = true;
+        }
+
+        return (post, nmi);
     }
 
     public byte ReadRegister(ushort reg)
@@ -180,6 +189,12 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
 
     private void RenderPixel(int xScreen, int yScreen)
     {
+        if ((mask & 0x08) == 0)
+        {
+            bgOpaque[yScreen, xScreen] = false;
+            return;
+        }
+
         int scrolledX = (xScreen + x) & 0x1FF;
         int coarseX = (v & 0x1F) + (scrolledX >> 3);
         int fineX = 7 - (scrolledX & 0x07);
@@ -219,9 +234,9 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
         var (r, g, b) = ReadPaletteColor(paletteAddr);
 
         int index = (yScreen * 256 + xScreen) * 3;
-        pixels[index + 0] = r;
-        pixels[index + 1] = g;
-        pixels[index + 2] = b;
+        backBuffer[index + 0] = r;
+        backBuffer[index + 1] = g;
+        backBuffer[index + 2] = b;
     }
 
 
@@ -280,9 +295,9 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
                 var (r, g, b) = ReadPaletteColor(paletteAddr);
 
                 int index = (y * 256 + x) * 3;
-                pixels[index + 0] = r;
-                pixels[index + 1] = g;
-                pixels[index + 2] = b;
+                backBuffer[index + 0] = r;
+                backBuffer[index + 1] = g;
+                backBuffer[index + 2] = b;
             }
         }
     }
