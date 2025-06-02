@@ -77,11 +77,8 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
         Array.Clear(backBuffer);
     }
 
-    public (bool, bool) Step()
+    public bool Step()
     {
-        bool nmi = false;
-        bool post = false;
-
         if (scanline == 241 && cycle == 1)
         {
             status |= 0x80;
@@ -124,10 +121,9 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
         if (scanline == 261 && cycle == 340)
         {
             Array.Copy(backBuffer, pixels.Data, pixels.Data.Length);
-            post = true;
+            return true;
         }
-
-        return (post, nmi);
+        else return false;
     }
 
     public byte ReadRegister(ushort reg)

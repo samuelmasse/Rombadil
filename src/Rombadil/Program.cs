@@ -77,12 +77,7 @@ canvas.Render += (delta) =>
 
         while (ppu.Cycles < state.Cycles * 3)
         {
-            var (post, nmi) = ppu.Step();
-
-            if (nmi && (ppu.Ctrl & 0x80) != 0)
-                cpu.Nmi();
-
-            if (post)
+            if (ppu.Step())
                 done = true;
         }
     }
