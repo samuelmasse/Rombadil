@@ -227,8 +227,20 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
 
     private void RenderPixel(int xScreen, int yScreen)
     {
-        if ((mask & 0x08) == 0)
+        if ((mask & 0x18) == 0 || (mask & 0x08) == 0)
         {
+            ushort pAddr = ((mask & 0x18) == 0) ? (ushort)(v & 0x3FFF) : (ushort)0x3F00;
+            if (pAddr < 0x3F00 || pAddr >= 0x4000)
+                pAddr = 0x3F00;
+
+            var (r, g, b) = ReadPaletteColor(pAddr);
+            var (er, eg, eb) = ApplyColorEmphasis(r, g, b);
+
+            int bindex = (yScreen * 256 + xScreen) * 3;
+            backBuffer[bindex + 0] = er;
+            backBuffer[bindex + 1] = eg;
+            backBuffer[bindex + 2] = eb;
+
             bgOpaque[yScreen, xScreen] = false;
             return;
         }
@@ -269,14 +281,38 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
         }
 
         ushort paletteAddr = (ushort)(0x3F00 + (paletteNum << 2) + colorIndex);
-        var (r, g, b) = ReadPaletteColor(paletteAddr);
+        var (baseR, baseG, baseB) = ReadPaletteColor(paletteAddr);
+        var (emphR, emphG, emphB) = ApplyColorEmphasis(baseR, baseG, baseB);
 
         int index = (yScreen * 256 + xScreen) * 3;
-        backBuffer[index + 0] = r;
-        backBuffer[index + 1] = g;
-        backBuffer[index + 2] = b;
+        backBuffer[index + 0] = emphR;
+        backBuffer[index + 1] = emphG;
+        backBuffer[index + 2] = emphB;
     }
 
+    private (byte r, byte g, byte b) ApplyColorEmphasis(byte r, byte g, byte b)
+    {
+        if (r == 0 && g == 0 && b == 0)
+            return (r, g, b);
+
+        const double attenuation = 0.816328;
+
+        bool emphasizeRed = (mask & 0x20) != 0;
+        bool emphasizeGreen = (mask & 0x40) != 0;
+        bool emphasizeBlue = (mask & 0x80) != 0;
+
+        double rf = r;
+        double gf = g;
+        double bf = b;
+
+        if (emphasizeRed) { gf *= attenuation; bf *= attenuation; }
+        if (emphasizeGreen) { rf *= attenuation; bf *= attenuation; }
+        if (emphasizeBlue) { rf *= attenuation; gf *= attenuation; }
+
+        return ((byte)Math.Clamp(rf, 0, 255),
+                (byte)Math.Clamp(gf, 0, 255),
+                (byte)Math.Clamp(bf, 0, 255));
+    }
 
     private void RenderSpritePixel(int x, int y)
     {
@@ -347,6 +383,8 @@ public class PpuNes(Memory<byte> chrRom, Pixels pixels)
             addr &= 0xFFEF;
 
         byte colorIndex = ReadPpuMemory(addr);
+        colorIndex &= 0x3F;
+
         return nespal[colorIndex];
     }
 
