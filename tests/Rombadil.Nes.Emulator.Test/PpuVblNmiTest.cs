@@ -87,11 +87,12 @@ public class PpuVblNmiTest
         var prgRom = rom.AsMemory().Slice(0x10, 0x8000);
         var chrRom = rom.AsMemory().Slice(0x8010, 0x2000);
 
+        var mapper = new NesMapperNrom(prgRom, chrRom);
         var state = new CpuEmulatorState();
-        var ppu = new NesPpu(chrRom, new byte[256 * 240 * 3]);
+        var ppu = new NesPpu(mapper, new byte[256 * 240 * 3]);
         var controller1 = new NesController();
         var controller2 = new NesController();
-        var bus = new NesMemoryBus(new NesMapperNrom(prgRom), ppu, controller1, controller2);
+        var bus = new NesMemoryBus(mapper, ppu, controller1, controller2);
         var cpu = new CpuEmulator6502(state, bus);
 
         cpu.Reset();
