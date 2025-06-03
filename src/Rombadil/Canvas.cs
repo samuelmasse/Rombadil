@@ -29,7 +29,7 @@ public class Canvas : IDisposable
         int correctedWidth = (int)Math.Round(correctedPixelWidth * scale);
         int correctedHeight = (int)Math.Round(pixels.Size.Y * scale);
 
-        var icon = Png.Open("Icon.png");
+        var icon = Png.Open(Content("Icon.png"));
         var data = new byte[icon.Width * icon.Height * 4];
 
         for (int y = 0; y < icon.Height; y++)
@@ -194,8 +194,8 @@ public class Canvas : IDisposable
 
     private void LoadProgram()
     {
-        var vertexSource = File.ReadAllText("Shader.vert");
-        var fragSource = File.ReadAllText("Shader.frag");
+        var vertexSource = File.ReadAllText(Content("Shader.vert"));
+        var fragSource = File.ReadAllText(Content("Shader.frag"));
 
         program = GL.CreateProgram();
         int vs = GL.CreateShader(ShaderType.VertexShader);
@@ -227,6 +227,8 @@ public class Canvas : IDisposable
         GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb,
             pixels.Size.X, pixels.Size.Y, 0, PixelFormat.Rgb, PixelType.UnsignedByte, pixels.Data);
     }
+
+    private string Content(string file) => Path.Combine(AppContext.BaseDirectory, file);
 
     public void Dispose() => window.Dispose();
 }
