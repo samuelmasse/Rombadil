@@ -281,18 +281,26 @@ public class NesPpu(NesMapper mapper, Memory<byte> framebuffer)
             return;
         }
 
-        int scrolledX = (xScreen + x) & 0x1FF;
-        int coarseX = (v & 0x1F) + (scrolledX >> 3);
-        int fineX = 7 - (scrolledX & 0x07);
+        int fineXScroll = x;
+        int scrollX = (v & 0x001F);
+        int scrollY = ((v >> 5) & 0x1F);
+        int fineY = (v >> 12) & 0x7;
 
-        int tileX = coarseX & 0x1F;
-        int nametableIndex = (v >> 10) & 0x03;
+        int coarseX = (scrollX + ((xScreen + fineXScroll) / 8)) & 0x1F;
+        int tileX = coarseX;
+        int fineX = 7 - ((xScreen + fineXScroll) % 8);
+
+        int nametableX = ((v >> 10) & 1);
+        int nametableY = ((v >> 11) & 1);
+
+        nametableX ^= ((scrollX + ((xScreen + fineXScroll) / 8)) >> 5) & 1;
+
+        int nametableIndex = nametableY * 2 + nametableX;
         int nametableBase = 0x2000 + nametableIndex * 0x400;
 
-        int fineY = (v >> 12) & 0x7;
-        int tileY = (v >> 5) & 0x1F;
-
+        int tileY = scrollY;
         int tileIndex = ReadPpuMemory((ushort)(nametableBase + tileY * 32 + tileX));
+
         int patternTableBase = (ctrl & 0x10) != 0 ? 0x1000 : 0x0000;
         int tileAddr = patternTableBase + tileIndex * 16;
 
