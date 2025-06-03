@@ -3,7 +3,6 @@ namespace Rombadil.Nes.Emulator;
 public class NesEmulator
 {
     private readonly CpuEmulatorState state;
-    private readonly CpuEmulatorMemory memory;
     private readonly NesPpu ppu;
     private readonly NesController controller1;
     private readonly NesController controller2;
@@ -19,29 +18,24 @@ public class NesEmulator
         var romPrg = rom.Slice(romHeader.Length, header.PrgRomSize * 0x4000);
         var romChr = rom.Slice(romHeader.Length + romPrg.Length, header.ChrRomSize * 0x2000);
 
-        Memory<byte> mem = new byte[0x10000];
-        Memory<ushort> map = new ushort[0x10000];
         Memory<byte> chr = new byte[0x2000];
-        for (int i = 0; i < map.Length; i++)
-            map.Span[i] = (ushort)i;
 
-        if (header.PrgRomSize == 1)
+        var mapper = header.MapperNumber switch
         {
-            for (int i = 0; i < 0x4000; i++)
-                map.Span[0xC000 + i] = (ushort)(0x8000 + i);
-        }
+            0 => new NesMapperNrom(romPrg),
+            1 => new NesMapperMmc1(),
+            _ => new NesMapper()
+        };
 
-        romPrg.CopyTo(mem.Slice(0x8000, 0x8000));
         romChr.CopyTo(chr);
 
         state = new CpuEmulatorState();
-        memory = new CpuEmulatorMemory(mem, map);
         ppu = new NesPpu(chr, framebuffer);
         controller1 = new NesController();
         controller2 = new NesController();
-        bus = new NesMemoryBus(memory, state, ppu, controller1, controller2);
-        cpu = new CpuEmulator6502(state, memory, bus);
-        logger = new CpuEmulatorLogger(state, memory, cpu);
+        bus = new NesMemoryBus(mapper, ppu, controller1, controller2);
+        cpu = new CpuEmulator6502(state, bus);
+        logger = new CpuEmulatorLogger(state, bus, cpu);
 
         Reset();
     }

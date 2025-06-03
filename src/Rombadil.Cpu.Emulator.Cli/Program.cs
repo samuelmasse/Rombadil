@@ -165,9 +165,9 @@ rootCommand.SetHandler((input, start, length, mem, pc, remap, byteValues, wordVa
     }
 
     var state = new CpuEmulatorState();
-    var memory = new CpuEmulatorMemory(bytes, map);
-    var cpu = new CpuEmulator6502(state, memory, new(memory));
-    var logger = new CpuEmulatorLogger(state, memory, cpu);
+    var bus = new CpuEmulatorBusMap(bytes, map);
+    var cpu = new CpuEmulator6502(state, bus);
+    var logger = new CpuEmulatorLogger(state, bus, cpu);
 
     foreach (var value in byteValues)
     {
@@ -186,7 +186,7 @@ rootCommand.SetHandler((input, start, length, mem, pc, remap, byteValues, wordVa
         }
 
         for (int i = 0; i < value.Length; i++)
-            memory[(ushort)(value.Start + i)] = (byte)value.Value;
+            bus[(ushort)(value.Start + i)] = (byte)value.Value;
     }
 
     foreach (var value in wordValues)
@@ -202,8 +202,8 @@ rootCommand.SetHandler((input, start, length, mem, pc, remap, byteValues, wordVa
 
         for (int i = 0; i < l; i++)
         {
-            memory[(ushort)(value.Start + i * 2)] = (byte)(value.Value & 0xFF);
-            memory[(ushort)(value.Start + i * 2 + 1)] = (byte)((value.Value >> 8) & 0xFF);
+            bus[(ushort)(value.Start + i * 2)] = (byte)(value.Value & 0xFF);
+            bus[(ushort)(value.Start + i * 2 + 1)] = (byte)((value.Value >> 8) & 0xFF);
         }
     }
 
@@ -213,7 +213,7 @@ rootCommand.SetHandler((input, start, length, mem, pc, remap, byteValues, wordVa
     do
     {
         Console.WriteLine(logger.Log());
-        code = (CpuOpcode)memory[state.PC];
+        code = (CpuOpcode)bus[state.PC];
         cpu.Step();
     }
     while (code != CpuOpcode.BRK);

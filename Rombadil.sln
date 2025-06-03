@@ -22,7 +22,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rombadil.Cpu.Emulator.Test"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rombadil.Cpu.Emulator.Cli", "src\Rombadil.Cpu.Emulator.Cli\Rombadil.Cpu.Emulator.Cli.csproj", "{C0B0149C-7F39-4001-9B2B-9761299B6B5B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rombadil.Test", "tests\Rombadil.Test\Rombadil.Test.csproj", "{0283D1B8-B86C-49BC-BC39-E0FEBB49E994}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rombadil.Nes.Emulator.Test", "tests\Rombadil.Nes.Emulator.Test\Rombadil.Nes.Emulator.Test.csproj", "{0283D1B8-B86C-49BC-BC39-E0FEBB49E994}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rombadil.Nes.Emulator", "src\Rombadil.Nes.Emulator\Rombadil.Nes.Emulator.csproj", "{2C6045FB-7AA0-4251-9729-D0E64EC58C2A}"
 EndProject

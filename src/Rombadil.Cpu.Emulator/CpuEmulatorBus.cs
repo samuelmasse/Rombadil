@@ -1,11 +1,16 @@
 namespace Rombadil.Cpu.Emulator;
 
-public class CpuEmulatorMemory(Memory<byte> bytes, Memory<ushort> map)
+public class CpuEmulatorBus
 {
+    private readonly byte[] memory = new byte[0x10000];
+
+    public virtual byte Read(ushort addr) => memory[addr];
+    public virtual void Write(ushort addr, byte value) => memory[addr] = value;
+
     public byte this[ushort index]
     {
-        get => bytes.Span[map.Span[index]];
-        set => bytes.Span[map.Span[index]] = value;
+        get => Read(index);
+        set => Write(index, value);
     }
 
     public ushort Word(ushort index) => (ushort)(this[index] | (this[(ushort)(index + 1)] << 8));

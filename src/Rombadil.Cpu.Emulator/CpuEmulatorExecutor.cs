@@ -1,6 +1,6 @@
 namespace Rombadil.Cpu.Emulator;
 
-internal readonly struct CpuEmulatorExecutor(CpuEmulatorState s, CpuEmulatorMemory m, CpuEmulatorProcessor p, CpuEmulatorOperand op)
+internal readonly struct CpuEmulatorExecutor(CpuEmulatorState s, CpuEmulatorBus b, CpuEmulatorProcessor p, CpuEmulatorOperand op)
 {
     internal void Asl() => op.V = p.ShiftLeft(op.V);
     internal void Lsr() => op.V = p.ShiftRight(op.V);
@@ -67,7 +67,7 @@ internal readonly struct CpuEmulatorExecutor(CpuEmulatorState s, CpuEmulatorMemo
         p.PushWord(s.PC);
         p.Push((byte)(s.SR | CpuStatus.Break | CpuStatus.Unused));
         s.Interrupt = true;
-        s.PC = m.Word(0xFFFE);
+        s.PC = b.Word(0xFFFE);
     }
 
     internal void Jsr()

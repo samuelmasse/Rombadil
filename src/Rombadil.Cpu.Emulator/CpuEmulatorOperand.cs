@@ -1,6 +1,6 @@
 namespace Rombadil.Cpu.Emulator;
 
-public readonly struct CpuEmulatorOperand(CpuEmulatorState s, CpuEmulatorMemoryBus b, ushort addr, CpuAddressingMode mode)
+public readonly struct CpuEmulatorOperand(CpuEmulatorState s, CpuEmulatorBus b, ushort addr, CpuAddressingMode mode)
 {
     public ushort Addr => addr;
 

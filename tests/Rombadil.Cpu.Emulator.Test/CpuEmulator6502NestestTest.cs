@@ -26,9 +26,9 @@ public sealed class CpuEmulator6502NestestTest
         prgRom.CopyTo(prgArea);
 
         var state = new CpuEmulatorState();
-        var memory = new CpuEmulatorMemory(bytes, map);
-        var cpu = new CpuEmulator6502(state, memory, new(memory));
-        var logger = new CpuEmulatorLogger(state, memory, cpu);
+        var bus = new CpuEmulatorBusMap(bytes, map);
+        var cpu = new CpuEmulator6502(state, bus);
+        var logger = new CpuEmulatorLogger(state, bus, cpu);
         cpu.Reset(0xC000);
 
         for (int i = 0; i < log.Length; i++)

@@ -1,6 +1,6 @@
 namespace Rombadil.Cpu.Emulator;
 
-public class CpuEmulatorLogger(CpuEmulatorState state, CpuEmulatorMemory memory, CpuEmulator6502 cpu)
+public class CpuEmulatorLogger(CpuEmulatorState state, CpuEmulatorBus memory, CpuEmulator6502 cpu)
 {
     public string Log()
     {

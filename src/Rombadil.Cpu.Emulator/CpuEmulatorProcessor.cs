@@ -1,6 +1,6 @@
 namespace Rombadil.Cpu.Emulator;
 
-internal readonly struct CpuEmulatorProcessor(CpuEmulatorState s, CpuEmulatorMemory m)
+internal readonly struct CpuEmulatorProcessor(CpuEmulatorState s, CpuEmulatorBus b)
 {
     internal byte AC
     {
@@ -91,8 +91,8 @@ internal readonly struct CpuEmulatorProcessor(CpuEmulatorState s, CpuEmulatorMem
         return res;
     }
 
-    internal void Push(byte value) => m[(ushort)(0x0100 + s.SP--)] = value;
-    internal byte Pop() => m[(ushort)(0x0100 + ++s.SP)];
+    internal void Push(byte value) => b[(ushort)(0x0100 + s.SP--)] = value;
+    internal byte Pop() => b[(ushort)(0x0100 + ++s.SP)];
 
     internal void PushWord(ushort value)
     {
@@ -109,7 +109,7 @@ internal readonly struct CpuEmulatorProcessor(CpuEmulatorState s, CpuEmulatorMem
 
     internal void Branch(bool condition)
     {
-        sbyte offset = (sbyte)m[(ushort)(s.PC - 1)];
+        sbyte offset = (sbyte)b[(ushort)(s.PC - 1)];
         if (!condition)
             return;
 

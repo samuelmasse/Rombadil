@@ -1,4 +1,4 @@
-namespace Rombadil.Test;
+namespace Rombadil.Nes.Emulator.Test;
 
 [TestClass]
 public class PpuVblNmiTest
@@ -83,28 +83,21 @@ public class PpuVblNmiTest
     private void RunTest(string name, string? error = null)
     {
         var rom = File.ReadAllBytes(Path.Join("ppu_vbl_nmi", $"{name}.nes"));
-        var bytes = new byte[0x10000];
-        var map = new ushort[0x10000];
-        for (int i = 0; i < map.Length; i++)
-            map[i] = (ushort)i;
 
-        var prgArea = bytes.AsSpan().Slice(0x8000, 0x8000);
-        var prgRom = rom.AsSpan().Slice(0x10, 0x8000);
+        var prgRom = rom.AsMemory().Slice(0x10, 0x8000);
         var chrRom = rom.AsMemory().Slice(0x8010, 0x2000);
-        prgRom.CopyTo(prgArea);
 
         var state = new CpuEmulatorState();
-        var memory = new CpuEmulatorMemory(bytes, map);
-        var ppu = new PpuNes(chrRom, new Pixels((256, 240)));
+        var ppu = new NesPpu(chrRom, new byte[256 * 240 * 3]);
         var controller1 = new NesController();
         var controller2 = new NesController();
-        var bus = new NesMemoryBus(memory, state, ppu, controller1, controller2);
-        var cpu = new CpuEmulator6502(state, memory, bus);
+        var bus = new NesMemoryBus(new NesMapperNrom(prgRom), ppu, controller1, controller2);
+        var cpu = new CpuEmulator6502(state, bus);
 
         cpu.Reset();
         ppu.Reset();
 
-        while (memory[0x6001] != 0xDE || memory[0x6000] > 0x7F)
+        while (bus[0x6001] != 0xDE || bus[0x6000] > 0x7F)
         {
             bool done = false;
             while (!done)
@@ -125,16 +118,16 @@ public class PpuVblNmiTest
             }
         }
 
-        var result = memory[0x6000];
+        var result = bus[0x6000];
         string? actualError = null;
 
         if (result != 0)
         {
             List<byte> b = [];
             int length = 0;
-            while (length < 256 && memory[(ushort)(0x6004 + length)] != 0)
+            while (length < 256 && bus[(ushort)(0x6004 + length)] != 0)
             {
-                b.Add(memory[(ushort)(0x6004 + length)]);
+                b.Add(bus[(ushort)(0x6004 + length)]);
                 length++;
             }
 

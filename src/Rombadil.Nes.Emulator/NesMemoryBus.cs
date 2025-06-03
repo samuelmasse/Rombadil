@@ -1,11 +1,10 @@
 namespace Rombadil.Nes.Emulator;
 
 public class NesMemoryBus(
-    CpuEmulatorMemory memory,
-    CpuEmulatorState state,
+    NesMapper mapper,
     NesPpu ppu,
     NesController controller1,
-    NesController controller2) : CpuEmulatorMemoryBus(memory)
+    NesController controller2) : CpuEmulatorBus
 {
     public override byte Read(ushort addr)
     {
@@ -15,6 +14,8 @@ public class NesMemoryBus(
             return controller2.Read();
         else if (addr >= 0x2000 && addr <= 0x3FFF)
             return ppu.ReadRegister(addr);
+        else if (addr >= 0x8000)
+            return mapper.Read(addr);
         else return base.Read(addr);
     }
 
@@ -26,7 +27,7 @@ public class NesMemoryBus(
             byte start = ppu.OamAddr;
             for (int i = 0; i < 256; i++)
             {
-                byte b = memory[(ushort)(baseAddr + i)];
+                byte b = Read((ushort)(baseAddr + i));
                 ppu.WriteOam((start + i) & 0xFF, b);
             }
         }
@@ -36,6 +37,8 @@ public class NesMemoryBus(
             controller2.Write(value);
         else if (addr >= 0x2000 && addr <= 0x3FFF)
             ppu.WriteRegister(addr, value);
+        else if (addr >= 0x8000)
+            mapper.Write(addr, value);
         else base.Write(addr, value);
     }
 }

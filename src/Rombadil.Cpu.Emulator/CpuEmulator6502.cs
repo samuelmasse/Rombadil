@@ -1,10 +1,10 @@
 namespace Rombadil.Cpu.Emulator;
 
-public class CpuEmulator6502(CpuEmulatorState state, CpuEmulatorMemory memory, CpuEmulatorMemoryBus bus)
+public class CpuEmulator6502(CpuEmulatorState state, CpuEmulatorBus bus)
 {
     public void Reset(ushort? pc = null)
     {
-        state.PC = pc ?? memory.Word(0xFFFC);
+        state.PC = pc ?? bus.Word(0xFFFC);
 
         state.AC = 0;
         state.X = 0;
@@ -18,7 +18,7 @@ public class CpuEmulator6502(CpuEmulatorState state, CpuEmulatorMemory memory, C
 
     public void Step()
     {
-        var code = memory[state.PC++];
+        var code = bus[state.PC++];
 
         if (CpuOpcodeMap.TryDecodeOpcode((CpuOpcode)code, out var decode))
         {
@@ -36,20 +36,20 @@ public class CpuEmulator6502(CpuEmulatorState state, CpuEmulatorMemory memory, C
     public void Nmi()
     {
         var s = state;
-        var p = new CpuEmulatorProcessor(state, memory);
-        var m = memory;
+        var p = new CpuEmulatorProcessor(state, bus);
+        var b = bus;
 
         p.PushWord(s.PC);
         p.Push((byte)(s.SR & ~CpuStatus.Break | CpuStatus.Unused));
         s.Interrupt = true;
-        s.PC = m.Word(0xFFFA);
+        s.PC = b.Word(0xFFFA);
         s.Cycles += 7;
     }
 
     private void Step(CpuInstruction instruction, CpuAddressingMode mode)
     {
         var addr = Step(CpuEmulatorTimings.Get(instruction, mode), mode);
-        var exec = new CpuEmulatorExecutor(state, memory, new(state, memory), new(state, bus, addr, mode));
+        var exec = new CpuEmulatorExecutor(state, bus, new(state, bus), new(state, bus, addr, mode));
 
         switch (instruction)
         {
@@ -115,7 +115,7 @@ public class CpuEmulator6502(CpuEmulatorState state, CpuEmulatorMemory memory, C
     private void Step(CpuEmulatorIllegalInstruction instruction, CpuAddressingMode mode)
     {
         var addr = Step(CpuEmulatorIllegalTimings.Get(instruction, mode), mode);
-        var exec = new CpuEmulatorIllegalExecutor(new(state, memory), new(state, bus, addr, mode));
+        var exec = new CpuEmulatorIllegalExecutor(new(state, bus), new(state, bus, addr, mode));
 
         switch (instruction)
         {
@@ -148,15 +148,15 @@ public class CpuEmulator6502(CpuEmulatorState state, CpuEmulatorMemory memory, C
     public (ushort, ushort) Addr(ushort pc, CpuAddressingMode mode) => mode switch
     {
         CpuAddressingMode.Immediate => (pc, pc),
-        CpuAddressingMode.ZeroPage => (memory[pc], memory[pc]),
-        CpuAddressingMode.ZeroPageX => ((byte)(memory[pc] + state.X), memory[pc]),
-        CpuAddressingMode.ZeroPageY => ((byte)(memory[pc] + state.Y), memory[pc]),
-        CpuAddressingMode.Absolute => (memory.Word(pc), memory.Word(pc)),
-        CpuAddressingMode.AbsoluteX => ((ushort)(memory.Word(pc) + state.X), memory.Word(pc)),
-        CpuAddressingMode.AbsoluteY => ((ushort)(memory.Word(pc) + state.Y), memory.Word(pc)),
-        CpuAddressingMode.Indirect => (memory.WordPageWrap(memory.Word(pc)), memory.Word(pc)),
-        CpuAddressingMode.IndirectX => (memory.WordZP((byte)(memory[pc] + state.X)), memory[pc]),
-        CpuAddressingMode.IndirectY => ((ushort)(memory.WordZP(memory[pc]) + state.Y), memory.WordZP(memory[pc])),
+        CpuAddressingMode.ZeroPage => (bus[pc], bus[pc]),
+        CpuAddressingMode.ZeroPageX => ((byte)(bus[pc] + state.X), bus[pc]),
+        CpuAddressingMode.ZeroPageY => ((byte)(bus[pc] + state.Y), bus[pc]),
+        CpuAddressingMode.Absolute => (bus.Word(pc), bus.Word(pc)),
+        CpuAddressingMode.AbsoluteX => ((ushort)(bus.Word(pc) + state.X), bus.Word(pc)),
+        CpuAddressingMode.AbsoluteY => ((ushort)(bus.Word(pc) + state.Y), bus.Word(pc)),
+        CpuAddressingMode.Indirect => (bus.WordPageWrap(bus.Word(pc)), bus.Word(pc)),
+        CpuAddressingMode.IndirectX => (bus.WordZP((byte)(bus[pc] + state.X)), bus[pc]),
+        CpuAddressingMode.IndirectY => ((ushort)(bus.WordZP(bus[pc]) + state.Y), bus.WordZP(bus[pc])),
         _ => (0, 0)
     };
 }
