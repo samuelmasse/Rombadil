@@ -1,10 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
+        <OutputType>WinExe</OutputType>
+        <ApplicationIcon>Icon.ico</ApplicationIcon>
     </PropertyGroup>
 
     <ItemGroup>
+        <Content Include="Icon.ico" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="BigGustave" Version="1.0.6" />
         <PackageReference Include="OpenTK" Version="4.9.4" />
     </ItemGroup>
 
@@ -14,6 +20,9 @@
     </ItemGroup>
 
     <ItemGroup>
+        <None Update="Icon.png">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
         <None Update="nestest.nes">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
@@ -26,6 +35,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Using Include="BigGustave" />
         <Using Include="OpenTK.Graphics.OpenGL4" />
         <Using Include="OpenTK.Mathematics" />
         <Using Include="OpenTK.Windowing.Common" />
