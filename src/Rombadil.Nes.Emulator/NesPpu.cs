@@ -18,6 +18,7 @@ public class NesPpu(NesMapper mapper, Memory<byte> framebuffer)
     private readonly SortedList<byte, byte>[,] spriteBlocks = new SortedList<byte, byte>[15, 16];
     private readonly byte[] prevSpriteX = new byte[64];
     private readonly byte[] prevSpriteY = new byte[64];
+    private readonly byte[] prevSpriteHeight = new byte[64];
 
     private long cycles;
     private int cycle;
@@ -194,30 +195,33 @@ public class NesPpu(NesMapper mapper, Memory<byte> framebuffer)
         int baseIndex = i * 4;
         int spriteY = oam[baseIndex + 0] + 1;
         int spriteX = oam[baseIndex + 3];
+        int height = (ctrl & 0x20) != 0 ? 16 : 8;
 
         prevSpriteX[i] = (byte)spriteX;
         prevSpriteY[i] = (byte)spriteY;
+        prevSpriteHeight[i] = (byte)height;
 
         int bx0 = spriteX / 16;
         int by0 = spriteY / 16;
         int bx1 = (spriteX + 7) / 16;
-        int by1 = (spriteY + 7) / 16;
+        int by1 = (spriteY + height - 1) / 16;
 
-        if (bx0 < 16 && by0 < 15) spriteBlocks[by0, bx0].Add((byte)i, 0); // top-left
-        if (bx1 < 16 && by0 < 15 && bx1 != bx0) spriteBlocks[by0, bx1].Add((byte)i, 0); // top-right
-        if (bx0 < 16 && by1 < 15 && by1 != by0) spriteBlocks[by1, bx0].Add((byte)i, 0); // bottom-left
-        if (bx1 < 16 && by1 < 15 && bx1 != bx0 && by1 != by0) spriteBlocks[by1, bx1].Add((byte)i, 0); // bottom-right
+        if (bx0 < 16 && by0 < 15) spriteBlocks[by0, bx0].Add((byte)i, 0);
+        if (bx1 < 16 && by0 < 15 && bx1 != bx0) spriteBlocks[by0, bx1].Add((byte)i, 0);
+        if (bx0 < 16 && by1 < 15 && by1 != by0) spriteBlocks[by1, bx0].Add((byte)i, 0);
+        if (bx1 < 16 && by1 < 15 && bx1 != bx0 && by1 != by0) spriteBlocks[by1, bx1].Add((byte)i, 0);
     }
 
     private void RemoveSpriteFromBlocks(int i)
     {
         int spriteX = prevSpriteX[i];
         int spriteY = prevSpriteY[i];
+        int height = prevSpriteHeight[i];
 
         int bx0 = spriteX / 16;
         int by0 = spriteY / 16;
         int bx1 = (spriteX + 7) / 16;
-        int by1 = (spriteY + 7) / 16;
+        int by1 = (spriteY + height - 1) / 16;
 
         if (bx0 < 16 && by0 < 15) spriteBlocks[by0, bx0].Remove((byte)i);
         if (bx1 < 16 && by0 < 15 && bx1 != bx0) spriteBlocks[by0, bx1].Remove((byte)i);
@@ -319,6 +323,8 @@ public class NesPpu(NesMapper mapper, Memory<byte> framebuffer)
         if ((mask & 0x10) == 0)
             return;
 
+        bool spriteSize8x16 = (ctrl & 0x20) != 0;
+
         int blockX = x / 16;
         int blockY = y / 16;
         var list = spriteBlocks[blockY, blockX].Keys;
@@ -332,15 +338,29 @@ public class NesPpu(NesMapper mapper, Memory<byte> framebuffer)
             byte attr = oam[baseIndex + 2];
             int spriteX = oam[baseIndex + 3];
 
-            if (y < spriteY || y >= spriteY + 8)
+            int height = spriteSize8x16 ? 16 : 8;
+            if (y < spriteY || y >= spriteY + height)
                 continue;
 
             int row = y - spriteY;
-            if ((attr & 0x80) != 0) row = 7 - row;
+            if ((attr & 0x80) != 0)
+                row = height - 1 - row;
 
-            int patternTableBase = (ctrl & 0x08) != 0 ? 0x1000 : 0x0000;
-            int addr = patternTableBase + tileIndex * 16 + row;
-            byte plane0 = mapper.ReadChr((ushort)addr);
+            ushort addr;
+            if (spriteSize8x16)
+            {
+                byte tile = (byte)(tileIndex & 0xFE);
+                int table = (tileIndex & 1) != 0 ? 0x1000 : 0x0000;
+                addr = (ushort)(table + tile * 16 + (row % 8));
+                if (row >= 8) addr += 16;
+            }
+            else
+            {
+                int patternTableBase = (ctrl & 0x08) != 0 ? 0x1000 : 0x0000;
+                addr = (ushort)(patternTableBase + tileIndex * 16 + row);
+            }
+
+            byte plane0 = mapper.ReadChr(addr);
             byte plane1 = mapper.ReadChr((ushort)(addr + 8));
 
             for (int col = 0; col < 8; col++)
