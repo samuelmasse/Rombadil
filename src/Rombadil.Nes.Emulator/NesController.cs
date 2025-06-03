@@ -1,4 +1,4 @@
-namespace Rombadil;
+namespace Rombadil.Nes.Emulator;
 
 public class NesController
 {

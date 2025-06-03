@@ -1,10 +1,11 @@
 namespace Rombadil;
 
-public class Canvas : IDisposable
+public class RombadilWindow : IDisposable
 {
     public event Action<double>? Render;
 
-    private readonly Pixels pixels;
+    private readonly byte[] framebuffer;
+    private readonly Vector2i framebufferSize;
     private readonly GameWindow window;
     private readonly float[] vertices = new float[16];
 
@@ -17,17 +18,20 @@ public class Canvas : IDisposable
     private WindowState previousState;
     private bool isFullscreen;
 
-    public Canvas(Pixels pixels)
+    public Memory<byte> Framebuffer => framebuffer;
+
+    public RombadilWindow()
     {
-        this.pixels = pixels;
+        framebufferSize = (256, 240);
+        framebuffer = new byte[framebufferSize.X * framebufferSize.Y * 3];
 
         float ntscPixelAspect = 8f / 7f;
-        float correctedPixelWidth = pixels.Size.X * ntscPixelAspect;
-        float targetAspect = correctedPixelWidth / pixels.Size.Y;
+        float correctedPixelWidth = framebufferSize.X * ntscPixelAspect;
+        float targetAspect = correctedPixelWidth / framebufferSize.Y;
         var size = Monitors.GetPrimaryMonitor().ClientArea.Size * 4 / 5;
-        float scale = MathF.Min(size.X / correctedPixelWidth, size.Y / pixels.Size.Y);
+        float scale = MathF.Min(size.X / correctedPixelWidth, size.Y / framebufferSize.Y);
         int correctedWidth = (int)Math.Round(correctedPixelWidth * scale);
-        int correctedHeight = (int)Math.Round(pixels.Size.Y * scale);
+        int correctedHeight = (int)Math.Round(framebufferSize.Y * scale);
 
         var icon = Png.Open(Content("Icon.png"));
         var data = new byte[icon.Width * icon.Height * 4];
@@ -89,7 +93,7 @@ public class Canvas : IDisposable
         int w = window.ClientSize.X;
         int h = window.ClientSize.Y;
 
-        float targetAspect = (pixels.Size.X * 8f / 7f) / pixels.Size.Y;
+        float targetAspect = (framebufferSize.X * 8f / 7f) / framebufferSize.Y;
         float windowAspect = (float)w / h;
 
         if (windowAspect > targetAspect)
@@ -114,8 +118,8 @@ public class Canvas : IDisposable
         GL.Clear(ClearBufferMask.ColorBufferBit);
 
         GL.BindTexture(TextureTarget.Texture2D, texture);
-        GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, pixels.Size.X, pixels.Size.Y,
-            PixelFormat.Rgb, PixelType.UnsignedByte, pixels.Data);
+        GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, framebufferSize.X, framebufferSize.Y,
+            PixelFormat.Rgb, PixelType.UnsignedByte, framebuffer);
 
         GL.UseProgram(program);
         GL.BindVertexArray(vao);
@@ -225,10 +229,19 @@ public class Canvas : IDisposable
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
 
         GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb,
-            pixels.Size.X, pixels.Size.Y, 0, PixelFormat.Rgb, PixelType.UnsignedByte, pixels.Data);
+            framebufferSize.X, framebufferSize.Y, 0, PixelFormat.Rgb, PixelType.UnsignedByte, framebuffer);
     }
 
     private string Content(string file) => Path.Combine(AppContext.BaseDirectory, file);
 
-    public void Dispose() => window.Dispose();
+    public void Dispose()
+    {
+        GL.DeleteVertexArray(vao);
+        GL.DeleteBuffer(ebo);
+        GL.DeleteBuffer(vbo);
+        GL.DeleteProgram(program);
+        GL.DeleteTexture(texture);
+
+        window.Dispose();
+    }
 }

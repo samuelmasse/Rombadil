@@ -1,9 +1,9 @@
-namespace Rombadil;
+namespace Rombadil.Nes.Emulator;
 
 public class NesMemoryBus(
     CpuEmulatorMemory memory,
     CpuEmulatorState state,
-    PpuNes ppu,
+    NesPpu ppu,
     NesController controller1,
     NesController controller2) : CpuEmulatorMemoryBus(memory)
 {

@@ -15,15 +15,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Rombadil.Assembler\Rombadil.Assembler.csproj" />
-        <ProjectReference Include="..\Rombadil.Cpu.Emulator\Rombadil.Cpu.Emulator.csproj" />
+        <ProjectReference Include="..\Rombadil.Nes.Emulator\Rombadil.Nes.Emulator.csproj" />
     </ItemGroup>
 
     <ItemGroup>
         <None Update="Icon.png">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-        <None Update="nestest.nes">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
         <None Update="Shader.frag">
@@ -41,8 +37,7 @@
         <Using Include="OpenTK.Windowing.Common" />
         <Using Include="OpenTK.Windowing.Desktop" />
         <Using Include="OpenTK.Windowing.GraphicsLibraryFramework" />
-        <Using Include="Rombadil.Cpu" />
-        <Using Include="Rombadil.Cpu.Emulator" />
+        <Using Include="Rombadil.Nes.Emulator" />
     </ItemGroup>
 
 </Project>

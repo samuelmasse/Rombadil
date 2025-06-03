@@ -1,17 +1,17 @@
-namespace Rombadil;
+namespace Rombadil.Nes.Emulator;
 
 public class NesEmulator
 {
     private readonly CpuEmulatorState state;
     private readonly CpuEmulatorMemory memory;
-    private readonly PpuNes ppu;
+    private readonly NesPpu ppu;
     private readonly NesController controller1;
     private readonly NesController controller2;
     private readonly NesMemoryBus bus;
     private readonly CpuEmulator6502 cpu;
     private readonly CpuEmulatorLogger logger;
 
-    public NesEmulator(Memory<byte> rom, Pixels pixels)
+    public NesEmulator(Memory<byte> rom, Memory<byte> framebuffer)
     {
         var romHeader = rom[..0x10];
         var header = new NesRomHeader(romHeader);
@@ -36,12 +36,14 @@ public class NesEmulator
 
         state = new CpuEmulatorState();
         memory = new CpuEmulatorMemory(mem, map);
-        ppu = new PpuNes(chr, pixels);
+        ppu = new NesPpu(chr, framebuffer);
         controller1 = new NesController();
         controller2 = new NesController();
         bus = new NesMemoryBus(memory, state, ppu, controller1, controller2);
         cpu = new CpuEmulator6502(state, memory, bus);
         logger = new CpuEmulatorLogger(state, memory, cpu);
+
+        Reset();
     }
 
     public void Reset()

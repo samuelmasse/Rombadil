@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="..\Rombadil.Cpu.Emulator\Rombadil.Cpu.Emulator.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="Rombadil.Cpu" />
+        <Using Include="Rombadil.Cpu.Emulator" />
+    </ItemGroup>
+
+</Project>
