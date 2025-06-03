@@ -13,24 +13,20 @@ public class NesEmulator
     public NesEmulator(Memory<byte> rom, Memory<byte> framebuffer)
     {
         var romHeader = rom[..0x10];
-        var header = new NesRomHeader(romHeader);
+        var header = new NesRomHeader(rom[..0x10]);
 
-        var romPrg = rom.Slice(romHeader.Length, header.PrgRomSize * 0x4000);
-        var romChr = rom.Slice(romHeader.Length + romPrg.Length, header.ChrRomSize * 0x2000);
-
-        Memory<byte> chr = new byte[0x2000];
+        var prg = rom.Slice(romHeader.Length, header.PrgRomSize * 0x4000);
+        var chr = rom.Slice(romHeader.Length + prg.Length, header.ChrRomSize * 0x2000);
 
         var mapper = header.MapperNumber switch
         {
-            0 => new NesMapperNrom(romPrg),
-            1 => new NesMapperMmc1(),
+            0 => new NesMapperNrom(prg, chr),
+            1 => new NesMapperMmc1(prg, chr),
             _ => new NesMapper()
         };
 
-        romChr.CopyTo(chr);
-
         state = new CpuEmulatorState();
-        ppu = new NesPpu(chr, framebuffer);
+        ppu = new NesPpu(mapper, framebuffer);
         controller1 = new NesController();
         controller2 = new NesController();
         bus = new NesMemoryBus(mapper, ppu, controller1, controller2);

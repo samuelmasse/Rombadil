@@ -1,6 +1,6 @@
 namespace Rombadil.Nes.Emulator;
 
-public class NesPpu(Memory<byte> chr, Memory<byte> framebuffer)
+public class NesPpu(NesMapper mapper, Memory<byte> framebuffer)
 {
     private static readonly (byte R, byte G, byte B)[] nespal =
     [
@@ -260,8 +260,8 @@ public class NesPpu(Memory<byte> chr, Memory<byte> framebuffer)
         int patternTableBase = (ctrl & 0x10) != 0 ? 0x1000 : 0x0000;
         int tileAddr = patternTableBase + tileIndex * 16;
 
-        byte plane0 = chr.Span[tileAddr + fineY];
-        byte plane1 = chr.Span[tileAddr + fineY + 8];
+        byte plane0 = mapper.ReadChr((ushort)(tileAddr + fineY));
+        byte plane1 = mapper.ReadChr((ushort)(tileAddr + fineY + 8));
 
         int bit0 = (plane0 >> fineX) & 1;
         int bit1 = (plane1 >> fineX) & 1;
@@ -340,8 +340,8 @@ public class NesPpu(Memory<byte> chr, Memory<byte> framebuffer)
 
             int patternTableBase = (ctrl & 0x08) != 0 ? 0x1000 : 0x0000;
             int addr = patternTableBase + tileIndex * 16 + row;
-            byte plane0 = chr.Span[addr];
-            byte plane1 = chr.Span[addr + 8];
+            byte plane0 = mapper.ReadChr((ushort)addr);
+            byte plane1 = mapper.ReadChr((ushort)(addr + 8));
 
             for (int col = 0; col < 8; col++)
             {
@@ -431,7 +431,7 @@ public class NesPpu(Memory<byte> chr, Memory<byte> framebuffer)
         addr &= 0x3FFF;
 
         if (addr < 0x2000)
-            return chr.Span[addr];
+            return mapper.ReadChr(addr);
         else if (addr < 0x3F00)
         {
             if (addr >= 0x3000)
@@ -451,7 +451,7 @@ public class NesPpu(Memory<byte> chr, Memory<byte> framebuffer)
         addr &= 0x3FFF;
 
         if (addr < 0x2000)
-            chr.Span[addr] = value;
+            mapper.WriteChr(addr, value);
         else if (addr < 0x3F00)
         {
             if (addr >= 0x3000)
