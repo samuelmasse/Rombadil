@@ -104,4 +104,19 @@ public class NesMapperMmc1(Memory<byte> prg, Memory<byte> chr) : NesMapper
             return chr.Span[(bank + addr) % chr.Length];
         }
     }
+
+    public override int MapNametableAddr(ushort addr)
+    {
+        int index = addr - 0x2000;
+        int mode = control & 0b11;
+
+        return mode switch
+        {
+            0 => index % 0x400,
+            1 => 0x400 + (index % 0x400),
+            2 => index % 0x800,
+            3 => ((index & 0x800) >> 1) | (index & 0x3FF),
+            _ => index % 0x800
+        };
+    }
 }

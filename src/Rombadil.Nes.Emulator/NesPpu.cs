@@ -75,6 +75,8 @@ public class NesPpu(NesMapper mapper, Memory<byte> framebuffer)
 
     public bool Step()
     {
+        bool renderingEnabled = (mask & 0x18) != 0;
+
         if (scanline == 241 && cycle == 1)
         {
             if (!vblankSuppressed)
@@ -88,11 +90,8 @@ public class NesPpu(NesMapper mapper, Memory<byte> framebuffer)
         if (nmiDelay > 0)
         {
             nmiDelay--;
-            if (nmiDelay == 0)
-            {
-                if (!nmiSuppressed)
-                    nmiPending = true;
-            }
+            if (nmiDelay == 0 && !nmiSuppressed)
+                nmiPending = true;
         }
 
         if (scanline == 261 && cycle == 1)
@@ -109,8 +108,17 @@ public class NesPpu(NesMapper mapper, Memory<byte> framebuffer)
             RenderSpritePixel(cycle - 1, scanline);
         }
 
-        if ((scanline < 240 || scanline == 261) && cycle == 257 && (mask & 0x18) != 0)
+        if ((scanline < 240 || scanline == 261) && cycle == 257 && renderingEnabled)
             v = (ushort)((v & 0xFBE0) | (t & 0x041F));
+
+        if ((scanline < 240) && (cycle >= 328 || (cycle >= 1 && cycle <= 256)) && renderingEnabled)
+        {
+            if (cycle == 256)
+                IncrementY();
+        }
+
+        if (scanline == 261 && cycle >= 280 && cycle <= 304 && renderingEnabled)
+            v = (ushort)((v & 0x841F) | (t & 0x7BE0));
 
         cycle++;
         cycles++;
@@ -119,12 +127,8 @@ public class NesPpu(NesMapper mapper, Memory<byte> framebuffer)
         {
             cycle = 0;
 
-            if (scanline == 261)
-            {
-                bool renderingEnabled = (mask & 0x18) != 0;
-                if (evenFrame && renderingEnabled)
-                    cycle = 1;
-            }
+            if (scanline == 261 && evenFrame && renderingEnabled)
+                cycle = 1;
 
             scanline = (scanline + 1) % 262;
 
@@ -137,7 +141,35 @@ public class NesPpu(NesMapper mapper, Memory<byte> framebuffer)
             backBuffer.AsMemory().CopyTo(framebuffer);
             return true;
         }
-        else return false;
+
+        return false;
+    }
+
+    private void IncrementY()
+    {
+        if ((v & 0x7000) != 0x7000)
+        {
+            v += 0x1000;
+        }
+        else
+        {
+            v &= 0x8FFF;
+            int y = (v & 0x03E0) >> 5;
+            if (y == 29)
+            {
+                y = 0;
+                v ^= 0x0800;
+            }
+            else if (y == 31)
+            {
+                y = 0;
+            }
+            else
+            {
+                y++;
+            }
+            v = (ushort)((v & 0xFC1F) | (y << 5));
+        }
     }
 
     public byte ReadRegister(ushort reg)
@@ -254,11 +286,11 @@ public class NesPpu(NesMapper mapper, Memory<byte> framebuffer)
         int fineX = 7 - (scrolledX & 0x07);
 
         int tileX = coarseX & 0x1F;
-        int nametableX = ((v >> 10) & 0x01) ^ ((coarseX >> 5) & 0x01);
-        int nametableBase = 0x2000 + nametableX * 0x400;
+        int nametableIndex = (v >> 10) & 0x03;
+        int nametableBase = 0x2000 + nametableIndex * 0x400;
 
-        int tileY = yScreen / 8;
-        int fineY = yScreen % 8;
+        int fineY = (v >> 12) & 0x7;
+        int tileY = (v >> 5) & 0x1F;
 
         int tileIndex = ReadPpuMemory((ushort)(nametableBase + tileY * 32 + tileX));
         int patternTableBase = (ctrl & 0x10) != 0 ? 0x1000 : 0x0000;
@@ -457,8 +489,8 @@ public class NesPpu(NesMapper mapper, Memory<byte> framebuffer)
             if (addr >= 0x3000)
                 addr -= 0x1000;
 
-            int index = addr - 0x2000;
-            return vram[index % 0x800];
+            int index = mapper.MapNametableAddr(addr);
+            return vram[index];
         }
         else if (addr < 0x4000)
             return ReadPalette(addr);
@@ -477,8 +509,8 @@ public class NesPpu(NesMapper mapper, Memory<byte> framebuffer)
             if (addr >= 0x3000)
                 addr -= 0x1000;
 
-            int index = addr - 0x2000;
-            vram[index % 0x800] = value;
+            int index = mapper.MapNametableAddr(addr);
+            vram[index] = value;
         }
         else if (addr < 0x4000)
             WritePalette(addr, value);
