@@ -106,6 +106,8 @@ public class NesPpu(NesMapper mapper, Memory<byte> framebuffer)
         {
             RenderPixel(cycle - 1, scanline);
             RenderSpritePixel(cycle - 1, scanline);
+            if (cycle == 256 && renderingEnabled)
+                mapper.ClockIrq();
         }
 
         if ((scanline < 240 || scanline == 261) && cycle == 257 && renderingEnabled)

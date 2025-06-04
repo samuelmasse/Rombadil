@@ -2,6 +2,7 @@ namespace Rombadil.Nes.Emulator;
 
 public class NesMapperMmc3(Memory<byte> prg, Memory<byte> chr) : NesMapper
 {
+    private readonly byte[] chrRam = new byte[0x2000];
     private readonly byte[] ram = new byte[0x2000];
 
     private readonly byte[] bankRegs = new byte[8];
@@ -97,6 +98,9 @@ public class NesMapperMmc3(Memory<byte> prg, Memory<byte> chr) : NesMapper
 
     public override byte ReadChr(ushort addr)
     {
+        if (chr.Length == 0)
+            return chrRam[addr & 0x1FFF];
+
         int bank;
         int offset;
 
@@ -162,7 +166,8 @@ public class NesMapperMmc3(Memory<byte> prg, Memory<byte> chr) : NesMapper
 
     public override void WriteChr(ushort addr, byte value)
     {
-        // CHR RAM not implemented
+        if (chr.Length == 0)
+            chrRam[addr & 0x1FFF] = value;
     }
 
     public override int MapNametableAddr(ushort addr)
