@@ -46,6 +46,20 @@ public class CpuEmulator6502(CpuEmulatorState state, CpuEmulatorBus bus)
         s.Cycles += 7;
     }
 
+    public void Irq()
+    {
+        if ((state.SR & CpuStatus.Interrupt) != 0)
+            return;
+
+        var p = new CpuEmulatorProcessor(state, bus);
+
+        p.PushWord(state.PC);
+        p.Push((byte)(state.SR & ~CpuStatus.Break | CpuStatus.Unused));
+        state.Interrupt = true;
+        state.PC = bus.Word(0xFFFE);
+        state.Cycles += 7;
+    }
+
     private void Step(CpuInstruction instruction, CpuAddressingMode mode)
     {
         var addr = Step(CpuEmulatorTimings.Get(instruction, mode), mode);

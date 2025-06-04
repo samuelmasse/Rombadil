@@ -1,6 +1,6 @@
 using Rombadil;
 
-string romFile = @"C:\Users\Samuel\Desktop\NES\Metal Gear (USA).nes";
+string romFile = @"C:\Users\Samuel\Desktop\NES\Super Mario Bros. 3 (USA) (Rev A).nes";
 if (args.Length > 0)
     romFile = args[0];
 

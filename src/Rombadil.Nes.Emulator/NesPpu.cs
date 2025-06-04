@@ -283,7 +283,10 @@ public class NesPpu(NesMapper mapper, Memory<byte> framebuffer)
 
     private void RenderPixel(int xScreen, int yScreen)
     {
-        if ((mask & 0x18) == 0 || (mask & 0x08) == 0)
+        bool showBg = (mask & 0x08) != 0;
+        bool showBgLeft = (mask & 0x02) != 0;
+
+        if (!showBg || (xScreen < 8 && !showBgLeft))
         {
             ushort pAddr = ((mask & 0x18) == 0) ? (ushort)(v & 0x3FFF) : (ushort)0x3F00;
             if (pAddr < 0x3F00 || pAddr >= 0x4000)

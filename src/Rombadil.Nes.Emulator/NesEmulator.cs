@@ -3,6 +3,7 @@ namespace Rombadil.Nes.Emulator;
 public class NesEmulator
 {
     private readonly CpuEmulatorState state;
+    private readonly NesMapper mapper;
     private readonly NesPpu ppu;
     private readonly NesController controller1;
     private readonly NesController controller2;
@@ -18,11 +19,12 @@ public class NesEmulator
         var prg = rom.Slice(romHeader.Length, header.PrgRomSize * 0x4000);
         var chr = rom.Slice(romHeader.Length + prg.Length, header.ChrRomSize * 0x2000);
 
-        var mapper = header.MapperNumber switch
+        mapper = header.MapperNumber switch
         {
             0 => new NesMapperNrom(prg, chr),
             1 => new NesMapperMmc1(prg, chr),
             2 => new NesMapperUxrom(prg, chr),
+            4 => new NesMapperMmc3(prg, chr),
             _ => new NesMapper()
         };
 
@@ -55,6 +57,12 @@ public class NesEmulator
             {
                 cpu.Nmi();
                 ppu.ClearPendingNmi();
+            }
+
+            if (mapper.PendingIrq)
+            {
+                cpu.Irq();
+                mapper.ClearPendingIrq();
             }
 
             while (ppu.Cycles < state.Cycles * 3)
