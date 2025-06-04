@@ -22,6 +22,7 @@ public class NesEmulator
         {
             0 => new NesMapperNrom(prg, chr),
             1 => new NesMapperMmc1(prg, chr),
+            2 => new NesMapperUxrom(prg, chr),
             _ => new NesMapper()
         };
 

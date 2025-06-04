@@ -235,13 +235,23 @@ public class NesPpu(NesMapper mapper, Memory<byte> framebuffer)
 
         int bx0 = spriteX / 16;
         int by0 = spriteY / 16;
-        int bx1 = (spriteX + 7) / 16;
-        int by1 = (spriteY + height - 1) / 16;
 
-        if (bx0 < 16 && by0 < 15) spriteBlocks[by0, bx0].Add((byte)i, 0);
-        if (bx1 < 16 && by0 < 15 && bx1 != bx0) spriteBlocks[by0, bx1].Add((byte)i, 0);
-        if (bx0 < 16 && by1 < 15 && by1 != by0) spriteBlocks[by1, bx0].Add((byte)i, 0);
-        if (bx1 < 16 && by1 < 15 && bx1 != bx0 && by1 != by0) spriteBlocks[by1, bx1].Add((byte)i, 0);
+        Add(0, 0);
+        Add(1, 0);
+        Add(0, 1);
+        Add(1, 1);
+
+        if (height > 8)
+        {
+            Add(0, 2);
+            Add(1, 2);
+        }
+
+        void Add(int dx, int dy)
+        {
+            if (bx0 + dx < 16 && by0 + dy < 15)
+                spriteBlocks[(byte)(by0 + dy), (byte)(bx0 + dx)][(byte)i] = 0;
+        }
     }
 
     private void RemoveSpriteFromBlocks(int i)
@@ -252,13 +262,23 @@ public class NesPpu(NesMapper mapper, Memory<byte> framebuffer)
 
         int bx0 = spriteX / 16;
         int by0 = spriteY / 16;
-        int bx1 = (spriteX + 7) / 16;
-        int by1 = (spriteY + height - 1) / 16;
 
-        if (bx0 < 16 && by0 < 15) spriteBlocks[by0, bx0].Remove((byte)i);
-        if (bx1 < 16 && by0 < 15 && bx1 != bx0) spriteBlocks[by0, bx1].Remove((byte)i);
-        if (bx0 < 16 && by1 < 15 && by1 != by0) spriteBlocks[by1, bx0].Remove((byte)i);
-        if (bx1 < 16 && by1 < 15 && bx1 != bx0 && by1 != by0) spriteBlocks[by1, bx1].Remove((byte)i);
+        Remove(0, 0);
+        Remove(1, 0);
+        Remove(0, 1);
+        Remove(1, 1);
+
+        if (height > 8)
+        {
+            Remove(0, 2);
+            Remove(1, 2);
+        }
+
+        void Remove(int dx, int dy)
+        {
+            if (bx0 + dx < 16 && by0 + dy < 15)
+                spriteBlocks[(byte)(by0 + dy), (byte)(bx0 + dx)].Remove((byte)i);
+        }
     }
 
     private void RenderPixel(int xScreen, int yScreen)
@@ -369,18 +389,22 @@ public class NesPpu(NesMapper mapper, Memory<byte> framebuffer)
         int blockY = y / 16;
         var list = spriteBlocks[blockY, blockX].Keys;
 
-        for (int i = list.Count - 1; i >= 0; i--)
+        for (int i = 0; i < list.Count; i++)
         {
             int spriteIndex = list[i];
             int baseIndex = spriteIndex * 4;
-            int spriteY = oam[baseIndex + 0] + 1;
-            byte tileIndex = oam[baseIndex + 1];
-            byte attr = oam[baseIndex + 2];
             int spriteX = oam[baseIndex + 3];
+            int col = x - spriteX;
+            if (col >= 8 || col < 0)
+                continue;
 
+            int spriteY = oam[baseIndex + 0] + 1;
             int height = spriteSize8x16 ? 16 : 8;
             if (y < spriteY || y >= spriteY + height)
                 continue;
+
+            byte tileIndex = oam[baseIndex + 1];
+            byte attr = oam[baseIndex + 2];
 
             int row = y - spriteY;
             if ((attr & 0x80) != 0)
@@ -403,38 +427,34 @@ public class NesPpu(NesMapper mapper, Memory<byte> framebuffer)
             byte plane0 = mapper.ReadChr(addr);
             byte plane1 = mapper.ReadChr((ushort)(addr + 8));
 
-            for (int col = 0; col < 8; col++)
-            {
-                int bit = (attr & 0x40) != 0 ? col : 7 - col;
-                int bit0 = (plane0 >> bit) & 1;
-                int bit1 = (plane1 >> bit) & 1;
-                int colorIndex = (bit1 << 1) | bit0;
+            int bit = (attr & 0x40) != 0 ? col : 7 - col;
+            int bit0 = (plane0 >> bit) & 1;
+            int bit1 = (plane1 >> bit) & 1;
+            int colorIndex = (bit1 << 1) | bit0;
 
-                if (colorIndex == 0)
-                    continue;
+            if (colorIndex == 0)
+                continue;
 
-                int px = spriteX + col;
-                if (px != x)
-                    continue;
+            if (spriteIndex == 0 && bgOpaque[y, x])
+                status |= 0x40;
 
-                if (spriteIndex == 0 && bgOpaque[y, x])
-                    status |= 0x40;
+            bool behindBg = (attr & 0x20) != 0;
+            if (behindBg && bgOpaque[y, x])
+                return;
 
-                bool behindBg = (attr & 0x20) != 0;
-                if (behindBg && bgOpaque[y, x])
-                    continue;
+            int paletteNum = attr & 0x03;
+            ushort paletteAddr = (ushort)(0x3F10 + (paletteNum << 2) + colorIndex);
+            var (r, g, b) = ReadPaletteColor(paletteAddr);
 
-                int paletteNum = attr & 0x03;
-                ushort paletteAddr = (ushort)(0x3F10 + (paletteNum << 2) + colorIndex);
-                var (r, g, b) = ReadPaletteColor(paletteAddr);
+            int index = (y * 256 + x) * 3;
+            backBuffer[index + 0] = r;
+            backBuffer[index + 1] = g;
+            backBuffer[index + 2] = b;
 
-                int index = (y * 256 + x) * 3;
-                backBuffer[index + 0] = r;
-                backBuffer[index + 1] = g;
-                backBuffer[index + 2] = b;
-            }
+            return;
         }
     }
+
 
     private (byte r, byte g, byte b) ReadPaletteColor(ushort addr)
     {
