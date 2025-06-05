@@ -4,6 +4,7 @@ public class CpuEmulatorBus
 {
     private readonly byte[] memory = new byte[0x10000];
 
+    public virtual byte Peek(ushort addr) => memory[addr];
     public virtual byte Read(ushort addr) => memory[addr];
     public virtual void Write(ushort addr, byte value) => memory[addr] = value;
 

@@ -1,6 +1,6 @@
 using Rombadil;
 
-string romFile = @"C:\Users\Samuel\Desktop\NES\Mega Man 6 (USA).nes";
+string romFile = "apu_test.nes";
 if (args.Length > 0)
     romFile = args[0];
 
@@ -12,22 +12,34 @@ var sw = Stopwatch.StartNew();
 window.Render += (delta) =>
 {
     sw.Restart();
-    NesButtons b = 0;
 
     if (window.IsKeyDown(Keys.LeftControl) && window.IsKeyPressed(Keys.R)) nes.Reset();
-    if (window.IsKeyDown(Keys.S)) b |= NesButtons.A;
-    if (window.IsKeyDown(Keys.A)) b |= NesButtons.B;
-    if (window.IsKeyDown(Keys.W)) b |= NesButtons.Start;
-    if (window.IsKeyDown(Keys.Q)) b |= NesButtons.Select;
-    if (window.IsKeyDown(Keys.Up) && !window.IsKeyDown(Keys.Down)) b |= NesButtons.Up;
-    if (window.IsKeyDown(Keys.Down) && !window.IsKeyDown(Keys.Up)) b |= NesButtons.Down;
-    if (window.IsKeyDown(Keys.Left) && !window.IsKeyDown(Keys.Right)) b |= NesButtons.Left;
-    if (window.IsKeyDown(Keys.Right) && !window.IsKeyDown(Keys.Left)) b |= NesButtons.Right;
 
-    nes.SetButtons1(b);
+    NesButtons b1 = 0;
+    if (window.IsKeyDown(Keys.S)) b1 |= NesButtons.A;
+    if (window.IsKeyDown(Keys.A)) b1 |= NesButtons.B;
+    if (window.IsKeyDown(Keys.W)) b1 |= NesButtons.Start;
+    if (window.IsKeyDown(Keys.Q)) b1 |= NesButtons.Select;
+    if (window.IsKeyDown(Keys.Up) && !window.IsKeyDown(Keys.Down)) b1 |= NesButtons.Up;
+    if (window.IsKeyDown(Keys.Down) && !window.IsKeyDown(Keys.Up)) b1 |= NesButtons.Down;
+    if (window.IsKeyDown(Keys.Left) && !window.IsKeyDown(Keys.Right)) b1 |= NesButtons.Left;
+    if (window.IsKeyDown(Keys.Right) && !window.IsKeyDown(Keys.Left)) b1 |= NesButtons.Right;
+    nes.SetButtons1(b1);
+
+    NesButtons b2 = 0;
+    if (window.IsKeyDown(Keys.F)) b2 |= NesButtons.A;
+    if (window.IsKeyDown(Keys.D)) b2 |= NesButtons.B;
+    if (window.IsKeyDown(Keys.R)) b2 |= NesButtons.Start;
+    if (window.IsKeyDown(Keys.E)) b2 |= NesButtons.Select;
+    if (window.IsKeyDown(Keys.U) && !window.IsKeyDown(Keys.J)) b2 |= NesButtons.Up;
+    if (window.IsKeyDown(Keys.J) && !window.IsKeyDown(Keys.U)) b2 |= NesButtons.Down;
+    if (window.IsKeyDown(Keys.H) && !window.IsKeyDown(Keys.K)) b2 |= NesButtons.Left;
+    if (window.IsKeyDown(Keys.K) && !window.IsKeyDown(Keys.H)) b2 |= NesButtons.Right;
+    nes.SetButtons2(b2);
+
     nes.Step();
 
-    Console.WriteLine($"time {sw.Elapsed.TotalMilliseconds}");
+    // Console.WriteLine($"time {sw.Elapsed.TotalMilliseconds}");
 };
 
 window.Run();

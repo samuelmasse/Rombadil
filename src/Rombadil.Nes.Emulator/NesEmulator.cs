@@ -5,6 +5,7 @@ public class NesEmulator
     private readonly CpuEmulatorState state;
     private readonly NesMapper mapper;
     private readonly NesPpu ppu;
+    private readonly NesApu apu;
     private readonly NesController controller1;
     private readonly NesController controller2;
     private readonly NesMemoryBus bus;
@@ -30,9 +31,10 @@ public class NesEmulator
 
         state = new CpuEmulatorState();
         ppu = new NesPpu(mapper, framebuffer);
+        apu = new();
         controller1 = new NesController();
         controller2 = new NesController();
-        bus = new NesMemoryBus(mapper, ppu, controller1, controller2);
+        bus = new NesMemoryBus(mapper, ppu, apu, controller1, controller2);
         cpu = new CpuEmulator6502(state, bus);
         logger = new CpuEmulatorLogger(state, bus, cpu);
 
@@ -52,6 +54,9 @@ public class NesEmulator
         {
             // Console.WriteLine(logger.Log());
             cpu.Step();
+
+            while (apu.Cycles < state.Cycles / 2)
+                apu.Step();
 
             if (ppu.PendingNmi)
             {

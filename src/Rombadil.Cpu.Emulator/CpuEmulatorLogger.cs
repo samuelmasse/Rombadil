@@ -5,17 +5,17 @@ public class CpuEmulatorLogger(CpuEmulatorState state, CpuEmulatorBus memory, Cp
     public string Log()
     {
         var reg = state.Reg;
-        var opcode = (CpuOpcode)memory[reg.PC];
-        var low = memory[(ushort)(reg.PC + 1)];
-        var high = memory[(ushort)(reg.PC + 2)];
+        var opcode = memory.Peek(reg.PC);
+        var low = memory.Peek((ushort)(reg.PC + 1));
+        var high = memory.Peek((ushort)(reg.PC + 2));
 
         CpuInstruction? instruction = null;
         CpuEmulatorIllegalInstruction? illegalInstruction = null;
         CpuAddressingMode mode;
 
-        if (CpuOpcodeMap.TryDecodeOpcode((CpuOpcode)memory[reg.PC], out var decode))
+        if (CpuOpcodeMap.TryDecodeOpcode((CpuOpcode)opcode, out var decode))
             (instruction, mode) = decode;
-        else if (CpuEmulatorIllegalOpcodeMap.TryDecodeOpcode((CpuEmulatorIllegalOpcode)memory[reg.PC], out var illegal))
+        else if (CpuEmulatorIllegalOpcodeMap.TryDecodeOpcode((CpuEmulatorIllegalOpcode)opcode, out var illegal))
             (illegalInstruction, mode) = illegal;
         else return string.Empty;
 
@@ -57,7 +57,7 @@ public class CpuEmulatorLogger(CpuEmulatorState state, CpuEmulatorBus memory, Cp
 
         if ((instruction == null || !ShouldShowMemoryValue(instruction.Value)) && ShouldShowMemoryValue(mode))
         {
-            var display = $"{memory[addr]:X2}";
+            var display = $"{memory.Peek(addr):X2}";
             dissassemble += $" = {display}";
         }
 

@@ -185,6 +185,17 @@ public class NesPpu(NesMapper mapper, Memory<byte> framebuffer)
         };
     }
 
+    public byte PeekRegister(ushort reg)
+    {
+        return (reg % 8) switch
+        {
+            2 => PeekStatus(),
+            4 => oam[oamAddr],
+            7 => PeekData(),
+            _ => 0x00,
+        };
+    }
+
     public void WriteRegister(ushort reg, byte value)
     {
         switch (reg % 8)
@@ -480,11 +491,13 @@ public class NesPpu(NesMapper mapper, Memory<byte> framebuffer)
             nmiSuppressed = true;
             vblankSuppressed = true;
         }
-        byte result = (byte)(status & 0xE0);
+        byte result = PeekStatus();
         writeToggle = false;
         status &= 0x7F;
         return result;
     }
+
+    private byte PeekStatus() => (byte)(status & 0xE0);
 
     private byte ReadData()
     {
@@ -503,6 +516,13 @@ public class NesPpu(NesMapper mapper, Memory<byte> framebuffer)
 
         v += (ctrl & 0x04) != 0 ? (ushort)32 : (ushort)1;
         return result;
+    }
+
+    private byte PeekData()
+    {
+        if (v < 0x3F00)
+            return buffer;
+        else return ReadPpuMemory(v);
     }
 
     private void WriteData(byte value)

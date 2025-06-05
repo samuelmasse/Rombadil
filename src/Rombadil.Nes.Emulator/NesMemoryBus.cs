@@ -3,12 +3,30 @@ namespace Rombadil.Nes.Emulator;
 public class NesMemoryBus(
     NesMapper mapper,
     NesPpu ppu,
+    NesApu apu,
     NesController controller1,
     NesController controller2) : CpuEmulatorBus
 {
+    public override byte Peek(ushort addr)
+    {
+        if (addr == 0x4015)
+            return apu.PeekStatus();
+        else if (addr == 0x4016)
+            return controller1.Peek();
+        else if (addr == 0x4017)
+            return controller2.Peek();
+        else if (addr >= 0x2000 && addr <= 0x3FFF)
+            return ppu.PeekRegister(addr);
+        else if (addr >= 0x8000)
+            return mapper.Read(addr);
+        else return base.Peek(addr);
+    }
+
     public override byte Read(ushort addr)
     {
-        if (addr == 0x4016)
+        if (addr == 0x4015)
+            return apu.ReadStatus();
+        else if (addr == 0x4016)
             return controller1.Read();
         else if (addr == 0x4017)
             return controller2.Read();
@@ -32,9 +50,12 @@ public class NesMemoryBus(
             }
         }
         else if (addr == 0x4016)
+        {
             controller1.Write(value);
-        else if (addr == 0x4017)
             controller2.Write(value);
+        }
+        else if (addr >= 0x4000 && addr <= 0x4017 && addr != 0x4016)
+            apu.WriteRegister(addr, value);
         else if (addr >= 0x2000 && addr <= 0x3FFF)
             ppu.WriteRegister(addr, value);
         else if (addr >= 0x8000)

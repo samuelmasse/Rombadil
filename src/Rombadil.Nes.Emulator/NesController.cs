@@ -34,4 +34,20 @@ public class NesController
 
         return result;
     }
+
+    public byte Peek()
+    {
+        var s = latchedState;
+        var b = bitIndex;
+
+        if (strobe)
+        {
+            s = currentState;
+            b = 0;
+        }
+
+        byte result = (byte)((((byte)s >> b) & 1) | 0x40);
+
+        return result;
+    }
 }
