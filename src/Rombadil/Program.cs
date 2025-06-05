@@ -19,10 +19,10 @@ window.Render += (delta) =>
     if (window.IsKeyDown(Keys.A)) b |= NesButtons.B;
     if (window.IsKeyDown(Keys.W)) b |= NesButtons.Start;
     if (window.IsKeyDown(Keys.Q)) b |= NesButtons.Select;
-    if (window.IsKeyDown(Keys.Up)) b |= NesButtons.Up;
-    if (window.IsKeyDown(Keys.Down)) b |= NesButtons.Down;
-    if (window.IsKeyDown(Keys.Left)) b |= NesButtons.Left;
-    if (window.IsKeyDown(Keys.Right)) b |= NesButtons.Right;
+    if (window.IsKeyDown(Keys.Up) && !window.IsKeyDown(Keys.Down)) b |= NesButtons.Up;
+    if (window.IsKeyDown(Keys.Down) && !window.IsKeyDown(Keys.Up)) b |= NesButtons.Down;
+    if (window.IsKeyDown(Keys.Left) && !window.IsKeyDown(Keys.Right)) b |= NesButtons.Left;
+    if (window.IsKeyDown(Keys.Right) && !window.IsKeyDown(Keys.Left)) b |= NesButtons.Right;
 
     nes.SetButtons1(b);
     nes.Step();
