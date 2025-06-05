@@ -13,7 +13,9 @@ public class NesApu
     private NesApuChannel triangle;
     private NesApuChannel noise;
     private NesApuChannel dmc;
+    private bool frameIrq;
     private bool frameFiveStep;
+    private bool frameIrqInhibit;
     private int frameCycle;
     private long cycles;
 
@@ -22,6 +24,7 @@ public class NesApu
     public byte ReadStatus()
     {
         var status = PeekStatus();
+        frameIrq = false;
         Console.WriteLine($"APU CYC:{cycles} READ ${status:X2}");
         return status;
     }
@@ -35,6 +38,7 @@ public class NesApu
         if (triangle.Length > 0) status |= 0b0000_0100;
         if (noise.Length > 0) status |= 0b0000_1000;
         if (dmc.Enabled) status |= 0b0001_0000;
+        if (frameIrq) status |= 0b0100_0000;
 
         return status;
     }
@@ -65,6 +69,9 @@ public class NesApu
         {
             ClockLength();
             frameCycle = 0;
+
+            if (!frameFiveStep && !frameIrqInhibit)
+                frameIrq = true;
         }
 
         frameCycle++;
@@ -83,7 +90,11 @@ public class NesApu
     private void WriteFrameCounter(byte value)
     {
         frameFiveStep = (value & 0x80) != 0;
+        frameIrqInhibit = (value & 0x40) != 0;
         frameCycle = 0;
+
+        if (frameIrqInhibit)
+            frameIrq = false;
 
         if (frameFiveStep)
             ClockLength();
