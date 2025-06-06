@@ -55,7 +55,7 @@ public class NesEmulator
             // Console.WriteLine(logger.Log());
             cpu.Step();
 
-            while (apu.Cycles < state.Cycles / 2)
+            while (apu.Cycles < state.Cycles)
                 apu.Step();
 
             if (ppu.PendingNmi)

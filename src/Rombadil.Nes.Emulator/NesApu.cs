@@ -63,19 +63,31 @@ public class NesApu
     {
         int frame = frameFiveStep ? 18641 : 14915;
 
-        if (frameCycle == 7457)
-            ClockLength();
-        else if (frameCycle == frame)
+        if (cycles % 2 == 0)
         {
-            ClockLength();
-            frameCycle = 0;
+            if (frameCycle == frame)
+                SetFrameInterruptIfRequired();
 
-            if (!frameFiveStep && !frameIrqInhibit)
-                frameIrq = true;
+            frameCycle++;
+        }
+        else
+        {
+            if (frameCycle == 7458)
+                ClockLength();
+            if (frameCycle == frame + 1)
+            {
+                ClockLength();
+                frameCycle -= frame;
+            }
         }
 
-        frameCycle++;
         cycles++;
+    }
+
+    private void SetFrameInterruptIfRequired()
+    {
+        if (!frameFiveStep && !frameIrqInhibit)
+            frameIrq = true;
     }
 
     private void WriteStatus(byte value)
