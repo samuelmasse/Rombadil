@@ -17,12 +17,12 @@ public class NesApuDmc(NesMapper mapper)
     private ushort currentAddress;
     private int sampleRemaining;
     private bool irqFlag;
-    private bool bufferFilled;
     private byte sampleBuffer;
     private byte shiftRegister;
     private int bitCounter;
     private byte outputLevel;
     private int timer;
+    private bool bufferFilled;
 
     public bool Enabled => enabled;
     public bool IrqFlag => irqFlag;
@@ -42,12 +42,20 @@ public class NesApuDmc(NesMapper mapper)
     public void Toggle(bool enable)
     {
         enabled = enable;
+        irqFlag = false;
 
         if (enable)
-            StartDmcSample();
-        else StopDmcSample();
+        {
+            if (sampleRemaining == 0)
+            {
+                currentAddress = sampleAddress;
+                sampleRemaining = sampleLength;
+            }
 
-        irqFlag = false;
+            if (!bufferFilled && sampleRemaining > 0)
+                FetchDmcSample();
+        }
+        else sampleRemaining = 0;
     }
 
     public void WriteRegister(int reg, byte value)
@@ -80,16 +88,9 @@ public class NesApuDmc(NesMapper mapper)
     {
         if (bitCounter == 0)
         {
-            if (!bufferFilled)
-            {
-                if (sampleRemaining == 0 && !loop)
-                    enabled = false;
-            }
-
             shiftRegister = sampleBuffer;
             bitCounter = 8;
             bufferFilled = false;
-
             FetchDmcSample();
         }
 
@@ -106,54 +107,29 @@ public class NesApuDmc(NesMapper mapper)
         bitCounter--;
     }
 
-    private void StartDmcSample()
-    {
-        if (sampleRemaining == 0)
-        {
-            currentAddress = sampleAddress;
-            sampleRemaining = sampleLength;
-        }
-
-        if (!bufferFilled)
-            FetchDmcSample();
-
-        if (timer <= 0)
-            timer = rates[rateIndex];
-    }
-
-    private void StopDmcSample()
-    {
-        sampleRemaining = 0;
-    }
-
     private void FetchDmcSample()
     {
         if (sampleRemaining <= 0)
             return;
 
-        sampleBuffer = mapper.Read(currentAddress);
+        sampleBuffer = mapper.Read(currentAddress++);
         bufferFilled = true;
-
-        currentAddress++;
-        if (currentAddress == 0x0000)
-            currentAddress = 0x8000;
-
         sampleRemaining--;
 
-        if (sampleRemaining != 0)
-            return;
-
-        if (loop)
+        if (sampleRemaining == 0)
         {
-            currentAddress = sampleAddress;
-            sampleRemaining = sampleLength;
-        }
-        else
-        {
-            if (irqEnable)
-                irqFlag = true;
+            if (loop)
+            {
+                currentAddress = sampleAddress;
+                sampleRemaining = sampleLength;
+            }
+            else
+            {
+                if (irqEnable)
+                    irqFlag = true;
 
-            enabled = false;
+                enabled = false;
+            }
         }
     }
 }
