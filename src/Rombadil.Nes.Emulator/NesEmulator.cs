@@ -31,7 +31,7 @@ public class NesEmulator
 
         state = new CpuEmulatorState();
         ppu = new NesPpu(mapper, framebuffer);
-        apu = new();
+        apu = new(mapper);
         controller1 = new NesController();
         controller2 = new NesController();
         bus = new NesMemoryBus(mapper, ppu, apu, controller1, controller2);

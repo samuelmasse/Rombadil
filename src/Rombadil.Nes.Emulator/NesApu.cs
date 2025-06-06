@@ -1,6 +1,6 @@
 namespace Rombadil.Nes.Emulator;
 
-public class NesApu
+public class NesApu(NesMapper mapper)
 {
     private static readonly byte[] lt =
     [
@@ -8,11 +8,33 @@ public class NesApu
         12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30
     ];
 
+    private static readonly int[] dmcRates =
+    [
+        428, 380, 340, 320, 286, 254, 226, 214,
+        190, 160, 142, 128, 106,  84,  72,  54
+    ];
+
     private NesApuChannel pulse1;
     private NesApuChannel pulse2;
     private NesApuChannel triangle;
     private NesApuChannel noise;
     private NesApuChannel dmc;
+
+    private bool dmcIrqEnable;
+    private bool dmcLoop;
+    private byte dmcRateIndex;
+    private ushort dmcSampleAddress;
+    private int dmcSampleLength;
+    private ushort dmcCurrentAddress;
+    private int dmcSampleRemaining;
+    private bool dmcIrqFlag;
+    private bool dmcBufferFilled;
+    private byte dmcSampleBuffer;
+    private byte dmcShiftRegister;
+    private int dmcBitCounter;
+    private byte dmcOutputLevel;
+    private int dmcTimer;
+
     private bool frameIrq;
     private bool frameFiveStep;
     private bool frameIrqInhibit;
@@ -39,6 +61,7 @@ public class NesApu
         if (noise.Length > 0) status |= 0b0000_1000;
         if (dmc.Enabled) status |= 0b0001_0000;
         if (frameIrq) status |= 0b0100_0000;
+        if (dmcIrqFlag) status |= 0b1000_0000;
 
         return status;
     }
@@ -53,7 +76,7 @@ public class NesApu
             case >= 0x4004 and <= 0x4007: WriteChannelRegister(ref pulse2, addr - 0x4004, value); break;
             case >= 0x4008 and <= 0x400B: WriteChannelRegister(ref triangle, addr - 0x4008, value); break;
             case >= 0x400C and <= 0x400F: WriteChannelRegister(ref noise, addr - 0x400C, value); break;
-            case >= 0x4010 and <= 0x4013: WriteChannelRegister(ref dmc, addr - 0x4010, value); break;
+            case >= 0x4010 and <= 0x4013: WriteDmcRegister(addr - 0x4010, value); break;
             case 0x4015: WriteStatus(value); break;
             case 0x4017: WriteFrameCounter(value); break;
         }
@@ -82,6 +105,42 @@ public class NesApu
         }
 
         cycles++;
+
+        if (dmcTimer > 0)
+            dmcTimer--;
+
+        if (dmcTimer == 0)
+        {
+            ClockDmcOutput();
+            dmcTimer = dmcRates[dmcRateIndex];
+        }
+    }
+
+    private void ClockDmcOutput()
+    {
+        if (dmcBitCounter == 0)
+        {
+            if (!dmcBufferFilled)
+                return;
+
+            dmcShiftRegister = dmcSampleBuffer;
+            dmcBitCounter = 8;
+            dmcBufferFilled = false;
+
+            FetchDmcSample();
+        }
+
+        if ((dmcShiftRegister & 1) != 0)
+        {
+            if (dmcOutputLevel <= 125) dmcOutputLevel += 2;
+        }
+        else
+        {
+            if (dmcOutputLevel >= 2) dmcOutputLevel -= 2;
+        }
+
+        dmcShiftRegister >>= 1;
+        dmcBitCounter--;
     }
 
     private void SetFrameInterruptIfRequired()
@@ -96,7 +155,66 @@ public class NesApu
         ToggleChannel(ref pulse2, (value & 0b0000_0010) != 0);
         ToggleChannel(ref triangle, (value & 0b0000_0100) != 0);
         ToggleChannel(ref noise, (value & 0b0000_1000) != 0);
-        ToggleChannel(ref dmc, (value & 0b0001_0000) != 0);
+
+        bool dmcEnable = (value & 0b0001_0000) != 0;
+        ToggleChannel(ref dmc, dmcEnable);
+
+        if (dmcEnable)
+            StartDmcSample();
+        else StopDmcSample();
+
+        dmcIrqFlag = false;
+    }
+
+    private void StartDmcSample()
+    {
+        if (dmcSampleRemaining == 0)
+        {
+            dmcCurrentAddress = dmcSampleAddress;
+            dmcSampleRemaining = dmcSampleLength;
+        }
+
+        if (!dmcBufferFilled)
+            FetchDmcSample();
+
+        if (dmcTimer <= 0)
+            dmcTimer = dmcRates[dmcRateIndex];
+    }
+
+    private void StopDmcSample()
+    {
+        dmcSampleRemaining = 0;
+    }
+
+    private void FetchDmcSample()
+    {
+        if (dmcSampleRemaining <= 0)
+            return;
+
+        dmcSampleBuffer = mapper.Read(dmcCurrentAddress);
+        dmcBufferFilled = true;
+
+        dmcCurrentAddress++;
+        if (dmcCurrentAddress == 0x0000)
+            dmcCurrentAddress = 0x8000;
+
+        dmcSampleRemaining--;
+
+        if (dmcSampleRemaining != 0)
+            return;
+
+        if (dmcLoop)
+        {
+            dmcCurrentAddress = dmcSampleAddress;
+            dmcSampleRemaining = dmcSampleLength;
+        }
+        else
+        {
+            if (dmcIrqEnable)
+                dmcIrqFlag = true;
+
+            dmc.Enabled = false;
+        }
     }
 
     private void WriteFrameCounter(byte value)
@@ -118,6 +236,34 @@ public class NesApu
         ClockLengthChannel(ref pulse2);
         ClockLengthChannel(ref triangle);
         ClockLengthChannel(ref noise);
+    }
+
+    private void WriteDmcRegister(int reg, byte value)
+    {
+        switch (reg)
+        {
+            case 0:
+                dmcIrqEnable = (value & 0b1000_0000) != 0;
+                dmcLoop = (value & 0b0100_0000) != 0;
+                dmcRateIndex = (byte)(value & 0b0000_1111);
+                if (!dmcIrqEnable)
+                    dmcIrqFlag = false;
+                break;
+
+            case 1:
+                dmcOutputLevel = (byte)(value & 0b0111_1111);
+                break;
+
+            case 2:
+                dmcSampleAddress = (ushort)(0xC000 + (value << 6));
+                break;
+
+            case 3:
+                dmcSampleLength = (value << 4) + 1;
+                break;
+        }
+
+        WriteChannelRegister(ref dmc, reg, value);
     }
 
     private void WriteChannelRegister(ref NesApuChannel channel, int reg, byte value)

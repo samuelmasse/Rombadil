@@ -1,6 +1,8 @@
 using Rombadil;
 
-string romFile = "apu_test.nes";
+// note : zelda upper door bug
+
+string romFile = @"C:\Users\Samuel\Documents\Repos\nes-test-roms\apu_test\rom_singles\7-dmc_basics.nes";
 if (args.Length > 0)
     romFile = args[0];
 
