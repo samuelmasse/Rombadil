@@ -39,6 +39,11 @@ public class NesApuDmc(NesMapper mapper)
         }
     }
 
+    public float Sample()
+    {
+        return outputLevel / 127f;
+    }
+
     public void Toggle(bool enable)
     {
         enabled = enable;

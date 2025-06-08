@@ -88,6 +88,13 @@ public class NesApu(NesMapper mapper)
         dmc.Step();
     }
 
+    public short Sample()
+    {
+        var dmcSample = dmc.Sample();
+
+        return (short)((Math.Clamp((dmcSample), -1f, 1f) * short.MaxValue));
+    }
+
     private void SetFrameInterruptIfRequired()
     {
         if (!frameFiveStep && !frameIrqInhibit)

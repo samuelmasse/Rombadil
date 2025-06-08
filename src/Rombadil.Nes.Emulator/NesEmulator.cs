@@ -60,7 +60,10 @@ public class NesEmulator
             cpu.Step();
 
             while (apu.Cycles < state.Cycles)
+            {
                 apu.Step();
+                samples.Enqueue(apu.Sample());
+            }
 
             if (ppu.PendingNmi)
             {
@@ -79,22 +82,6 @@ public class NesEmulator
                 if (ppu.Step())
                     done = true;
             }
-        }
-
-        FillSine(735 * 40);
-    }
-
-    private void FillSine(int count)
-    {
-        const double freq = 440.0;
-        const double step = 2 * Math.PI * freq / (44100 * 40);
-
-        for (int i = 0; i < count; i++)
-        {
-            samples.Enqueue((short)(Math.Sin(phase) * short.MaxValue));
-            phase += step;
-            if (phase >= 2 * Math.PI)
-                phase -= 2 * Math.PI;
         }
     }
 
