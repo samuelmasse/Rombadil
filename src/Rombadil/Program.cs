@@ -8,7 +8,7 @@ if (args.Length > 0)
 
 using var window = new RombadilWindow();
 var rom = File.ReadAllBytes(romFile);
-var nes = new NesEmulator(rom, window.Framebuffer);
+var nes = new NesEmulator(rom, window.Framebuffer, window.Samples);
 var sw = Stopwatch.StartNew();
 
 window.Render += (delta) =>

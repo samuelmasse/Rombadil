@@ -26,7 +26,7 @@ public class NesApu(NesMapper mapper)
     {
         var status = PeekStatus();
         frameIrq = false;
-        Console.WriteLine($"APU CYC:{cycles} READ ${status:X2}");
+        // Console.WriteLine($"APU CYC:{cycles} READ ${status:X2}");
         return status;
     }
 
@@ -47,7 +47,7 @@ public class NesApu(NesMapper mapper)
 
     public void WriteRegister(ushort addr, byte value)
     {
-        Console.WriteLine($"APU CYC:{cycles} WRITE ${addr:X4}=${value:X2}");
+        // Console.WriteLine($"APU CYC:{cycles} WRITE ${addr:X4}=${value:X2}");
 
         switch (addr)
         {

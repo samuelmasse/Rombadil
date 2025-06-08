@@ -25,6 +25,9 @@
         <None Update="Icon.png">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <None Update="OpenAL32.dll">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
         <None Update="Shader.frag">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
@@ -35,6 +38,7 @@
 
     <ItemGroup>
         <Using Include="BigGustave" />
+        <Using Include="OpenTK.Audio.OpenAL" />
         <Using Include="OpenTK.Graphics.OpenGL4" />
         <Using Include="OpenTK.Mathematics" />
         <Using Include="OpenTK.Windowing.Common" />

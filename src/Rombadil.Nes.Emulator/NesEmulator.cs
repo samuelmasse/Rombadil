@@ -11,9 +11,13 @@ public class NesEmulator
     private readonly NesMemoryBus bus;
     private readonly CpuEmulator6502 cpu;
     private readonly CpuEmulatorLogger logger;
+    private readonly Queue<short> samples;
+    private double phase;
 
-    public NesEmulator(Memory<byte> rom, Memory<byte> framebuffer)
+    public NesEmulator(Memory<byte> rom, Memory<byte> framebuffer, Queue<short> samples)
     {
+        this.samples = samples;
+
         var romHeader = rom[..0x10];
         var header = new NesRomHeader(rom[..0x10]);
 
@@ -75,6 +79,22 @@ public class NesEmulator
                 if (ppu.Step())
                     done = true;
             }
+        }
+
+        FillSine(735 * 40);
+    }
+
+    private void FillSine(int count)
+    {
+        const double freq = 440.0;
+        const double step = 2 * Math.PI * freq / (44100 * 40);
+
+        for (int i = 0; i < count; i++)
+        {
+            samples.Enqueue((short)(Math.Sin(phase) * short.MaxValue));
+            phase += step;
+            if (phase >= 2 * Math.PI)
+                phase -= 2 * Math.PI;
         }
     }
 

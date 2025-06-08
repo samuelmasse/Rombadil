@@ -5,6 +5,8 @@ public class RombadilWindow : IDisposable
     public event Action<double>? Render;
 
     private readonly byte[] framebuffer;
+    private readonly Queue<short> samples;
+
     private readonly Vector2i framebufferSize;
     private readonly GameWindow window;
     private readonly float[] vertices = new float[16];
@@ -18,12 +20,22 @@ public class RombadilWindow : IDisposable
     private WindowState previousState;
     private bool isFullscreen;
 
+    private Thread? audioThread;
+    private bool running;
+    private ALDevice device;
+    private ALContext context;
+    private int source;
+    private int[] buffers = [];
+    private AudioBuffer audioBuffer = new(0xFFFF, 16);
+
     public Memory<byte> Framebuffer => framebuffer;
+    public Queue<short> Samples => samples;
 
     public RombadilWindow()
     {
         framebufferSize = (256, 240);
         framebuffer = new byte[framebufferSize.X * framebufferSize.Y * 3];
+        samples = [];
 
         float ntscPixelAspect = 8f / 7f;
         float correctedPixelWidth = framebufferSize.X * ntscPixelAspect;
@@ -72,10 +84,140 @@ public class RombadilWindow : IDisposable
                 ToggleFullscreen();
 
             Render?.Invoke(e.Time);
+
+            while (samples.Count > 0)
+                audioBuffer.Add(samples.Dequeue());
+            audioBuffer.Submit();
+
             Present();
         };
         window.Resize += (e) => Present();
+        window.Load += () => StartAudio();
+        window.Unload += () => StopAudio();
+    }
 
+    private void StartAudio()
+    {
+        device = ALC.OpenDevice(null);
+        context = ALC.CreateContext(device, (int[])null!);
+        ALC.MakeContextCurrent(context);
+
+        source = AL.GenSource();
+        buffers = AL.GenBuffers(3);
+
+        running = true;
+        audioThread = new Thread(AudioLoop) { IsBackground = true };
+        audioThread.Start();
+    }
+
+    private void StopAudio()
+    {
+        running = false;
+        audioThread?.Join();
+
+        AL.SourceStop(source);
+        AL.DeleteSource(source);
+        AL.DeleteBuffers(buffers);
+        ALC.DestroyContext(context);
+        ALC.CloseDevice(device);
+    }
+
+    private void AudioLoop()
+    {
+        foreach (var buffer in buffers)
+        {
+            AL.BufferData(buffer, ALFormat.Mono16, audioBuffer.Output, 44100);
+            AL.SourceQueueBuffer(source, buffer);
+        }
+
+        AL.SourcePlay(source);
+
+        var sample = new short[0xFFFF];
+        while (audioBuffer.Delay < 5 && running)
+            Thread.Sleep(1);
+
+        while (running)
+        {
+            Console.WriteLine(audioBuffer.Delay);
+
+            while (audioBuffer.Delay < 2 && running)
+            {
+                Console.WriteLine("too early");
+                while (audioBuffer.Delay < 5 && running)
+                    Thread.Sleep(1);
+            }
+
+            while (audioBuffer.Delay > 6)
+            {
+                Console.WriteLine("too late");
+                audioBuffer.Retrieve();
+            }
+
+            int target = audioBuffer.Delay switch
+            {
+                2 => 738,
+                3 => 737,
+                4 => 735,
+                5 => 734,
+                6 => 730,
+                _ => 736
+            };
+
+            AL.GetSource(source, ALGetSourcei.BuffersProcessed, out int processed);
+            for (int i = 0; i < processed; i++)
+            {
+                int buffer = AL.SourceUnqueueBuffer(source);
+                audioBuffer.Retrieve();
+                var src = audioBuffer.Output;
+                var dst = sample.AsSpan()[..target];
+                ResampleSinc(src, dst);
+                AL.BufferData(buffer, ALFormat.Mono16, (ReadOnlySpan<short>)dst, 44100);
+                AL.SourceQueueBuffer(source, buffer);
+            }
+
+            AL.GetSource(source, ALGetSourcei.SourceState, out int state);
+            if ((ALSourceState)state != ALSourceState.Playing)
+            {
+                AL.SourcePlay(source);
+                Console.WriteLine("restart");
+            }
+
+            Thread.Sleep(2);
+        }
+    }
+
+    public static void ResampleSinc(ReadOnlySpan<short> src, Span<short> dst, int taps = 32)
+    {
+        int srcLen = src.Length;
+        int dstLen = dst.Length;
+        double rate = (double)srcLen / dstLen;
+
+        for (int i = 0; i < dstLen; i++)
+        {
+            double pos = i * rate;
+            int center = (int)pos;
+            double frac = pos - center;
+
+            double sum = 0;
+            double norm = 0;
+
+            for (int t = -taps; t <= taps; t++)
+            {
+                int idx = center + t;
+                if (idx < 0 || idx >= srcLen)
+                    continue;
+
+                double x = t - frac;
+                double sinc = x == 0 ? 1 : Math.Sin(Math.PI * x) / (Math.PI * x);
+                double window = 0.5 + 0.5 * Math.Cos(Math.PI * x / taps);
+                double weight = sinc * window;
+
+                sum += src[idx] * weight;
+                norm += weight;
+            }
+
+            dst[i] = (short)Math.Clamp(sum / norm, short.MinValue, short.MaxValue);
+        }
     }
 
     public void Run()
