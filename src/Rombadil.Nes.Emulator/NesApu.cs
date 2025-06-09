@@ -2,15 +2,9 @@ namespace Rombadil.Nes.Emulator;
 
 public class NesApu(NesMapper mapper)
 {
-    private static readonly byte[] lt =
-    [
-        10, 254, 20, 2, 40, 4, 80, 6, 160, 8, 60, 10, 14, 12, 26, 14,
-        12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30
-    ];
-
     private readonly NesApuPulse pulse1 = new(false);
     private readonly NesApuPulse pulse2 = new(true);
-    private NesApuChannel triangle;
+    private readonly NesApuTriangle triangle = new();
     private NesApuChannel noise;
     private readonly NesApuDmc dmc = new(mapper);
 
@@ -58,7 +52,7 @@ public class NesApu(NesMapper mapper)
         {
             case >= 0x4000 and <= 0x4003: pulse1.WriteRegister(addr - 0x4000, value); break;
             case >= 0x4004 and <= 0x4007: pulse2.WriteRegister(addr - 0x4004, value); break;
-            case >= 0x4008 and <= 0x400B: WriteChannelRegister(ref triangle, addr - 0x4008, value); break;
+            case >= 0x4008 and <= 0x400B: triangle.WriteRegister(addr - 0x4008, value); break;
             case >= 0x400C and <= 0x400F: WriteChannelRegister(ref noise, addr - 0x400C, value); break;
             case >= 0x4010 and <= 0x4013: dmc.WriteRegister(addr - 0x4010, value); break;
             case 0x4015: WriteStatus(value); break;
@@ -99,18 +93,31 @@ public class NesApu(NesMapper mapper)
             pulse2.Step();
         }
 
-        cycles++;
-
         dmc.Step();
+        triangle.Step();
+
+        cycles++;
     }
 
     public short Sample()
     {
         float p1 = pulse1.Sample();
         float p2 = pulse2.Sample();
-        float pulseOut = (p1 + p2) == 0 ? 0 : 95.88f / ((8128f / (p1 + p2)) + 100f);
+        float tri = triangle.Sample();
 
-        return (short)(Math.Clamp(pulseOut, -1f, 1f) * short.MaxValue);
+        float pulseMix = p1 + p2;
+        float pulseOut = pulseMix == 0
+            ? 0
+            : 95.88f / ((8128f / pulseMix) + 100f);
+
+        float tndMix = tri / 8227f;
+        float tndOut = tndMix == 0
+            ? 0
+            : 159.79f / ((1f / tndMix) + 100f);
+
+        float output = pulseOut + tndOut;
+
+        return (short)(Math.Clamp(output, -1f, 1f) * short.MaxValue);
     }
 
     private void SetFrameInterruptIfRequired()
@@ -123,7 +130,7 @@ public class NesApu(NesMapper mapper)
     {
         pulse1.Toggle((value & 0b0000_0001) != 0);
         pulse2.Toggle((value & 0b0000_0010) != 0);
-        ToggleChannel(ref triangle, (value & 0b0000_0100) != 0);
+        triangle.Toggle((value & 0b0000_0100) != 0);
         ToggleChannel(ref noise, (value & 0b0000_1000) != 0);
         dmc.Toggle((value & 0b0001_0000) != 0);
     }
@@ -138,14 +145,17 @@ public class NesApu(NesMapper mapper)
             frameIrq = false;
 
         if (frameFiveStep)
+        {
             ClockLengthAndSweep();
+            ClockEnvelopes();
+        }
     }
 
     private void ClockLengthAndSweep()
     {
         pulse1.ClockLength();
         pulse2.ClockLength();
-        ClockLengthChannel(ref triangle);
+        triangle.ClockLength();
         ClockLengthChannel(ref noise);
 
         pulse1.ClockSweep();
@@ -156,6 +166,7 @@ public class NesApu(NesMapper mapper)
     {
         pulse1.ClockEnvelope();
         pulse2.ClockEnvelope();
+        triangle.ClockLinear();
     }
 
     private void WriteChannelRegister(ref NesApuChannel channel, int reg, byte value)
@@ -163,7 +174,7 @@ public class NesApu(NesMapper mapper)
         if (reg == 0)
             channel.Halted = (value & 0x20) != 0;
         else if (reg == 3 && channel.Enabled)
-            channel.Length = lt[(value >> 3) & 0x1F];
+            channel.Length = NesApuLength.Table[(value >> 3) & 0x1F];
     }
 
     private void ToggleChannel(ref NesApuChannel channel, bool enabled)

@@ -2,7 +2,7 @@ using Rombadil;
 
 // note : zelda upper door bug
 
-string romFile = @"C:\Users\Samuel\Desktop\NES\Legend of Zelda, The (USA).nes";
+string romFile = @"C:\Users\Samuel\Desktop\NES\Super Mario Bros. (World).nes";
 if (args.Length > 0)
     romFile = args[0];
 

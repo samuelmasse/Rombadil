@@ -2,12 +2,6 @@ namespace Rombadil.Nes.Emulator;
 
 public class NesApuPulse(bool isSecondChannel)
 {
-    private static readonly byte[] lt =
-    [
-        10, 254, 20, 2, 40, 4, 80, 6, 160, 8, 60, 10, 14, 12, 26, 14,
-        12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30
-    ];
-
     private static readonly byte[][] dutyTable =
     [
         [0, 1, 0, 0, 0, 0, 0, 0],
@@ -43,7 +37,7 @@ public class NesApuPulse(bool isSecondChannel)
 
     public float Sample()
     {
-        if (length == 0 || timerPeriod < 8 || timerPeriod > 0x7FF)
+        if (length == 0 || timerPeriod < 8 || timerPeriod > 0b0111_1111_1111)
             return 0;
 
         int vol = constantVolume ? volumeOrEnvelope : envelopeDecayLevel;
@@ -57,29 +51,29 @@ public class NesApuPulse(bool isSecondChannel)
         switch (reg)
         {
             case 0:
-                duty = (value >> 6) & 0b11;
-                envelopeLoop = (value & 0x20) != 0;
-                constantVolume = (value & 0x10) != 0;
-                volumeOrEnvelope = value & 0x0F;
+                duty = (value & 0b1100_0000) >> 6;
+                envelopeLoop = (value & 0b0010_0000) != 0;
+                constantVolume = (value & 0b0001_0000) != 0;
+                volumeOrEnvelope = value & 0b0000_1111;
                 halted = envelopeLoop;
                 break;
 
             case 1:
-                sweepEnabled = (value & 0x80) != 0;
-                sweepPeriod = (value >> 4) & 0b111;
-                sweepNegate = (value & 0x08) != 0;
-                sweepShift = value & 0b111;
+                sweepEnabled = (value & 0b1000_0000) != 0;
+                sweepPeriod = (value & 0b0111_0000) >> 4;
+                sweepNegate = (value & 0b0000_1000) != 0;
+                sweepShift = value & 0b0000_0111;
                 sweepReload = true;
                 break;
 
             case 2:
-                timerPeriod = (timerPeriod & 0x700) | value;
+                timerPeriod = (timerPeriod & 0b111_0000_0000) | (value & 0b0000_1111_1111);
                 break;
 
             case 3:
                 if (enabled)
-                    length = lt[(value >> 3) & 0x1F];
-                timerPeriod = (timerPeriod & 0xFF) | ((value & 0x07) << 8);
+                    length = NesApuLength.Table[(value & 0b1111_1000) >> 3];
+                timerPeriod = (timerPeriod & 0b0000_1111_1111) | ((value & 0b0000_0111) << 8);
                 dutyStep = 0;
                 envelopeStart = true;
                 break;
@@ -116,7 +110,7 @@ public class NesApuPulse(bool isSecondChannel)
                     ? timerPeriod - (isSecondChannel ? delta + 1 : delta)
                     : timerPeriod + delta;
 
-                if (target >= 8 && target <= 0x7FF)
+                if (target >= 8 && target <= 0b0111_1111_1111)
                     timerPeriod = target;
             }
         }
@@ -124,8 +118,6 @@ public class NesApuPulse(bool isSecondChannel)
 
     public void ClockEnvelope()
     {
-        Console.WriteLine($"ENV tick: start={envelopeStart} decay={envelopeDecayLevel}, divider={envelopeDivider}, loop={envelopeLoop}");
-
         if (envelopeStart)
         {
             envelopeStart = false;
@@ -155,7 +147,7 @@ public class NesApuPulse(bool isSecondChannel)
         if (timerCounter == 0)
         {
             timerCounter = timerPeriod;
-            dutyStep = (dutyStep + 1) & 7;
+            dutyStep = (dutyStep + 1) & 0b0111;
         }
         else timerCounter--;
     }
