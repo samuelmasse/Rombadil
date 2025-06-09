@@ -8,8 +8,8 @@ public class NesApu(NesMapper mapper)
         12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30
     ];
 
-    private readonly NesApuPulse pulse1 = new();
-    private NesApuChannel pulse2;
+    private readonly NesApuPulse pulse1 = new(false);
+    private readonly NesApuPulse pulse2 = new(true);
     private NesApuChannel triangle;
     private NesApuChannel noise;
     private readonly NesApuDmc dmc = new(mapper);
@@ -21,6 +21,11 @@ public class NesApu(NesMapper mapper)
     private long cycles;
 
     public long Cycles => cycles;
+
+    public void Reset()
+    {
+        cycles = 0;
+    }
 
     public byte ReadStatus()
     {
@@ -52,7 +57,7 @@ public class NesApu(NesMapper mapper)
         switch (addr)
         {
             case >= 0x4000 and <= 0x4003: pulse1.WriteRegister(addr - 0x4000, value); break;
-            case >= 0x4004 and <= 0x4007: WriteChannelRegister(ref pulse2, addr - 0x4004, value); break;
+            case >= 0x4004 and <= 0x4007: pulse2.WriteRegister(addr - 0x4004, value); break;
             case >= 0x4008 and <= 0x400B: WriteChannelRegister(ref triangle, addr - 0x4008, value); break;
             case >= 0x400C and <= 0x400F: WriteChannelRegister(ref noise, addr - 0x400C, value); break;
             case >= 0x4010 and <= 0x4013: dmc.WriteRegister(addr - 0x4010, value); break;
@@ -91,6 +96,7 @@ public class NesApu(NesMapper mapper)
             }
 
             pulse1.Step();
+            pulse2.Step();
         }
 
         cycles++;
@@ -100,8 +106,11 @@ public class NesApu(NesMapper mapper)
 
     public short Sample()
     {
-        var sample = dmc.Sample() + pulse1.Sample();
-        return (short)((Math.Clamp((sample), -1f, 1f) * short.MaxValue));
+        float p1 = pulse1.Sample();
+        float p2 = pulse2.Sample();
+        float pulseOut = (p1 + p2) == 0 ? 0 : 95.88f / ((8128f / (p1 + p2)) + 100f);
+
+        return (short)(Math.Clamp(pulseOut, -1f, 1f) * short.MaxValue);
     }
 
     private void SetFrameInterruptIfRequired()
@@ -113,7 +122,7 @@ public class NesApu(NesMapper mapper)
     private void WriteStatus(byte value)
     {
         pulse1.Toggle((value & 0b0000_0001) != 0);
-        ToggleChannel(ref pulse2, (value & 0b0000_0010) != 0);
+        pulse2.Toggle((value & 0b0000_0010) != 0);
         ToggleChannel(ref triangle, (value & 0b0000_0100) != 0);
         ToggleChannel(ref noise, (value & 0b0000_1000) != 0);
         dmc.Toggle((value & 0b0001_0000) != 0);
@@ -135,16 +144,18 @@ public class NesApu(NesMapper mapper)
     private void ClockLengthAndSweep()
     {
         pulse1.ClockLength();
-        ClockLengthChannel(ref pulse2);
+        pulse2.ClockLength();
         ClockLengthChannel(ref triangle);
         ClockLengthChannel(ref noise);
 
         pulse1.ClockSweep();
+        pulse2.ClockSweep();
     }
 
     private void ClockEnvelopes()
     {
         pulse1.ClockEnvelope();
+        pulse2.ClockEnvelope();
     }
 
     private void WriteChannelRegister(ref NesApuChannel channel, int reg, byte value)

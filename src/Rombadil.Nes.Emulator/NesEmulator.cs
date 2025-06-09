@@ -12,7 +12,6 @@ public class NesEmulator
     private readonly CpuEmulator6502 cpu;
     private readonly CpuEmulatorLogger logger;
     private readonly Queue<short> samples;
-    private double phase;
 
     public NesEmulator(Memory<byte> rom, Memory<byte> framebuffer, Queue<short> samples)
     {
@@ -49,6 +48,7 @@ public class NesEmulator
     {
         cpu.Reset();
         ppu.Reset();
+        apu.Reset();
     }
 
     public void Step()

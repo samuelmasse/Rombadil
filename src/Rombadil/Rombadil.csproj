@@ -19,6 +19,9 @@
     </ItemGroup>
 
     <ItemGroup>
+        <None Update="alsoft.ini">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
         <None Update="apu_test.nes">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>

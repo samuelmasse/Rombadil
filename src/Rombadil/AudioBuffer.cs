@@ -7,7 +7,7 @@ public class AudioBuffer
     private long inputIndex = 1;
     private long outputIndex;
 
-    public ReadOnlySpan<short> Output => buffers[outputIndex % buffers.Length].AsSpan()[..counts[outputIndex % buffers.Length]];
+    public Span<short> Output => buffers[outputIndex % buffers.Length].AsSpan()[..counts[outputIndex % buffers.Length]];
 
     public long Delay => inputIndex - outputIndex;
 

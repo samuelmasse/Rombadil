@@ -2,7 +2,7 @@ using Rombadil;
 
 // note : zelda upper door bug
 
-string romFile = @"C:\Users\Samuel\Documents\Repos\nes-test-roms\apu_test\rom_singles\7-dmc_basics.nes";
+string romFile = @"C:\Users\Samuel\Desktop\NES\Legend of Zelda, The (USA).nes";
 if (args.Length > 0)
     romFile = args[0];
 
@@ -10,12 +10,15 @@ using var window = new RombadilWindow();
 var rom = File.ReadAllBytes(romFile);
 var nes = new NesEmulator(rom, window.Framebuffer, window.Samples);
 var sw = Stopwatch.StartNew();
+bool paused = false;
 
 window.Render += (delta) =>
 {
     sw.Restart();
 
+    if (window.IsKeyPressed(Keys.Escape)) paused = !paused;
     if (window.IsKeyDown(Keys.LeftControl) && window.IsKeyPressed(Keys.R)) nes.Reset();
+    if (paused) return;
 
     NesButtons b1 = 0;
     if (window.IsKeyDown(Keys.S)) b1 |= NesButtons.A;

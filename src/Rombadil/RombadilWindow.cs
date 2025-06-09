@@ -126,7 +126,7 @@ public class RombadilWindow : IDisposable
     {
         foreach (var buffer in buffers)
         {
-            AL.BufferData(buffer, ALFormat.Mono16, audioBuffer.Output, 44100);
+            AL.BufferData(buffer, ALFormat.Mono16, (ReadOnlySpan<short>)audioBuffer.Output, 44100);
             AL.SourceQueueBuffer(source, buffer);
         }
 
@@ -138,7 +138,7 @@ public class RombadilWindow : IDisposable
 
         while (running)
         {
-            Console.WriteLine(audioBuffer.Delay);
+            // Console.WriteLine(audioBuffer.Delay);
 
             while (audioBuffer.Delay < 2 && running)
             {
@@ -170,6 +170,7 @@ public class RombadilWindow : IDisposable
                 audioBuffer.Retrieve();
                 var src = audioBuffer.Output;
                 var dst = sample.AsSpan()[..target];
+                ApplyFilter(src);
                 ResampleSinc(src, dst);
                 AL.BufferData(buffer, ALFormat.Mono16, (ReadOnlySpan<short>)dst, 44100);
                 AL.SourceQueueBuffer(source, buffer);
@@ -183,6 +184,23 @@ public class RombadilWindow : IDisposable
             }
 
             Thread.Sleep(2);
+        }
+    }
+
+    void ApplyFilter(Span<short> buffer)
+    {
+        if (buffer.Length == 0)
+            return;
+
+        float prev = buffer[0];
+        float alpha = 0.5f;
+
+        for (int i = 1; i < buffer.Length; i++)
+        {
+            float sample = buffer[i];
+            float smoothed = prev + alpha * (sample - prev);
+            buffer[i] = (short)smoothed;
+            prev = smoothed;
         }
     }
 
