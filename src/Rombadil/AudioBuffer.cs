@@ -4,16 +4,19 @@ public class AudioBuffer
 {
     private readonly short[][] buffers;
     private readonly int[] counts;
+    private readonly double[] rates;
     private long inputIndex = 1;
     private long outputIndex;
 
     public Span<short> Output => buffers[outputIndex % buffers.Length].AsSpan()[..counts[outputIndex % buffers.Length]];
+    public double Rate => rates[outputIndex % buffers.Length];
 
     public long Delay => inputIndex - outputIndex;
 
     public AudioBuffer(int unit, int size)
     {
         counts = new int[size];
+        rates = new double[size];
         buffers = new short[size][];
         for (int i = 0; i < size; i++)
             buffers[i] = new short[unit];
@@ -27,10 +30,12 @@ public class AudioBuffer
         count++;
     }
 
-    public void Submit()
+    public void Submit(double rate)
     {
+        rates[inputIndex % buffers.Length] = rate;
         inputIndex++;
         counts[inputIndex % buffers.Length] = 0;
+        rates[inputIndex % buffers.Length] = 0;
     }
 
     public void Retrieve()

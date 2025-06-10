@@ -27,9 +27,11 @@ public class RombadilWindow : IDisposable
     private int source;
     private int[] buffers = [];
     private AudioBuffer audioBuffer = new(0xFFFF, 16);
+    private double samplesRemaining;
 
     public Memory<byte> Framebuffer => framebuffer;
     public Queue<short> Samples => samples;
+    public AudioBuffer AudioBuffer => audioBuffer;
 
     public RombadilWindow()
     {
@@ -68,7 +70,7 @@ public class RombadilWindow : IDisposable
             Icon = new([new(icon.Width, icon.Height, data)])
         })
         {
-            UpdateFrequency = 60
+            UpdateFrequency = 240
         };
 
         window.Load += () =>
@@ -84,10 +86,6 @@ public class RombadilWindow : IDisposable
                 ToggleFullscreen();
 
             Render?.Invoke(e.Time);
-
-            while (samples.Count > 0)
-                audioBuffer.Add(samples.Dequeue());
-            audioBuffer.Submit();
 
             Present();
         };
@@ -124,9 +122,11 @@ public class RombadilWindow : IDisposable
 
     private void AudioLoop()
     {
+        int freq = 44100;
+
         foreach (var buffer in buffers)
         {
-            AL.BufferData(buffer, ALFormat.Mono16, (ReadOnlySpan<short>)audioBuffer.Output, 44100);
+            AL.BufferData(buffer, ALFormat.Mono16, (ReadOnlySpan<short>)audioBuffer.Output, freq);
             AL.SourceQueueBuffer(source, buffer);
         }
 
@@ -142,37 +142,40 @@ public class RombadilWindow : IDisposable
 
             while (audioBuffer.Delay < 2 && running)
             {
-                Console.WriteLine("too early");
-                while (audioBuffer.Delay < 5 && running)
+                // Console.WriteLine("too early");
+                while (audioBuffer.Delay < 3 && running)
                     Thread.Sleep(1);
             }
 
-            while (audioBuffer.Delay > 6)
+            if (audioBuffer.Delay > 3)
             {
-                Console.WriteLine("too late");
-                audioBuffer.Retrieve();
+                // Console.WriteLine("too late");
+                while (audioBuffer.Delay > 2)
+                    audioBuffer.Retrieve();
             }
 
-            int target = audioBuffer.Delay switch
-            {
-                2 => 738,
-                3 => 737,
-                4 => 735,
-                5 => 734,
-                6 => 730,
-                _ => 736
-            };
-
             AL.GetSource(source, ALGetSourcei.BuffersProcessed, out int processed);
+            while (audioBuffer.Delay <= processed && running)
+                Thread.Sleep(1);
+
+            if (!running)
+                break;
+
             for (int i = 0; i < processed; i++)
             {
-                int buffer = AL.SourceUnqueueBuffer(source);
                 audioBuffer.Retrieve();
+
+                double target = freq / audioBuffer.Rate;
+                samplesRemaining += target;
+                int length = (int)samplesRemaining;
+                samplesRemaining -= length;
+
+                int buffer = AL.SourceUnqueueBuffer(source);
                 var src = audioBuffer.Output;
-                var dst = sample.AsSpan()[..target];
+                var dst = sample.AsSpan()[..length];
                 ApplyFilter(src);
                 ResampleSinc(src, dst);
-                AL.BufferData(buffer, ALFormat.Mono16, (ReadOnlySpan<short>)dst, 44100);
+                AL.BufferData(buffer, ALFormat.Mono16, (ReadOnlySpan<short>)dst, freq);
                 AL.SourceQueueBuffer(source, buffer);
             }
 
