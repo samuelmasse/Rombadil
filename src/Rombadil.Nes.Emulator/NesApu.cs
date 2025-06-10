@@ -5,7 +5,7 @@ public class NesApu(NesMapper mapper)
     private readonly NesApuPulse pulse1 = new(false);
     private readonly NesApuPulse pulse2 = new(true);
     private readonly NesApuTriangle triangle = new();
-    private NesApuChannel noise;
+    private readonly NesApuNoise noise = new();
     private readonly NesApuDmc dmc = new(mapper);
 
     private bool frameIrq;
@@ -53,7 +53,7 @@ public class NesApu(NesMapper mapper)
             case >= 0x4000 and <= 0x4003: pulse1.WriteRegister(addr - 0x4000, value); break;
             case >= 0x4004 and <= 0x4007: pulse2.WriteRegister(addr - 0x4004, value); break;
             case >= 0x4008 and <= 0x400B: triangle.WriteRegister(addr - 0x4008, value); break;
-            case >= 0x400C and <= 0x400F: WriteChannelRegister(ref noise, addr - 0x400C, value); break;
+            case >= 0x400C and <= 0x400F: noise.WriteRegister(addr - 0x400C, value); break;
             case >= 0x4010 and <= 0x4013: dmc.WriteRegister(addr - 0x4010, value); break;
             case 0x4015: WriteStatus(value); break;
             case 0x4017: WriteFrameCounter(value); break;
@@ -91,6 +91,7 @@ public class NesApu(NesMapper mapper)
 
             pulse1.Step();
             pulse2.Step();
+            noise.Step();
         }
 
         dmc.Step();
@@ -131,7 +132,7 @@ public class NesApu(NesMapper mapper)
         pulse1.Toggle((value & 0b0000_0001) != 0);
         pulse2.Toggle((value & 0b0000_0010) != 0);
         triangle.Toggle((value & 0b0000_0100) != 0);
-        ToggleChannel(ref noise, (value & 0b0000_1000) != 0);
+        noise.Toggle((value & 0b0000_1000) != 0);
         dmc.Toggle((value & 0b0001_0000) != 0);
     }
 
@@ -156,7 +157,7 @@ public class NesApu(NesMapper mapper)
         pulse1.ClockLength();
         pulse2.ClockLength();
         triangle.ClockLength();
-        ClockLengthChannel(ref noise);
+        noise.ClockLength();
 
         pulse1.ClockSweep();
         pulse2.ClockSweep();
@@ -166,34 +167,7 @@ public class NesApu(NesMapper mapper)
     {
         pulse1.ClockEnvelope();
         pulse2.ClockEnvelope();
+        noise.ClockEnvelope();
         triangle.ClockLinear();
     }
-
-    private void WriteChannelRegister(ref NesApuChannel channel, int reg, byte value)
-    {
-        if (reg == 0)
-            channel.Halted = (value & 0x20) != 0;
-        else if (reg == 3 && channel.Enabled)
-            channel.Length = NesApuLength.Table[(value >> 3) & 0x1F];
-    }
-
-    private void ToggleChannel(ref NesApuChannel channel, bool enabled)
-    {
-        channel.Enabled = enabled;
-        if (!enabled)
-            channel.Length = 0;
-    }
-
-    private void ClockLengthChannel(ref NesApuChannel channel)
-    {
-        if (!channel.Halted && channel.Length > 0)
-            channel.Length--;
-    }
-}
-
-public struct NesApuChannel
-{
-    public int Length;
-    public bool Enabled;
-    public bool Halted;
 }
