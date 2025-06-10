@@ -6,10 +6,11 @@ public class RombadilWindow : IDisposable
 
     private readonly byte[] framebuffer;
     private readonly Queue<short> samples;
-
     private readonly Vector2i framebufferSize;
     private readonly GameWindow window;
     private readonly float[] vertices = new float[16];
+    private readonly AudioBuffer audioBuffer = new(0xFFFF, 16);
+    private readonly Stopwatch lastMouse = new();
 
     private int vao;
     private int vbo;
@@ -26,8 +27,8 @@ public class RombadilWindow : IDisposable
     private ALContext context;
     private int source;
     private int[] buffers = [];
-    private AudioBuffer audioBuffer = new(0xFFFF, 16);
     private double samplesRemaining;
+    private Vector2 lastMousePosition;
 
     public Memory<byte> Framebuffer => framebuffer;
     public Queue<short> Samples => samples;
@@ -84,6 +85,7 @@ public class RombadilWindow : IDisposable
         {
             if (window.IsKeyPressed(Keys.F11))
                 ToggleFullscreen();
+            ToggleMouse();
 
             Render?.Invoke(e.Time);
 
@@ -309,6 +311,23 @@ public class RombadilWindow : IDisposable
             window.WindowState = WindowState.Fullscreen;
             isFullscreen = true;
         }
+    }
+
+    private void ToggleMouse()
+    {
+        if (window.MousePosition != lastMousePosition)
+        {
+            lastMouse.Restart();
+            lastMousePosition = window.MousePosition;
+        }
+
+        if (lastMouse.Elapsed.TotalSeconds > 1)
+        {
+            if (window.CursorState != CursorState.Hidden)
+                window.CursorState = CursorState.Hidden;
+        }
+        else if (window.CursorState != CursorState.Normal)
+            window.CursorState = CursorState.Normal;
     }
 
     private void SetVertices(int x, int y, int width, int height)
