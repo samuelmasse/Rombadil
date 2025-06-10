@@ -23,44 +23,14 @@ public class NesApuDmc(NesMapper mapper)
     private byte outputLevel;
     private int timer;
     private bool bufferFilled;
+    private bool silence;
 
     public bool Enabled => enabled;
     public bool IrqFlag => irqFlag;
 
-    public void Step()
-    {
-        if (timer > 0)
-            timer--;
-
-        if (timer == 0)
-        {
-            ClockDmcOutput();
-            timer = rates[rateIndex];
-        }
-    }
-
     public float Sample()
     {
-        return outputLevel / 127f;
-    }
-
-    public void Toggle(bool enable)
-    {
-        enabled = enable;
-        irqFlag = false;
-
-        if (enable)
-        {
-            if (sampleRemaining == 0)
-            {
-                currentAddress = sampleAddress;
-                sampleRemaining = sampleLength;
-            }
-
-            if (!bufferFilled && sampleRemaining > 0)
-                FetchDmcSample();
-        }
-        else sampleRemaining = 0;
+        return outputLevel;
     }
 
     public void WriteRegister(int reg, byte value)
@@ -89,23 +59,58 @@ public class NesApuDmc(NesMapper mapper)
         }
     }
 
+    public void Toggle(bool enable)
+    {
+        enabled = enable;
+        irqFlag = false;
+
+        if (enable)
+        {
+            if (sampleRemaining == 0)
+            {
+                currentAddress = sampleAddress;
+                sampleRemaining = sampleLength;
+            }
+
+            if (!bufferFilled && sampleRemaining > 0)
+                FetchDmcSample();
+        }
+        else sampleRemaining = 0;
+    }
+
+    public void Step()
+    {
+        if (timer > 0)
+            timer--;
+
+        if (timer == 0)
+        {
+            ClockDmcOutput();
+            timer = rates[rateIndex];
+        }
+    }
+
     private void ClockDmcOutput()
     {
         if (bitCounter == 0)
         {
-            shiftRegister = sampleBuffer;
             bitCounter = 8;
+            shiftRegister = sampleBuffer;
             bufferFilled = false;
             FetchDmcSample();
+            silence = !bufferFilled;
         }
 
-        if ((shiftRegister & 1) != 0)
+        if (!silence)
         {
-            if (outputLevel <= 125) outputLevel += 2;
-        }
-        else
-        {
-            if (outputLevel >= 2) outputLevel -= 2;
+            if ((shiftRegister & 1) != 0)
+            {
+                if (outputLevel <= 125) outputLevel += 2;
+            }
+            else
+            {
+                if (outputLevel >= 2) outputLevel -= 2;
+            }
         }
 
         shiftRegister >>= 1;

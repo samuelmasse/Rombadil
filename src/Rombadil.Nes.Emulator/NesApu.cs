@@ -94,8 +94,8 @@ public class NesApu(NesMapper mapper)
             noise.Step();
         }
 
-        dmc.Step();
         triangle.Step();
+        dmc.Step();
 
         cycles++;
     }
@@ -106,13 +106,14 @@ public class NesApu(NesMapper mapper)
         float p2 = pulse2.Sample();
         float tri = triangle.Sample();
         float noi = noise.Sample();
+        float dm = dmc.Sample();
 
         float pulseMix = p1 + p2;
         float pulseOut = pulseMix == 0
             ? 0
             : 95.88f / ((8128f / pulseMix) + 100f);
 
-        float tndMix = tri / 8227f + noi / 12241f;
+        float tndMix = tri / 8227f + noi / 12241f + dm / 22638f;
         float tndOut = tndMix == 0
             ? 0
             : 159.79f / ((1f / tndMix) + 100f);
