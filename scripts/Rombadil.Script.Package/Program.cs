@@ -6,7 +6,8 @@ Delete("dist");
 var runtimes = new List<string>()
 {
     "win-x64",
-    "linux-x64"
+    "linux-x64",
+    "osx-arm64"
 };
 
 var exes = runtimes.Select((runtime) =>

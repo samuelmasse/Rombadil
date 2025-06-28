@@ -35,6 +35,9 @@ public class RombadilWindow : IDisposable
 
     public RombadilWindow()
     {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            OpenALLibraryNameContainer.OverridePath = "libopenal.1.dylib";
+
         framebufferSize = (256, 240);
         framebuffer = new byte[framebufferSize.X * framebufferSize.Y * 3];
         samples = [];
@@ -82,7 +85,7 @@ public class RombadilWindow : IDisposable
 
         window.RenderFrame += (e) =>
         {
-            if (window.IsKeyPressed(Keys.F11))
+            if (window.IsKeyPressed(Keys.F11) && !RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 ToggleFullscreen();
             ToggleMouse();
 
@@ -273,7 +276,7 @@ public class RombadilWindow : IDisposable
         GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
         GL.BufferSubData(BufferTarget.ArrayBuffer, IntPtr.Zero, vertices.Length * sizeof(float), vertices);
 
-        GL.Viewport(0, 0, window.ClientSize.X, window.ClientSize.Y);
+        GL.Viewport(0, 0, window.FramebufferSize.X, window.FramebufferSize.Y);
 
         GL.ClearColor(0, 0, 0, 0);
         GL.Clear(ClearBufferMask.ColorBufferBit);

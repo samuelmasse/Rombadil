@@ -26,6 +26,9 @@
         <None Update="alsoft.ini">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <None Update="libopenal.1.dylib">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
         <None Update="libopenal.so.1">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
