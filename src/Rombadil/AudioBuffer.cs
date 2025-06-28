@@ -38,8 +38,5 @@ public class AudioBuffer
         rates[inputIndex % buffers.Length] = 0;
     }
 
-    public void Retrieve()
-    {
-        outputIndex++;
-    }
+    public void Retrieve() => outputIndex++;
 }

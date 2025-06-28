@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Rombadil\Rombadil.csproj" />
+        <ProjectReference Include="..\Rombadil.Script\Rombadil.Script.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -32,7 +32,6 @@ public class RombadilWindow : IDisposable
 
     public Memory<byte> Framebuffer => framebuffer;
     public Queue<short> Samples => samples;
-    public AudioBuffer AudioBuffer => audioBuffer;
 
     public RombadilWindow()
     {
@@ -140,18 +139,14 @@ public class RombadilWindow : IDisposable
 
         while (running)
         {
-            // Console.WriteLine(audioBuffer.Delay);
-
             while (audioBuffer.Delay < 2 && running)
             {
-                // Console.WriteLine("too early");
                 while (audioBuffer.Delay < 3 && running)
                     Thread.Sleep(1);
             }
 
             if (audioBuffer.Delay > 3)
             {
-                // Console.WriteLine("too late");
                 while (audioBuffer.Delay > 2)
                     audioBuffer.Retrieve();
             }
@@ -183,16 +178,13 @@ public class RombadilWindow : IDisposable
 
             AL.GetSource(source, ALGetSourcei.SourceState, out int state);
             if ((ALSourceState)state != ALSourceState.Playing)
-            {
                 AL.SourcePlay(source);
-                Console.WriteLine("restart");
-            }
 
             Thread.Sleep(2);
         }
     }
 
-    void ApplyFilter(Span<short> buffer)
+    private void ApplyFilter(Span<short> buffer)
     {
         if (buffer.Length == 0)
             return;
@@ -209,7 +201,7 @@ public class RombadilWindow : IDisposable
         }
     }
 
-    public static void ResampleSinc(ReadOnlySpan<short> src, Span<short> dst, int taps = 32)
+    private void ResampleSinc(ReadOnlySpan<short> src, Span<short> dst, int taps = 32)
     {
         int srcLen = src.Length;
         int dstLen = dst.Length;
@@ -243,9 +235,13 @@ public class RombadilWindow : IDisposable
         }
     }
 
-    public void Run()
+    public void Run() => window.Run();
+
+    public void Step(double rate)
     {
-        window.Run();
+        while (samples.Count > 0)
+            audioBuffer.Add(samples.Dequeue());
+        audioBuffer.Submit(rate);
     }
 
     public bool IsKeyDown(Keys keys) => window.IsKeyDown(keys);

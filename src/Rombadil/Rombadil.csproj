@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
+        <OutputType>WinExe</OutputType>
         <ApplicationIcon>Icon.ico</ApplicationIcon>
     </PropertyGroup>
 
@@ -20,9 +20,6 @@
 
     <ItemGroup>
         <None Update="alsoft.ini">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-        <None Update="apu_test.nes">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
         <None Update="Icon.png">
