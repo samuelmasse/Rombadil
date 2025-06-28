@@ -39,7 +39,7 @@ public class RombadilWindow : IDisposable
             OpenALLibraryNameContainer.OverridePath = "libopenal.1.dylib";
 
         var assembly = Assembly.GetExecutingAssembly();
-        var iniPath = Path.Combine(assembly.Location, "alsoft.ini");
+        var iniPath = Path.Combine(AppContext.BaseDirectory, "alsoft.ini");
 
         if (!File.Exists(iniPath))
         {

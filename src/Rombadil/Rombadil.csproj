@@ -1,17 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <OutputType>WinExe</OutputType>
-        <ApplicationIcon>Icon.ico</ApplicationIcon>
+        <OutputType>Exe</OutputType>
+        <ApplicationIcon>../../res/Icon.ico</ApplicationIcon>
     </PropertyGroup>
 
     <ItemGroup>
-        <Content Include="Icon.ico" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <EmbeddedResource Include="Icon.png" />
-        <EmbeddedResource Include="alsoft.ini" />
+        <EmbeddedResource Include="../../res/Icon.png" Visible="false" />
+        <EmbeddedResource Include="../../res/alsoft.ini" Visible="false" />
     </ItemGroup>
 
     <ItemGroup>
