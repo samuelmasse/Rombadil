@@ -15,7 +15,7 @@
 
     <ItemGroup>
         <PackageReference Include="BigGustave" Version="1.0.6" />
-        <PackageReference Include="OpenTK" Version="4.9.4" />
+        <PackageReference Include="OpenTK" Version="4.8.2" />
     </ItemGroup>
 
     <ItemGroup>
