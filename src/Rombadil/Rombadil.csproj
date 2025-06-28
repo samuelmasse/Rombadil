@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
@@ -16,6 +16,7 @@
     <ItemGroup>
         <PackageReference Include="BigGustave" Version="1.0.6" />
         <PackageReference Include="OpenTK" Version="4.8.2" />
+        <PackageReference Include="Rombadil.OpenAL.Soft.Native" Version="1.0.1" />
     </ItemGroup>
 
     <ItemGroup>
@@ -24,15 +25,6 @@
 
     <ItemGroup>
         <None Update="alsoft.ini">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-        <None Update="libopenal.1.dylib">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-        <None Update="libopenal.so.1">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-        <None Update="OpenAL32.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
