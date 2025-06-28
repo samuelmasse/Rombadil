@@ -24,6 +24,7 @@ var exes = runtimes.Select((runtime) =>
             "-c Release",
             "--self-contained",
             "-p:PublishSingleFile=true",
+            "-p:IncludeNativeLibrariesForSelfExtract=true",
             "-p:DebugType=None",
             $"-r {runtime}",
             $"-o {outDir}"

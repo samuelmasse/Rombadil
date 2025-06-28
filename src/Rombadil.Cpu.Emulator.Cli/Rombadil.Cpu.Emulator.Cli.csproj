@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <AssemblyName>em65</AssemblyName>
+        <AssemblyName>rombadil6502</AssemblyName>
     </PropertyGroup>
 
     <ItemGroup>

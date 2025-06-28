@@ -2,7 +2,7 @@ var inputArgument = new Argument<FileInfo>("input", "Input source file");
 var outputOption = new Option<FileInfo>(["--output", "-o"], "Output binary file");
 var configOption = new Option<FileInfo>(["--config", "-c"], "Config file");
 
-var rootCommand = new RootCommand("Rombadil Assembler (rmdl)")
+var rootCommand = new RootCommand("Rombadil Assembler (rombadilasm)")
 {
     inputArgument,
     outputOption,
@@ -54,7 +54,7 @@ rootCommand.SetHandler((input, output, config) =>
     }
 
     string dir = Path.GetDirectoryName(input.FullName)!;
-    string file = $"{Path.GetFileNameWithoutExtension(input.FullName)}.rmdl";
+    string file = $"{Path.GetFileNameWithoutExtension(input.FullName)}.bin";
 
     if (output?.DirectoryName != null)
     {

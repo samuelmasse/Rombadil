@@ -17,7 +17,7 @@ public sealed class CpuEmulator6502NestestTest
             map[0xC000 + i] = (ushort)(0x8000 + i);
 
         // The log can also be validated by running and comparing the log
-        // em65 nestest.nes -s 0x10 -l 0x4000 -m 0x8000 -r 0xC000,0x4000=0x8000 -p 0xC000 -b 0x4000,0x17=0xFF > nestest.log
+        // rombadil6502 nestest.nes -s 0x10 -l 0x4000 -m 0x8000 -r 0xC000,0x4000=0x8000 -p 0xC000 -b 0x4000,0x17=0xFF > nestest.log
 
         var rom = File.ReadAllBytes("nestest.nes");
         var log = File.ReadAllLines("nestest.log");

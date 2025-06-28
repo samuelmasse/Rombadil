@@ -86,7 +86,7 @@ var programCounterOption = new Option<ushort?>(
     description: "Initial value of the program counter",
     parseArgument: (result) => ParseNumber(result, "p"));
 
-var rootCommand = new RootCommand("Rombadil CPU Emulator (em65)")
+var rootCommand = new RootCommand("Rombadil CPU Emulator (rombadil6502)")
 {
     inputArgument,
     startOption,
