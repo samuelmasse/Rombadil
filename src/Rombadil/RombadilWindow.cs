@@ -376,17 +376,14 @@ public class RombadilWindow : IDisposable
 
     private void LoadProgram()
     {
-        var vertexSource = File.ReadAllText(Content("Shader.vert"));
-        var fragSource = File.ReadAllText(Content("Shader.frag"));
-
         program = GL.CreateProgram();
         int vs = GL.CreateShader(ShaderType.VertexShader);
-        GL.ShaderSource(vs, vertexSource);
+        GL.ShaderSource(vs, RombadilShaders.Vert);
         GL.CompileShader(vs);
         GL.AttachShader(program, vs);
 
         int fs = GL.CreateShader(ShaderType.FragmentShader);
-        GL.ShaderSource(fs, fragSource);
+        GL.ShaderSource(fs, RombadilShaders.Frag);
         GL.CompileShader(fs);
         GL.AttachShader(program, fs);
 

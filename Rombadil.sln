@@ -28,6 +28,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rombadil.Nes.Emulator", "sr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rombadil.Script.Dev", "scripts\Rombadil.Script.Dev\Rombadil.Script.Dev.csproj", "{A6861EAA-0DAE-4157-BC5C-CDF70198A39B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rombadil.Script.Package", "scripts\Rombadil.Script.Package\Rombadil.Script.Package.csproj", "{FD4D5CAE-143E-4730-97D5-003A04AEF9A3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -86,6 +88,10 @@ Global
 		{A6861EAA-0DAE-4157-BC5C-CDF70198A39B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A6861EAA-0DAE-4157-BC5C-CDF70198A39B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A6861EAA-0DAE-4157-BC5C-CDF70198A39B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD4D5CAE-143E-4730-97D5-003A04AEF9A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD4D5CAE-143E-4730-97D5-003A04AEF9A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD4D5CAE-143E-4730-97D5-003A04AEF9A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD4D5CAE-143E-4730-97D5-003A04AEF9A3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
