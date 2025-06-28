@@ -14,13 +14,13 @@ public static class RombadilShaders
 
         void main() {
             outColor = texture(texSampler, fragTexCoord);
-        }     
+        }
         """;
 
     public const string Vert =
         """
         #version 330
-        
+
         layout(location = 0) in vec2 inPosition;
         layout(location = 1) in vec2 inTexCoord;
 
@@ -29,6 +29,6 @@ public static class RombadilShaders
         void main() {
             fragTexCoord = inTexCoord;
             gl_Position = vec4(inPosition, 0, 1);
-        }   
+        }
         """;
 }

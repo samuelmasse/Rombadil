@@ -10,6 +10,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <EmbeddedResource Include="Icon.png" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="BigGustave" Version="1.0.6" />
         <PackageReference Include="OpenTK" Version="4.9.4" />
     </ItemGroup>
@@ -22,7 +26,7 @@
         <None Update="alsoft.ini">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Update="Icon.png">
+        <None Update="libopenal.so.1">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
         <None Update="OpenAL32.dll">

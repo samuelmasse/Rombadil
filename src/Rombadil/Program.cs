@@ -4,7 +4,8 @@ byte[] rom;
 try
 {
     rom = File.ReadAllBytes(args[0]);
-} catch
+}
+catch
 {
     rom = new byte[0xFFFF];
     rom[4] = 1;

@@ -47,7 +47,7 @@ public class RombadilWindow : IDisposable
         int correctedWidth = (int)Math.Round(correctedPixelWidth * scale);
         int correctedHeight = (int)Math.Round(framebufferSize.Y * scale);
 
-        var icon = Png.Open(Content("Icon.png"));
+        var icon = Png.Open(Assembly.GetExecutingAssembly().GetManifestResourceStream("Rombadil.Icon.png"));
         var data = new byte[icon.Width * icon.Height * 4];
 
         for (int y = 0; y < icon.Height; y++)
@@ -406,8 +406,6 @@ public class RombadilWindow : IDisposable
         GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb,
             framebufferSize.X, framebufferSize.Y, 0, PixelFormat.Rgb, PixelType.UnsignedByte, framebuffer);
     }
-
-    private string Content(string file) => Path.Combine(AppContext.BaseDirectory, file);
 
     public void Dispose()
     {

@@ -31,7 +31,7 @@ var exes = runtimes.Select((runtime) =>
         Run(command, $"Publishing for {runtime}", $"Failed to publish for {runtime}");
     });
 
-    Dir(outDir, "Rombadil.exe", out var exeFile);
+    Dir(outDir, $"Rombadil{(runtime.StartsWith("win") ? ".exe" : "")}", out var exeFile);
     return exeFile;
 }).ToList();
 
