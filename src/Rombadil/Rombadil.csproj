@@ -11,6 +11,7 @@
 
     <ItemGroup>
         <EmbeddedResource Include="Icon.png" />
+        <EmbeddedResource Include="alsoft.ini" />
     </ItemGroup>
 
     <ItemGroup>
@@ -21,12 +22,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Rombadil.Nes.Emulator\Rombadil.Nes.Emulator.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Update="alsoft.ini">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
     </ItemGroup>
 
     <ItemGroup>

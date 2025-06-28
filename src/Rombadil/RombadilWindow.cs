@@ -38,6 +38,16 @@ public class RombadilWindow : IDisposable
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             OpenALLibraryNameContainer.OverridePath = "libopenal.1.dylib";
 
+        var assembly = Assembly.GetExecutingAssembly();
+        var iniPath = Path.Combine(assembly.Location, "alsoft.ini");
+
+        if (!File.Exists(iniPath))
+        {
+            using var stream = assembly.GetManifestResourceStream("Rombadil.alsoft.ini")!;
+            using var reader = new StreamReader(stream);
+            File.WriteAllText(iniPath, reader.ReadToEnd());
+        }
+
         framebufferSize = (256, 240);
         framebuffer = new byte[framebufferSize.X * framebufferSize.Y * 3];
         samples = [];
@@ -50,7 +60,8 @@ public class RombadilWindow : IDisposable
         int correctedWidth = (int)Math.Round(correctedPixelWidth * scale);
         int correctedHeight = (int)Math.Round(framebufferSize.Y * scale);
 
-        var icon = Png.Open(Assembly.GetExecutingAssembly().GetManifestResourceStream("Rombadil.Icon.png"));
+        using var iconStream = assembly.GetManifestResourceStream("Rombadil.Icon.png");
+        var icon = Png.Open(iconStream);
         var data = new byte[icon.Width * icon.Height * 4];
 
         for (int y = 0; y < icon.Height; y++)
