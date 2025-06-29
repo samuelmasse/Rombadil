@@ -261,6 +261,30 @@ public class RombadilWindow : IDisposable
     public bool IsKeyDown(Keys keys) => window.IsKeyDown(keys);
     public bool IsKeyPressed(Keys keys) => window.IsKeyPressed(keys);
 
+    public bool IsControllerButtonDown(int index, ControllerButtons button)
+    {
+        var state = window.JoystickStates[index];
+        if (state == null)
+            return false;
+
+        if ((int)button >= state.ButtonCount)
+            return false;
+
+        return state.IsButtonDown((int)button);
+    }
+
+    public float GetAxis(int index, ControllerAxis axis)
+    {
+        var state = window.JoystickStates[index];
+        if (state == null)
+            return 0;
+
+        if ((int)axis >= state.ButtonCount)
+            return 0;
+
+        return state.GetAxis((int)axis);
+    }
+
     private void Present()
     {
         int x = 0;
