@@ -250,10 +250,10 @@ public static class CpuOpcodeMap
             Register(instr, mode, opcode);
     }
 
-    private static void Register(CpuInstruction CpuInstruction, CpuAddressingMode mode, CpuOpcode opcode)
+    private static void Register(CpuInstruction instruction, CpuAddressingMode mode, CpuOpcode opcode)
     {
-        toOpcode[(CpuInstruction, mode)] = opcode;
-        fromOpcode[(byte)opcode] = (CpuInstruction, mode);
+        toOpcode[(instruction, mode)] = opcode;
+        fromOpcode[(byte)opcode] = (instruction, mode);
     }
 }
 

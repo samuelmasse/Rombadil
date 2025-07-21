@@ -2,8 +2,8 @@ using Rombadil;
 
 // note : zelda upper door bug
 
-string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-string romFile = Path.Combine(desktopPath, "NES", "Super Mario Bros. (World).nes");
+string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+string romFile = Path.Combine(documentsPath, "Roms", "NES", "Super Mario Bros. (World).nes");
 
 if (args.Length > 0)
     romFile = args[0];
