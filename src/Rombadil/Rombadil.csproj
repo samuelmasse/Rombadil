@@ -13,7 +13,7 @@
     <ItemGroup>
         <PackageReference Include="BigGustave" Version="1.0.6" />
         <PackageReference Include="OpenTK" Version="4.8.2" />
-        <PackageReference Include="Rombadil.OpenAL.Soft.Native" Version="1.0.1" />
+        <PackageReference Include="Rombadil.OpenAL.Soft.Native" Version="1.1.0" />
     </ItemGroup>
 
     <ItemGroup>
