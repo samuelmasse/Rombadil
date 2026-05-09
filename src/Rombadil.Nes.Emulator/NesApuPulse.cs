@@ -14,6 +14,13 @@ public class NesApuPulse(bool isSecondChannel)
     private bool enabled;
     private bool halted;
 
+    private bool pendingHalt;
+    private bool pendingHaltValue;
+    private bool pendingReload;
+    private byte pendingReloadValue;
+    private bool lengthClockedThisStep;
+    private bool lengthWasNonZeroBeforeClock;
+
     private int duty;
     private int dutyStep;
     private int timerPeriod;
@@ -46,7 +53,7 @@ public class NesApuPulse(bool isSecondChannel)
         return output;
     }
 
-    public void WriteRegister(int reg, byte value)
+    public void WriteRegister(int reg, byte value, bool atLengthClockCycle)
     {
         switch (reg)
         {
@@ -55,7 +62,8 @@ public class NesApuPulse(bool isSecondChannel)
                 envelopeLoop = (value & 0b0010_0000) != 0;
                 constantVolume = (value & 0b0001_0000) != 0;
                 volumeOrEnvelope = value & 0b0000_1111;
-                halted = envelopeLoop;
+                pendingHalt = true;
+                pendingHaltValue = envelopeLoop;
                 break;
 
             case 1:
@@ -72,7 +80,14 @@ public class NesApuPulse(bool isSecondChannel)
 
             case 3:
                 if (enabled)
-                    length = NesApuLength.Table[(value & 0b1111_1000) >> 3];
+                {
+                    if (atLengthClockCycle)
+                    {
+                        pendingReload = true;
+                        pendingReloadValue = value;
+                    }
+                    else length = NesApuLength.Table[(value & 0b1111_1000) >> 3];
+                }
                 timerPeriod = (timerPeriod & 0b0000_1111_1111) | ((value & 0b0000_0111) << 8);
                 dutyStep = 0;
                 envelopeStart = true;
@@ -90,7 +105,20 @@ public class NesApuPulse(bool isSecondChannel)
     public void ClockLength()
     {
         if (!halted && length > 0)
+        {
             length--;
+            lengthWasNonZeroBeforeClock = true;
+        }
+        lengthClockedThisStep = true;
+    }
+
+    public void EndOfCycle()
+    {
+        if (pendingHalt)
+        {
+            halted = pendingHaltValue;
+            pendingHalt = false;
+        }
     }
 
     public void ClockSweep()
@@ -150,5 +178,15 @@ public class NesApuPulse(bool isSecondChannel)
             dutyStep = (dutyStep + 1) & 0b0111;
         }
         else timerCounter--;
+
+        if (pendingReload)
+        {
+            if (!(lengthClockedThisStep && lengthWasNonZeroBeforeClock))
+                length = NesApuLength.Table[(pendingReloadValue & 0b1111_1000) >> 3];
+            pendingReload = false;
+        }
+
+        lengthClockedThisStep = false;
+        lengthWasNonZeroBeforeClock = false;
     }
 }

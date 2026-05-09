@@ -10,6 +10,9 @@
         <EmbeddedResource Include="apu_test_rom_singles\*.*">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </EmbeddedResource>
+        <EmbeddedResource Include="blargg_apu_2005\*.*">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </EmbeddedResource>
     </ItemGroup>
 
     <ItemGroup>

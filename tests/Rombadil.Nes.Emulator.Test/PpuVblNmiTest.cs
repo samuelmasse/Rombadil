@@ -46,7 +46,7 @@ public class PpuVblNmiTest
         var apu = new NesApu(mapper, []);
         var controller1 = new NesController();
         var controller2 = new NesController();
-        var bus = new NesMemoryBus(mapper, ppu, apu, controller1, controller2);
+        var bus = new NesMemoryBus(state, mapper, ppu, apu, controller1, controller2);
         var cpu = new CpuEmulator6502(state, bus);
 
         cpu.Reset();

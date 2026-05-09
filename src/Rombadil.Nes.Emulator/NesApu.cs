@@ -9,6 +9,8 @@ public class NesApu(NesMapper mapper, List<int> samples)
     private readonly NesApuDmc dmc = new(mapper);
 
     private bool frameIrq;
+    private bool pinFrameIrq;
+    private bool pinFrameIrqNext;
     private bool frameFiveStep;
     private bool frameIrqInhibit;
     private int frameCycle;
@@ -16,8 +18,19 @@ public class NesApu(NesMapper mapper, List<int> samples)
     private long cycles;
 
     public long Cycles => cycles;
+    public bool PendingIrq => pinFrameIrq || dmc.IrqFlag;
 
-    public void Reset() => cycles = 0;
+    public void Reset()
+    {
+        cycles = 0;
+        frameIrq = false;
+        pinFrameIrq = false;
+        pinFrameIrqNext = false;
+        frameFiveStep = false;
+        frameIrqInhibit = false;
+        frameIrqAssertCycles = 0;
+        frameCycle = 1;
+    }
 
     public byte ReadStatus()
     {
@@ -43,16 +56,25 @@ public class NesApu(NesMapper mapper, List<int> samples)
 
     public void WriteRegister(ushort addr, byte value)
     {
+        bool atLengthClockCycle = IsAtLengthClockCycle();
         switch (addr)
         {
-            case >= 0x4000 and <= 0x4003: pulse1.WriteRegister(addr - 0x4000, value); break;
-            case >= 0x4004 and <= 0x4007: pulse2.WriteRegister(addr - 0x4004, value); break;
+            case >= 0x4000 and <= 0x4003: pulse1.WriteRegister(addr - 0x4000, value, atLengthClockCycle); break;
+            case >= 0x4004 and <= 0x4007: pulse2.WriteRegister(addr - 0x4004, value, atLengthClockCycle); break;
             case >= 0x4008 and <= 0x400B: triangle.WriteRegister(addr - 0x4008, value); break;
             case >= 0x400C and <= 0x400F: noise.WriteRegister(addr - 0x400C, value); break;
             case >= 0x4010 and <= 0x4013: dmc.WriteRegister(addr - 0x4010, value); break;
             case 0x4015: WriteStatus(value); break;
             case 0x4017: WriteFrameCounter(value); break;
         }
+    }
+
+    private bool IsAtLengthClockCycle()
+    {
+        if ((cycles % 2) != 1)
+            return false;
+        int frame = frameFiveStep ? 18641 : 14915;
+        return frameCycle == 7458 || frameCycle == frame + 1;
     }
 
     public void Step()
@@ -97,6 +119,12 @@ public class NesApu(NesMapper mapper, List<int> samples)
 
         triangle.Step();
         dmc.Step();
+
+        pulse1.EndOfCycle();
+        pulse2.EndOfCycle();
+
+        pinFrameIrq = pinFrameIrqNext;
+        pinFrameIrqNext = frameIrq;
 
         samples.Add(Sample());
         cycles++;

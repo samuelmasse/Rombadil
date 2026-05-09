@@ -34,7 +34,7 @@ public class NesEmulator
         apu = new(mapper, samples);
         controller1 = new NesController();
         controller2 = new NesController();
-        bus = new NesMemoryBus(mapper, ppu, apu, controller1, controller2);
+        bus = new NesMemoryBus(state, mapper, ppu, apu, controller1, controller2);
         cpu = new CpuEmulator6502(state, bus);
         logger = new CpuEmulatorLogger(state, bus, cpu);
 
@@ -83,6 +83,9 @@ public class NesEmulator
             cpu.Irq();
             mapper.ClearPendingIrq();
         }
+
+        if (apu.PendingIrq)
+            cpu.Irq();
 
         while (ppu.Cycles < state.Cycles * 3)
             frameCompleted |= ppu.Step();
