@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <PackageReference Include="BigGustave" Version="1.0.6" />
+        <ProjectReference Include="..\..\src\Rombadil.Nes.Emulator\Rombadil.Nes.Emulator.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="BigGustave" />
+        <Using Include="Rombadil.Nes.Emulator" />
+    </ItemGroup>
+
+</Project>

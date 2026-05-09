@@ -1,0 +1,22 @@
+<Solution>
+    <Folder Name="/Cli/">
+        <Project Path="src/Rombadil.Assembler.Cli/Rombadil.Assembler.Cli.csproj" />
+        <Project Path="src/Rombadil.Cpu.Emulator.Cli/Rombadil.Cpu.Emulator.Cli.csproj" />
+    </Folder>
+    <Folder Name="/Scripts/">
+        <Project Path="scripts/Rombadil.Script.Coverage/Rombadil.Script.Coverage.csproj" />
+        <Project Path="scripts/Rombadil.Script.Dev/Rombadil.Script.Dev.csproj" />
+        <Project Path="scripts/Rombadil.Script.Package/Rombadil.Script.Package.csproj" />
+        <Project Path="scripts/Rombadil.Script.Screenshot/Rombadil.Script.Screenshot.csproj" />
+    </Folder>
+    <Folder Name="/Tests/">
+        <Project Path="tests/Rombadil.Assembler.Test/Rombadil.Assembler.Test.csproj" />
+        <Project Path="tests/Rombadil.Cpu.Emulator.Test/Rombadil.Cpu.Emulator.Test.csproj" />
+        <Project Path="tests/Rombadil.Nes.Emulator.Test/Rombadil.Nes.Emulator.Test.csproj" />
+    </Folder>
+    <Project Path="src/Rombadil.Assembler/Rombadil.Assembler.csproj" />
+    <Project Path="src/Rombadil.Cpu.Emulator/Rombadil.Cpu.Emulator.csproj" />
+    <Project Path="src/Rombadil.Cpu/Rombadil.Cpu.csproj" />
+    <Project Path="src/Rombadil.Nes.Emulator/Rombadil.Nes.Emulator.csproj" />
+    <Project Path="src/Rombadil/Rombadil.csproj" />
+</Solution>

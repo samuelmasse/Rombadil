@@ -21,6 +21,8 @@ public class NesPpuBackground(NesPpuMemory memory, NesMapper mapper)
     private bool attributeLowLatch;
     private bool attributeHighLatch;
 
+    public ushort Address => v;
+
     public void Reset()
     {
         v = 0;

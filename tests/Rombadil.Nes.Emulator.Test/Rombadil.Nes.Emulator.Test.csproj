@@ -4,6 +4,13 @@
         <EmbeddedResource Include="ppu_vbl_nmi\*.*">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </EmbeddedResource>
+        <EmbeddedResource Include="full_palette\*.*">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </EmbeddedResource>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="BigGustave" Version="1.0.6" />
     </ItemGroup>
 
     <ItemGroup>
@@ -11,6 +18,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Using Include="BigGustave" />
         <Using Include="Rombadil.Cpu.Emulator" />
         <Using Include="Rombadil.Nes.Emulator" />
     </ItemGroup>

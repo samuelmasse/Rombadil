@@ -53,29 +53,41 @@ public class NesEmulator
         long target = state.Cycles + cycles;
 
         while (state.Cycles < target)
-        {
-            cpu.Step();
-
-            while (apu.Cycles < state.Cycles)
-                apu.Step();
-
-            if (ppu.PendingNmi)
-            {
-                cpu.Nmi();
-                ppu.ClearPendingNmi();
-            }
-
-            if (mapper.PendingIrq)
-            {
-                cpu.Irq();
-                mapper.ClearPendingIrq();
-            }
-
-            while (ppu.Cycles < state.Cycles * 3)
-                ppu.Step();
-        }
+            StepCpuInstruction();
 
         return state.Cycles - target;
+    }
+
+    public void StepFrame()
+    {
+        while (!StepCpuInstruction()) { }
+    }
+
+    private bool StepCpuInstruction()
+    {
+        bool frameCompleted = false;
+
+        cpu.Step();
+
+        while (apu.Cycles < state.Cycles)
+            apu.Step();
+
+        if (ppu.PendingNmi)
+        {
+            cpu.Nmi();
+            ppu.ClearPendingNmi();
+        }
+
+        if (mapper.PendingIrq)
+        {
+            cpu.Irq();
+            mapper.ClearPendingIrq();
+        }
+
+        while (ppu.Cycles < state.Cycles * 3)
+            frameCompleted |= ppu.Step();
+
+        return frameCompleted;
     }
 
     public void SetButtons1(NesButtons buttons) => controller1.SetButtons(buttons);

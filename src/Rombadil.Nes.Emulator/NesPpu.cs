@@ -2,8 +2,8 @@ namespace Rombadil.Nes.Emulator;
 
 public class NesPpu
 {
-    private const int ScreenWidth = 256;
-    private const int ScreenHeight = 240;
+    public const int ScreenWidth = 256;
+    public const int ScreenHeight = 240;
     private const int ScanlinesPerFrame = 262;
     private const int PreRenderScanline = 261;
     private const int VBlankStartScanline = 241;
@@ -210,7 +210,9 @@ public class NesPpu
 
         DetectSpriteZeroHit(xScreen, bgPixel, spritePixel, spriteSlot, showBgLeft, showSpriteLeft);
 
-        ushort paletteAddr = SelectPaletteAddress(bgPixel, bgPalette, spritePixel, spritePalette, spriteBehindBg);
+        ushort paletteAddr = showBg || showSprites
+            ? SelectPaletteAddress(bgPixel, bgPalette, spritePixel, spritePalette, spriteBehindBg)
+            : SelectForcedBlankingPaletteAddress();
         byte colorIndex = memory.ReadPalette(paletteAddr);
         if (grayscale)
             colorIndex &= 0x30;
@@ -221,6 +223,14 @@ public class NesPpu
         backBuffer[dst + 0] = NesPpuPalette.Rgb[rgbIndex + 0];
         backBuffer[dst + 1] = NesPpuPalette.Rgb[rgbIndex + 1];
         backBuffer[dst + 2] = NesPpuPalette.Rgb[rgbIndex + 2];
+    }
+
+    private ushort SelectForcedBlankingPaletteAddress()
+    {
+        ushort addr = bg.Address;
+        if ((addr & 0x3F00) == 0x3F00)
+            return addr;
+        return 0x3F00;
     }
 
     private void DetectSpriteZeroHit(int xScreen, int bgPixel, int spritePixel, int spriteSlot, bool showBgLeft, bool showSpriteLeft)

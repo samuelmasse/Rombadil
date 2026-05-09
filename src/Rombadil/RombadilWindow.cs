@@ -29,7 +29,7 @@ public class RombadilWindow : IDisposable
     {
         var assembly = Assembly.GetExecutingAssembly();
 
-        framebufferSize = (256, 240);
+        framebufferSize = (NesPpu.ScreenWidth, NesPpu.ScreenHeight);
         framebuffer = new byte[framebufferSize.X * framebufferSize.Y * 3];
 
         float ntscPixelAspect = 8f / 7f;

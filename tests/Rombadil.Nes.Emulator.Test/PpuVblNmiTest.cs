@@ -42,7 +42,7 @@ public class PpuVblNmiTest
 
         var mapper = new NesMapperNrom(prgRom, chrRom);
         var state = new CpuEmulatorState();
-        var ppu = new NesPpu(mapper, new byte[256 * 240 * 3]);
+        var ppu = new NesPpu(mapper, new byte[NesPpu.ScreenWidth * NesPpu.ScreenHeight * 3]);
         var apu = new NesApu(mapper, []);
         var controller1 = new NesController();
         var controller2 = new NesController();
