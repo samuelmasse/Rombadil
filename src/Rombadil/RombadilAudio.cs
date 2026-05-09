@@ -124,7 +124,7 @@ public class RombadilAudio : IDisposable
         int alPendingSamples = (queued - processed) * AudioChunkSize;
         double blipDrainRate = InternalSampleRate * effectiveSpeed;
         return blip.SamplesAvail * 1000.0 / blipDrainRate
-             + alPendingSamples * 1000.0 / AudioFreq;
+            + alPendingSamples * 1000.0 / AudioFreq;
     }
 
     public void Dispose()
