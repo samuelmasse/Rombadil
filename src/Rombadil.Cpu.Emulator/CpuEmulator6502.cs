@@ -62,7 +62,7 @@ public class CpuEmulator6502(CpuEmulatorState state, CpuEmulatorBus bus)
 
     private void Step(CpuInstruction instruction, CpuAddressingMode mode)
     {
-        var addr = Step(CpuEmulatorTimings.Get(instruction, mode), mode);
+        var (addr, _) = Step(CpuEmulatorTimings.Get(instruction, mode), mode);
         var exec = new CpuEmulatorExecutor(state, bus, new(state, bus), new(state, bus, addr, mode));
 
         switch (instruction)
@@ -128,8 +128,8 @@ public class CpuEmulator6502(CpuEmulatorState state, CpuEmulatorBus bus)
 
     private void Step(CpuEmulatorIllegalInstruction instruction, CpuAddressingMode mode)
     {
-        var addr = Step(CpuEmulatorIllegalTimings.Get(instruction, mode), mode);
-        var exec = new CpuEmulatorIllegalExecutor(new(state, bus), new(state, bus, addr, mode));
+        var (addr, baseAddr) = Step(CpuEmulatorIllegalTimings.Get(instruction, mode), mode);
+        var exec = new CpuEmulatorIllegalExecutor(state, bus, new(state, bus), new(state, bus, addr, mode));
 
         switch (instruction)
         {
@@ -143,10 +143,21 @@ public class CpuEmulator6502(CpuEmulatorState state, CpuEmulatorBus bus)
             case CpuEmulatorIllegalInstruction.RLA: exec.Rla(); break;
             case CpuEmulatorIllegalInstruction.SRE: exec.Sre(); break;
             case CpuEmulatorIllegalInstruction.RRA: exec.Rra(); break;
+            case CpuEmulatorIllegalInstruction.AAC: exec.Aac(); break;
+            case CpuEmulatorIllegalInstruction.ASR: exec.Asr(); break;
+            case CpuEmulatorIllegalInstruction.ARR: exec.Arr(); break;
+            case CpuEmulatorIllegalInstruction.ATX: exec.Atx(); break;
+            case CpuEmulatorIllegalInstruction.AXS: exec.Axs(); break;
+            case CpuEmulatorIllegalInstruction.XAA: exec.Xaa(); break;
+            case CpuEmulatorIllegalInstruction.LAR: exec.Lar(); break;
+            case CpuEmulatorIllegalInstruction.AXA: exec.Axa(baseAddr); break;
+            case CpuEmulatorIllegalInstruction.SYA: exec.Sya(baseAddr); break;
+            case CpuEmulatorIllegalInstruction.SXA: exec.Sxa(baseAddr); break;
+            case CpuEmulatorIllegalInstruction.XAS: exec.Xas(baseAddr); break;
         }
     }
 
-    private ushort Step((byte, byte) timing, CpuAddressingMode mode)
+    private (ushort addr, ushort baseAddr) Step((byte, byte) timing, CpuAddressingMode mode)
     {
         var (addr, baseAddr) = Addr(state.PC, mode);
         var (cycles, pagePenalty) = timing;
@@ -156,7 +167,7 @@ public class CpuEmulator6502(CpuEmulatorState state, CpuEmulatorBus bus)
         if ((baseAddr & 0xFF00) != (addr & 0xFF00))
             state.Cycles += pagePenalty;
 
-        return addr;
+        return (addr, baseAddr);
     }
 
     public (ushort, ushort) Addr(ushort pc, CpuAddressingMode mode) => mode switch

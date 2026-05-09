@@ -119,6 +119,28 @@ public static class CpuEmulatorIllegalOpcodeMap
             (CpuAddressingMode.IndirectX, CpuEmulatorIllegalOpcode.RRA_INDX),
             (CpuAddressingMode.IndirectY, CpuEmulatorIllegalOpcode.RRA_INDY)
         );
+
+        Register(CpuEmulatorIllegalInstruction.AAC,
+            (CpuAddressingMode.Immediate, CpuEmulatorIllegalOpcode.AAC_IM_0B),
+            (CpuAddressingMode.Immediate, CpuEmulatorIllegalOpcode.AAC_IM_2B)
+        );
+
+        Register(CpuEmulatorIllegalInstruction.ASR, (CpuAddressingMode.Immediate, CpuEmulatorIllegalOpcode.ASR_IM));
+        Register(CpuEmulatorIllegalInstruction.ARR, (CpuAddressingMode.Immediate, CpuEmulatorIllegalOpcode.ARR_IM));
+        Register(CpuEmulatorIllegalInstruction.ATX, (CpuAddressingMode.Immediate, CpuEmulatorIllegalOpcode.ATX_IM));
+        Register(CpuEmulatorIllegalInstruction.AXS, (CpuAddressingMode.Immediate, CpuEmulatorIllegalOpcode.AXS_IM));
+        Register(CpuEmulatorIllegalInstruction.XAA, (CpuAddressingMode.Immediate, CpuEmulatorIllegalOpcode.XAA_IM));
+
+        Register(CpuEmulatorIllegalInstruction.LAR, (CpuAddressingMode.AbsoluteY, CpuEmulatorIllegalOpcode.LAR_ABSY));
+
+        Register(CpuEmulatorIllegalInstruction.AXA,
+            (CpuAddressingMode.AbsoluteY, CpuEmulatorIllegalOpcode.AXA_ABSY),
+            (CpuAddressingMode.IndirectY, CpuEmulatorIllegalOpcode.AXA_INDY)
+        );
+
+        Register(CpuEmulatorIllegalInstruction.SYA, (CpuAddressingMode.AbsoluteX, CpuEmulatorIllegalOpcode.SYA_ABSX));
+        Register(CpuEmulatorIllegalInstruction.SXA, (CpuAddressingMode.AbsoluteY, CpuEmulatorIllegalOpcode.SXA_ABSY));
+        Register(CpuEmulatorIllegalInstruction.XAS, (CpuAddressingMode.AbsoluteY, CpuEmulatorIllegalOpcode.XAS_ABSY));
     }
 
     public static bool TryDecodeOpcode(CpuEmulatorIllegalOpcode opcode, out (CpuEmulatorIllegalInstruction, CpuAddressingMode) decode)

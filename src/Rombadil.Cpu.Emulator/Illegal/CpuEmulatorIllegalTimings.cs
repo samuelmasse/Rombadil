@@ -92,6 +92,24 @@ internal static class CpuEmulatorIllegalTimings
             (CpuAddressingMode.IndirectX, 8, 0),
             (CpuAddressingMode.IndirectY, 8, 0)
         );
+
+        Register(CpuEmulatorIllegalInstruction.AAC, (CpuAddressingMode.Immediate, 2, 0));
+        Register(CpuEmulatorIllegalInstruction.ASR, (CpuAddressingMode.Immediate, 2, 0));
+        Register(CpuEmulatorIllegalInstruction.ARR, (CpuAddressingMode.Immediate, 2, 0));
+        Register(CpuEmulatorIllegalInstruction.ATX, (CpuAddressingMode.Immediate, 2, 0));
+        Register(CpuEmulatorIllegalInstruction.AXS, (CpuAddressingMode.Immediate, 2, 0));
+        Register(CpuEmulatorIllegalInstruction.XAA, (CpuAddressingMode.Immediate, 2, 0));
+
+        Register(CpuEmulatorIllegalInstruction.LAR, (CpuAddressingMode.AbsoluteY, 4, 1));
+
+        Register(CpuEmulatorIllegalInstruction.AXA,
+            (CpuAddressingMode.AbsoluteY, 5, 0),
+            (CpuAddressingMode.IndirectY, 6, 0)
+        );
+
+        Register(CpuEmulatorIllegalInstruction.SYA, (CpuAddressingMode.AbsoluteX, 5, 0));
+        Register(CpuEmulatorIllegalInstruction.SXA, (CpuAddressingMode.AbsoluteY, 5, 0));
+        Register(CpuEmulatorIllegalInstruction.XAS, (CpuAddressingMode.AbsoluteY, 5, 0));
     }
 
     internal static (byte, byte) Get(CpuEmulatorIllegalInstruction op, CpuAddressingMode mode) => timings[(byte)op << 8 | (byte)mode];

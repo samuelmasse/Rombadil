@@ -96,4 +96,20 @@ public enum CpuEmulatorIllegalOpcode : byte
     RRA_ABSY = 0x7B,
     RRA_INDX = 0x63,
     RRA_INDY = 0x73,
+
+    AAC_IM_0B = 0x0B,
+    AAC_IM_2B = 0x2B,
+    ASR_IM = 0x4B,
+    ARR_IM = 0x6B,
+    ATX_IM = 0xAB,
+    AXS_IM = 0xCB,
+    XAA_IM = 0x8B,
+
+    LAR_ABSY = 0xBB,
+
+    AXA_ABSY = 0x9F,
+    AXA_INDY = 0x93,
+    SYA_ABSX = 0x9C,
+    SXA_ABSY = 0x9E,
+    XAS_ABSY = 0x9B,
 }

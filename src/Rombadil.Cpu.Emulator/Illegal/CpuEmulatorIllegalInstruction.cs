@@ -11,5 +11,16 @@ public enum CpuEmulatorIllegalInstruction : byte
     SLO,
     RLA,
     SRE,
-    RRA
+    RRA,
+    AAC,
+    ASR,
+    ARR,
+    ATX,
+    AXS,
+    XAA,
+    LAR,
+    AXA,
+    SYA,
+    SXA,
+    XAS
 }
