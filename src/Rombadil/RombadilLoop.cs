@@ -6,7 +6,7 @@ public class RombadilLoop
     private readonly NesEmulator nes;
     private readonly Stopwatch sw;
     private double time;
-    private int speed;
+    private double speed;
     private bool paused;
     private bool fullSpeed;
 
@@ -16,7 +16,7 @@ public class RombadilLoop
         nes = new(rom, window.Framebuffer, window.Samples);
         sw = new();
 
-        speed = 60;
+        speed = 60.0988;
         window.Render += Render;
     }
 
