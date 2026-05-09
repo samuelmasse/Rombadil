@@ -3,9 +3,6 @@ namespace Rombadil.Nes.Emulator.Test;
 [TestClass]
 public class PpuVblNmiTest
 {
-    // Tests from https://github.com/christopherpow/nes-test-roms/tree/master/ppu_vbl_nmi
-    // Tests 07, 08 and 10 don't pass currently
-
     [TestMethod]
     public void VblBasics() => RunTest("01-vbl_basics");
 
@@ -25,60 +22,16 @@ public class PpuVblNmiTest
     public void Suppression() => RunTest("06-suppression");
 
     [TestMethod]
-    public void NmiOnTiming() => RunTest("07-nmi_on_timing",
-        """
-        00 N
-        01 N
-        02 N
-        03 N
-        04 N
-        05 N
-        06 -
-        07 -
-        08 -
-
-        2B1F5269
-        07-nmi_on_timing
-
-        Failed
-
-        """);
+    public void NmiOnTiming() => RunTest("07-nmi_on_timing");
 
     [TestMethod]
-    public void NmiOffTiming() => RunTest("08-nmi_off_timing",
-        """
-        03 -
-        04 -
-        05 N
-        06 N
-        07 N
-        08 N
-        09 N
-        0A N
-        0B N
-        0C N
-
-        4CC88927
-        08-nmi_off_timing
-
-        Failed
-
-        """);
+    public void NmiOffTiming() => RunTest("08-nmi_off_timing");
 
     [TestMethod]
     public void EvenOddFrames() => RunTest("09-even_odd_frames");
 
     [TestMethod]
-    public void EvenOddTiming() => RunTest("10-even_odd_timing",
-        $"""
-        08 07{' '}
-        Clock is skipped too late, relative to enabling BG
-
-        10-even_odd_timing
-
-        Failed #3
-
-        """);
+    public void EvenOddTiming() => RunTest("10-even_odd_timing");
 
     private void RunTest(string name, string? error = null)
     {

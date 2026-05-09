@@ -45,7 +45,8 @@ public class RombadilLoop
             nes.SetButtons1(c1);
             nes.SetButtons2(c2);
 
-            nes.Step(cycles);
+            long overshoot = nes.Step(cycles);
+            cycleAccumulator -= overshoot;
         }
 
         audio.Pump(effectiveSpeed);

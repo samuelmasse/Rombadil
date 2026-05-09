@@ -19,6 +19,8 @@ public class RombadilAudio : IDisposable
     private int source;
     private int[] buffers = [];
     private int lastMix;
+    private int underruns;
+    private DateTime lastTime;
 
     public List<int> Samples => samples;
 
@@ -61,7 +63,16 @@ public class RombadilAudio : IDisposable
         for (int i = 0; i < processed; i++)
             freeBuffers.Enqueue(AL.SourceUnqueueBuffer(source));
 
-        if (ObservedLatencyMs(effectiveSpeed) > MaxLatencyMs)
+        var latency = ObservedLatencyMs(effectiveSpeed);
+
+        var time = DateTime.UtcNow;
+        if ((time - lastTime).TotalMilliseconds > 500)
+        {
+            Console.WriteLine(latency);
+            lastTime = time;
+        }
+
+        if (latency > MaxLatencyMs)
         {
             AL.SourceStop(source);
             AL.GetSource(source, ALGetSourcei.BuffersQueued, out int queuedToDrop);
@@ -70,6 +81,8 @@ public class RombadilAudio : IDisposable
                 freeBuffers.Enqueue(AL.SourceUnqueueBuffer(source));
 
             blip.Clear();
+
+            Console.WriteLine("DROP");
         }
 
         int neededBlipSamples = (int)Math.Ceiling(
@@ -94,6 +107,8 @@ public class RombadilAudio : IDisposable
 
         if ((ALSourceState)state != ALSourceState.Playing)
         {
+            Console.WriteLine($"underrun {underruns++}");
+
             AL.GetSource(source, ALGetSourcei.BuffersQueued, out int queued);
             if (queued > 0)
                 AL.SourcePlay(source);

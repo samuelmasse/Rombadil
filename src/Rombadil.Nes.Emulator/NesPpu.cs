@@ -8,6 +8,7 @@ public class NesPpu
     private const int PreRenderScanline = 261;
     private const int VBlankStartScanline = 241;
     private const int CyclesPerScanline = 341;
+    private const int NmiDelayCycles = 9;
     private const byte CtrlNmiEnable = 0x80;
     private const byte MaskGrayscale = 0x01;
     private const byte MaskShowBgLeft = 0x02;
@@ -39,10 +40,14 @@ public class NesPpu
     private bool nmiPending;
     private bool nmiSuppressed;
     private bool vblankSuppressed;
+    private bool renderingPreviousCycle;
 
     public long Cycles => cycles;
     public bool PendingNmi => nmiPending;
     public byte OamAddr => oamAddr;
+    private bool NmiOutput => (ctrl & CtrlNmiEnable) != 0 && (status & StatusVBlank) != 0;
+    private bool InVblankNmiSuppressionWindow => scanline == VBlankStartScanline && cycle > 0 && cycle <= 3;
+    private bool InVblankClearNmiEnableRace => scanline == PreRenderScanline && cycle == 1;
 
     public NesPpu(NesMapper mapper, Memory<byte> framebuffer)
     {
@@ -68,6 +73,7 @@ public class NesPpu
         nmiPending = false;
         nmiSuppressed = false;
         vblankSuppressed = false;
+        renderingPreviousCycle = false;
         memory.Reset();
         bg.Reset();
         sprites.Reset();
@@ -97,9 +103,10 @@ public class NesPpu
         if (fetchLine && cycle == 260 && rendering)
             mapper.ClockIrq();
 
-        AdvanceCycleAndScanline(prerenderLine, rendering);
+        bool frameCompleted = AdvanceCycleAndScanline(prerenderLine, renderingPreviousCycle);
+        renderingPreviousCycle = rendering;
 
-        if (scanline == PreRenderScanline && cycle == CyclesPerScanline - 1)
+        if (frameCompleted || scanline == PreRenderScanline && cycle == CyclesPerScanline - 1)
         {
             backBuffer.AsMemory().CopyTo(framebuffer);
             return true;
@@ -114,7 +121,7 @@ public class NesPpu
         {
             status |= StatusVBlank;
             if ((ctrl & CtrlNmiEnable) != 0)
-                nmiDelay = 9;
+                nmiDelay = NmiDelayCycles;
         }
 
         if (nmiDelay > 0)
@@ -157,22 +164,28 @@ public class NesPpu
         sprites.LoadShifters(targetLine, ctrl);
     }
 
-    private void AdvanceCycleAndScanline(bool prerenderLine, bool rendering)
+    private bool AdvanceCycleAndScanline(bool prerenderLine, bool rendering)
     {
+        if (prerenderLine && !evenFrame && rendering && cycle == CyclesPerScanline - 2)
+        {
+            cycles++;
+            SkipOddFrameCycle();
+            return true;
+        }
+
         cycle++;
         cycles++;
 
         if (cycle != CyclesPerScanline)
-            return;
+            return false;
 
         cycle = 0;
-
-        if (prerenderLine && !evenFrame && rendering)
-            cycle = 1;
 
         scanline = (scanline + 1) % ScanlinesPerFrame;
         if (scanline == 0)
             evenFrame = !evenFrame;
+
+        return false;
     }
 
     private void OutputPixel(int xScreen, int yScreen)
@@ -294,9 +307,21 @@ public class NesPpu
     private void WriteCtrl(byte value)
     {
         bool prevNmiEnable = (ctrl & CtrlNmiEnable) != 0;
+        bool nextNmiEnable = (value & CtrlNmiEnable) != 0;
         ctrl = value;
         bg.WriteCtrlNametable(value);
-        if (!prevNmiEnable && (value & CtrlNmiEnable) != 0 && (status & StatusVBlank) != 0)
-            nmiDelay = 9;
+
+        if (prevNmiEnable && !nextNmiEnable && InVblankNmiSuppressionWindow)
+            nmiDelay = 0;
+
+        if (!prevNmiEnable && NmiOutput && !InVblankClearNmiEnableRace)
+            nmiDelay = NmiDelayCycles;
+    }
+
+    private void SkipOddFrameCycle()
+    {
+        cycle = 0;
+        scanline = 0;
+        evenFrame = !evenFrame;
     }
 }

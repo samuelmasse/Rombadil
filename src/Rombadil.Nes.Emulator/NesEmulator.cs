@@ -48,7 +48,7 @@ public class NesEmulator
         apu.Reset();
     }
 
-    public void Step(long cycles)
+    public long Step(long cycles)
     {
         long target = state.Cycles + cycles;
 
@@ -74,6 +74,8 @@ public class NesEmulator
             while (ppu.Cycles < state.Cycles * 3)
                 ppu.Step();
         }
+
+        return state.Cycles - target;
     }
 
     public void SetButtons1(NesButtons buttons) => controller1.SetButtons(buttons);
