@@ -11,12 +11,9 @@ public class NesEmulator
     private readonly NesMemoryBus bus;
     private readonly CpuEmulator6502 cpu;
     private readonly CpuEmulatorLogger logger;
-    private readonly Queue<short> samples;
 
-    public NesEmulator(Memory<byte> rom, Memory<byte> framebuffer, Queue<short> samples)
+    public NesEmulator(Memory<byte> rom, Memory<byte> framebuffer, List<int> samples)
     {
-        this.samples = samples;
-
         var romHeader = rom[..0x10];
         var header = new NesRomHeader(rom[..0x10]);
 
@@ -34,7 +31,7 @@ public class NesEmulator
 
         state = new CpuEmulatorState();
         ppu = new NesPpu(mapper, framebuffer);
-        apu = new(mapper);
+        apu = new(mapper, samples);
         controller1 = new NesController();
         controller2 = new NesController();
         bus = new NesMemoryBus(mapper, ppu, apu, controller1, controller2);
@@ -51,19 +48,16 @@ public class NesEmulator
         apu.Reset();
     }
 
-    public void Step()
+    public void Step(long cycles)
     {
-        bool done = false;
-        while (!done)
+        long target = state.Cycles + cycles;
+
+        while (state.Cycles < target)
         {
-            // Console.WriteLine(logger.Log());
             cpu.Step();
 
             while (apu.Cycles < state.Cycles)
-            {
                 apu.Step();
-                samples.Enqueue(apu.Sample());
-            }
 
             if (ppu.PendingNmi)
             {
@@ -78,10 +72,7 @@ public class NesEmulator
             }
 
             while (ppu.Cycles < state.Cycles * 3)
-            {
-                if (ppu.Step())
-                    done = true;
-            }
+                ppu.Step();
         }
     }
 

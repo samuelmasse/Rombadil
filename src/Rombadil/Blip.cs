@@ -1,10 +1,7 @@
-namespace Rombadil.Nes.Emulator;
+namespace Rombadil;
 
 public class Blip
 {
-    public const int MaxRatio = 1 << 20;
-    public const int MaxFrame = 4000;
-
     private const int PreShift = 32;
     private const int TimeBits = PreShift + 20;
     private const ulong TimeUnit = 1UL << TimeBits;
@@ -57,32 +54,22 @@ public class Blip
         {   0,   43, -115,  350, -488, 1136, -914,  5861 },
     };
 
-    private ulong factor;
+    private readonly int[] buffer;
+    private readonly ulong factor;
     private ulong offset;
     private int avail;
     private int integrator;
-    private readonly int size;
-    private readonly int[] buffer;
-
-    public Blip(int size)
-    {
-        ArgumentOutOfRangeException.ThrowIfNegative(size);
-
-        this.size = size;
-        buffer = new int[size + BufExtra];
-        factor = TimeUnit / MaxRatio;
-        Clear();
-    }
 
     public int SamplesAvail => avail;
 
-    public void SetRates(double clockRate, double sampleRate)
+    public Blip(int size, double clockRate, double sampleRate)
     {
-        double f = TimeUnit * sampleRate / clockRate;
-        factor = (ulong)f;
+        buffer = new int[size + BufExtra];
 
-        if (factor < f)
-            factor++;
+        double f = TimeUnit * sampleRate / clockRate;
+        factor = (ulong)Math.Ceiling(f);
+
+        Clear();
     }
 
     public void Clear()
@@ -93,27 +80,16 @@ public class Blip
         Array.Clear(buffer, 0, buffer.Length);
     }
 
-    public int ClocksNeeded(int samples)
-    {
-        if (samples < 0 || avail + samples > size)
-            throw new ArgumentOutOfRangeException(nameof(samples));
-        ulong needed = (ulong)samples * TimeUnit;
-        if (needed < offset) return 0;
-        return (int)((needed - offset + factor - 1) / factor);
-    }
-
     public void EndFrame(uint t)
     {
-        ulong off = (ulong)t * factor + offset;
+        ulong off = t * factor + offset;
         avail += (int)(off >> TimeBits);
         offset = off & (TimeUnit - 1);
-        if (avail > size)
-            throw new InvalidOperationException("Blip buffer overflow.");
     }
 
     public void AddDelta(uint time, int delta)
     {
-        uint fixedPos = (uint)(((ulong)time * factor + offset) >> PreShift);
+        uint fixedPos = (uint)((time * factor + offset) >> PreShift);
         int outBase = avail + (int)(fixedPos >> FracBits);
         int phase = (int)(fixedPos >> PhaseShift) & (PhaseCount - 1);
         int rev = PhaseCount - phase;
@@ -139,19 +115,9 @@ public class Blip
         buffer[outBase + 15] += BlStep[rev, 0] * delta + BlStep[rev - 1, 0] * delta2;
     }
 
-    public void AddDeltaFast(uint time, int delta)
+    public int ReadSamples(Span<short> output)
     {
-        uint fixedPos = (uint)(((ulong)time * factor + offset) >> PreShift);
-        int outBase = avail + (int)(fixedPos >> FracBits);
-        int interp = (int)(fixedPos >> (FracBits - DeltaBits)) & (DeltaUnit - 1);
-        int delta2 = delta * interp;
-        buffer[outBase + 7] += delta * DeltaUnit - delta2;
-        buffer[outBase + 8] += delta2;
-    }
-
-    public int ReadSamples(Span<short> output, int count, bool stereo)
-    {
-        ArgumentOutOfRangeException.ThrowIfNegative(count);
+        int count = output.Length;
 
         if (count > avail)
             count = avail;
@@ -159,9 +125,7 @@ public class Blip
         if (count == 0)
             return 0;
 
-        int step = stereo ? 2 : 1;
         int sum = integrator;
-        int outIdx = 0;
 
         for (int i = 0; i < count; i++)
         {
@@ -169,8 +133,7 @@ public class Blip
             sum += buffer[i];
             if ((short)s != s)
                 s = (s >> 16) ^ MaxSample;
-            output[outIdx] = (short)s;
-            outIdx += step;
+            output[i] = (short)s;
             sum -= s << (DeltaBits - BassShift);
         }
 

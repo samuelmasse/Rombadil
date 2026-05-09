@@ -2,27 +2,35 @@ namespace Rombadil;
 
 public class RombadilLoop
 {
+    private static readonly double CpuHz = 1789773;
+    private static readonly long CyclesPerFrame = (long)Math.Ceiling(CpuHz / 60);
+
     private readonly RombadilWindow window;
+    private readonly RombadilAudio audio;
     private readonly NesEmulator nes;
     private readonly Stopwatch sw;
-    private double time;
+    private double cycleAccumulator;
     private double speed;
+    private double smoothedEffectiveSpeed;
     private bool paused;
     private bool fullSpeed;
 
     public RombadilLoop(byte[] rom)
     {
         window = new();
-        nes = new(rom, window.Framebuffer, window.Samples);
+        audio = new RombadilAudio(CpuHz);
+        nes = new(rom, window.Framebuffer, audio.Samples);
         sw = new();
 
-        speed = 60.0988;
+        speed = 1.0;
         window.Render += Render;
+        window.Load += audio.Start;
+        window.Unload += audio.Dispose;
     }
 
     private void Render(double obj)
     {
-        var (rate, steps) = TimeStep();
+        long cycles = TimeStep(out double effectiveSpeed);
 
         EmulatorInput();
 
@@ -32,32 +40,42 @@ public class RombadilLoop
         var c2 = FilterInput(KeyboardInput(Keys.F, Keys.D, Keys.R, Keys.E,
             Keys.U, Keys.J, Keys.H, Keys.K) | ControllerInput(1));
 
-        while (steps > 0 && !paused)
+        if (!paused && cycles > 0)
         {
             nes.SetButtons1(c1);
             nes.SetButtons2(c2);
 
-            nes.Step();
-            window.Step(rate);
-
-            steps--;
+            nes.Step(cycles);
         }
+
+        audio.Pump(effectiveSpeed);
     }
 
-    private (double, int) TimeStep()
+    private long TimeStep(out double effectiveSpeed)
     {
         var dt = sw.Elapsed.TotalSeconds;
         sw.Restart();
 
-        time += dt * speed;
-        int steps = (int)time;
-        time -= steps;
+        if (fullSpeed)
+        {
+            cycleAccumulator = 0;
+            double instant = dt > 0 ? CyclesPerFrame / (dt * CpuHz) : 1.0;
+            smoothedEffectiveSpeed = 0.95 * smoothedEffectiveSpeed + 0.05 * instant;
+            effectiveSpeed = smoothedEffectiveSpeed;
+            return CyclesPerFrame;
+        }
 
-        if (fullSpeed || steps > 16)
-            steps = 1;
+        cycleAccumulator += dt * CpuHz * speed;
 
-        var rate = fullSpeed ? (1 / dt) : speed;
-        return (rate, steps);
+        double maxCycles = CyclesPerFrame * 2 * speed;
+        if (cycleAccumulator > maxCycles)
+            cycleAccumulator = maxCycles;
+
+        long cycles = (long)cycleAccumulator;
+        cycleAccumulator -= cycles;
+        smoothedEffectiveSpeed = speed;
+        effectiveSpeed = speed;
+        return cycles;
     }
 
     private void EmulatorInput()
@@ -68,8 +86,8 @@ public class RombadilLoop
 
         if (!fullSpeed)
         {
-            if (speed > 15 && window.IsKeyPressed(Keys.LeftBracket)) speed /= 2;
-            if (speed < 480 && window.IsKeyPressed(Keys.RightBracket)) speed *= 2;
+            if (speed > 0.25 && window.IsKeyPressed(Keys.LeftBracket)) speed /= 2;
+            if (speed < 8.0 && window.IsKeyPressed(Keys.RightBracket)) speed *= 2;
         }
     }
 

@@ -1,6 +1,6 @@
 namespace Rombadil.Nes.Emulator;
 
-public class NesApu(NesMapper mapper)
+public class NesApu(NesMapper mapper, List<int> samples)
 {
     private readonly NesApuPulse pulse1 = new(false);
     private readonly NesApuPulse pulse2 = new(true);
@@ -16,16 +16,12 @@ public class NesApu(NesMapper mapper)
 
     public long Cycles => cycles;
 
-    public void Reset()
-    {
-        cycles = 0;
-    }
+    public void Reset() => cycles = 0;
 
     public byte ReadStatus()
     {
         var status = PeekStatus();
         frameIrq = false;
-        // Console.WriteLine($"APU CYC:{cycles} READ ${status:X2}");
         return status;
     }
 
@@ -46,8 +42,6 @@ public class NesApu(NesMapper mapper)
 
     public void WriteRegister(ushort addr, byte value)
     {
-        // Console.WriteLine($"APU CYC:{cycles} WRITE ${addr:X4}=${value:X2}");
-
         switch (addr)
         {
             case >= 0x4000 and <= 0x4003: pulse1.WriteRegister(addr - 0x4000, value); break;
@@ -97,10 +91,11 @@ public class NesApu(NesMapper mapper)
         triangle.Step();
         dmc.Step();
 
+        samples.Add(Sample());
         cycles++;
     }
 
-    public short Sample()
+    private int Sample()
     {
         float p1 = pulse1.Sample();
         float p2 = pulse2.Sample();
@@ -119,8 +114,7 @@ public class NesApu(NesMapper mapper)
             : 159.79f / ((1f / tndMix) + 100f);
 
         float output = pulseOut + tndOut;
-
-        return (short)(Math.Clamp(output, -1f, 1f) * short.MaxValue);
+        return (int)(Math.Clamp(output, 0f, 1f) * short.MaxValue);
     }
 
     private void SetFrameInterruptIfRequired()

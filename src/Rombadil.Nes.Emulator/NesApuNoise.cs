@@ -48,7 +48,7 @@ public class NesApuNoise
 
             case 2:
                 mode = (value & 0b1000_0000) != 0;
-                timerPeriod = periodTable[value & 0b0000_1111];
+                timerPeriod = periodTable[value & 0b0000_1111] / 2 - 1;
                 break;
 
             case 3:

@@ -3,13 +3,13 @@ namespace Rombadil;
 public class RombadilWindow : IDisposable
 {
     public event Action<double>? Render;
+    public event Action? Load;
+    public event Action? Unload;
 
     private readonly byte[] framebuffer;
-    private readonly Queue<short> samples;
     private readonly Vector2i framebufferSize;
     private readonly GameWindow window;
     private readonly float[] vertices = new float[16];
-    private readonly AudioBuffer audioBuffer = new(0xFFFF, 16);
     private readonly Stopwatch lastMouse = new();
 
     private int vao;
@@ -21,36 +21,16 @@ public class RombadilWindow : IDisposable
     private WindowState previousState;
     private bool isFullscreen;
 
-    private Thread? audioThread;
-    private bool running;
-    private ALDevice device;
-    private ALContext context;
-    private int source;
-    private int[] buffers = [];
-    private double samplesRemaining;
     private Vector2 lastMousePosition;
 
     public Memory<byte> Framebuffer => framebuffer;
-    public Queue<short> Samples => samples;
 
     public RombadilWindow()
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            OpenALLibraryNameContainer.OverridePath = "libopenal.1.dylib";
-
         var assembly = Assembly.GetExecutingAssembly();
-        var iniPath = Path.Combine(AppContext.BaseDirectory, "alsoft.ini");
-
-        if (!File.Exists(iniPath))
-        {
-            using var stream = assembly.GetManifestResourceStream("Rombadil.alsoft.ini")!;
-            using var reader = new StreamReader(stream);
-            File.WriteAllText(iniPath, reader.ReadToEnd());
-        }
 
         framebufferSize = (256, 240);
         framebuffer = new byte[framebufferSize.X * framebufferSize.Y * 3];
-        samples = [];
 
         float ntscPixelAspect = 8f / 7f;
         float correctedPixelWidth = framebufferSize.X * ntscPixelAspect;
@@ -92,6 +72,7 @@ public class RombadilWindow : IDisposable
             LoadVao();
             LoadProgram();
             LoadTexture();
+            Load?.Invoke();
         };
 
         window.RenderFrame += (e) =>
@@ -105,158 +86,10 @@ public class RombadilWindow : IDisposable
             Present();
         };
         window.Resize += (e) => Present();
-        window.Load += () => StartAudio();
-        window.Unload += () => StopAudio();
-    }
-
-    private void StartAudio()
-    {
-        device = ALC.OpenDevice(null);
-        context = ALC.CreateContext(device, (int[])null!);
-        ALC.MakeContextCurrent(context);
-
-        source = AL.GenSource();
-        buffers = AL.GenBuffers(3);
-
-        running = true;
-        audioThread = new Thread(AudioLoop) { IsBackground = true };
-        audioThread.Start();
-    }
-
-    private void StopAudio()
-    {
-        running = false;
-        audioThread?.Join();
-
-        AL.SourceStop(source);
-        AL.DeleteSource(source);
-        AL.DeleteBuffers(buffers);
-        ALC.DestroyContext(context);
-        ALC.CloseDevice(device);
-    }
-
-    private void AudioLoop()
-    {
-        int freq = 44100;
-
-        foreach (var buffer in buffers)
-        {
-            AL.BufferData(buffer, ALFormat.Mono16, (ReadOnlySpan<short>)audioBuffer.Output, freq);
-            AL.SourceQueueBuffer(source, buffer);
-        }
-
-        AL.SourcePlay(source);
-
-        var sample = new short[0xFFFF];
-        while (audioBuffer.Delay < 5 && running)
-            Thread.Sleep(1);
-
-        while (running)
-        {
-            while (audioBuffer.Delay < 2 && running)
-            {
-                while (audioBuffer.Delay < 3 && running)
-                    Thread.Sleep(1);
-            }
-
-            if (audioBuffer.Delay > 3)
-            {
-                while (audioBuffer.Delay > 2)
-                    audioBuffer.Retrieve();
-            }
-
-            AL.GetSource(source, ALGetSourcei.BuffersProcessed, out int processed);
-            while (audioBuffer.Delay <= processed && running)
-                Thread.Sleep(1);
-
-            if (!running)
-                break;
-
-            for (int i = 0; i < processed; i++)
-            {
-                audioBuffer.Retrieve();
-
-                double target = freq / audioBuffer.Rate;
-                samplesRemaining += target;
-                int length = (int)samplesRemaining;
-                samplesRemaining -= length;
-
-                int buffer = AL.SourceUnqueueBuffer(source);
-                var src = audioBuffer.Output;
-                var dst = sample.AsSpan()[..length];
-                ApplyFilter(src);
-                ResampleSinc(src, dst);
-                AL.BufferData(buffer, ALFormat.Mono16, (ReadOnlySpan<short>)dst, freq);
-                AL.SourceQueueBuffer(source, buffer);
-            }
-
-            AL.GetSource(source, ALGetSourcei.SourceState, out int state);
-            if ((ALSourceState)state != ALSourceState.Playing)
-                AL.SourcePlay(source);
-
-            Thread.Sleep(2);
-        }
-    }
-
-    private void ApplyFilter(Span<short> buffer)
-    {
-        if (buffer.Length == 0)
-            return;
-
-        float prev = buffer[0];
-        float alpha = 0.5f;
-
-        for (int i = 1; i < buffer.Length; i++)
-        {
-            float sample = buffer[i];
-            float smoothed = prev + alpha * (sample - prev);
-            buffer[i] = (short)smoothed;
-            prev = smoothed;
-        }
-    }
-
-    private void ResampleSinc(ReadOnlySpan<short> src, Span<short> dst, int taps = 32)
-    {
-        int srcLen = src.Length;
-        int dstLen = dst.Length;
-        double rate = (double)srcLen / dstLen;
-
-        for (int i = 0; i < dstLen; i++)
-        {
-            double pos = i * rate;
-            int center = (int)pos;
-            double frac = pos - center;
-
-            double sum = 0;
-            double norm = 0;
-
-            for (int t = -taps; t <= taps; t++)
-            {
-                int idx = center + t;
-                if (idx < 0 || idx >= srcLen)
-                    continue;
-
-                double x = t - frac;
-                double sinc = x == 0 ? 1 : Math.Sin(Math.PI * x) / (Math.PI * x);
-                double window = 0.5 + 0.5 * Math.Cos(Math.PI * x / taps);
-                double weight = sinc * window;
-
-                sum += src[idx] * weight;
-                norm += weight;
-            }
-
-            dst[i] = (short)Math.Clamp(sum / norm, short.MinValue, short.MaxValue);
-        }
+        window.Unload += () => Unload?.Invoke();
     }
 
     public void Run() => window.Run();
-
-    public void Step(double rate)
-    {
-        while (samples.Count > 0)
-            audioBuffer.Add(samples.Dequeue());
-        audioBuffer.Submit(rate);
-    }
 
     public bool IsKeyDown(Keys keys) => window.IsKeyDown(keys);
     public bool IsKeyPressed(Keys keys) => window.IsKeyPressed(keys);
