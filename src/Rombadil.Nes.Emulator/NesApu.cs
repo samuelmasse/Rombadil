@@ -12,6 +12,7 @@ public class NesApu(NesMapper mapper, List<int> samples)
     private bool frameFiveStep;
     private bool frameIrqInhibit;
     private int frameCycle;
+    private int frameIrqAssertCycles;
     private long cycles;
 
     public long Cycles => cycles;
@@ -61,7 +62,7 @@ public class NesApu(NesMapper mapper, List<int> samples)
         if (cycles % 2 == 0)
         {
             if (frameCycle == frame)
-                SetFrameInterruptIfRequired();
+                frameIrqAssertCycles = 3;
 
             frameCycle++;
         }
@@ -86,6 +87,12 @@ public class NesApu(NesMapper mapper, List<int> samples)
             pulse1.Step();
             pulse2.Step();
             noise.Step();
+        }
+
+        if (frameIrqAssertCycles > 0)
+        {
+            SetFrameInterruptIfRequired();
+            frameIrqAssertCycles--;
         }
 
         triangle.Step();
@@ -137,6 +144,7 @@ public class NesApu(NesMapper mapper, List<int> samples)
         frameFiveStep = (value & 0x80) != 0;
         frameIrqInhibit = (value & 0x40) != 0;
         frameCycle = 0;
+        frameIrqAssertCycles = 0;
 
         if (frameIrqInhibit)
             frameIrq = false;
