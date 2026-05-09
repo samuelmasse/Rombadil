@@ -75,7 +75,7 @@ public class NesPpuBackground(NesPpuMemory memory, NesMapper mapper)
     {
         int bit = 15 - fineX;
         int pixel = ((bgPatternHighShift >> bit) & 1) << 1
-                  | ((bgPatternLowShift >> bit) & 1);
+                    | ((bgPatternLowShift >> bit) & 1);
         int attrBit = 7 - fineX;
         int palette = ((attributeHighShift >> attrBit) & 1) << 1
                     | ((attributeLowShift >> attrBit) & 1);
