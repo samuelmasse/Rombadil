@@ -81,9 +81,17 @@ public class RombadilLoop
 
     private void EmulatorInput()
     {
-        if (window.IsKeyPressed(Keys.P)) fullSpeed = !fullSpeed;
-        if (window.IsKeyPressed(Keys.Escape)) paused = !paused;
-        if (window.IsKeyDown(Keys.LeftControl) && window.IsKeyPressed(Keys.R)) nes.Reset();
+        if (window.IsKeyPressed(Keys.P))
+            fullSpeed = !fullSpeed;
+
+        if (window.IsKeyPressed(Keys.Escape))
+            paused = !paused;
+
+        if (window.IsKeyDown(Keys.LeftControl) && window.IsKeyPressed(Keys.R))
+        {
+            nes.Reset();
+            audio.Drop();
+        }
 
         if (!fullSpeed)
         {

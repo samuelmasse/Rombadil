@@ -2,11 +2,11 @@ namespace Rombadil.Nes.Emulator;
 
 public class NesApu(NesMapper mapper, List<int> samples)
 {
-    private readonly NesApuPulse pulse1 = new(false);
-    private readonly NesApuPulse pulse2 = new(true);
-    private readonly NesApuTriangle triangle = new();
-    private readonly NesApuNoise noise = new();
-    private readonly NesApuDmc dmc = new(mapper);
+    private NesApuPulse pulse1 = new(false);
+    private NesApuPulse pulse2 = new(true);
+    private NesApuTriangle triangle = new();
+    private NesApuNoise noise = new();
+    private NesApuDmc dmc = new(mapper);
 
     private bool frameIrq;
     private bool pinFrameIrq;
@@ -30,6 +30,12 @@ public class NesApu(NesMapper mapper, List<int> samples)
         frameIrqInhibit = false;
         frameIrqAssertCycles = 0;
         frameCycle = 1;
+
+        pulse1 = new(false);
+        pulse2 = new(true);
+        triangle = new();
+        noise = new();
+        dmc = new(mapper);
     }
 
     public byte ReadStatus()

@@ -30,15 +30,6 @@ public class RombadilAudio : IDisposable
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             OpenALLibraryNameContainer.OverridePath = "libopenal.1.dylib";
 
-        var assembly = Assembly.GetExecutingAssembly();
-        var iniPath = Path.Combine(AppContext.BaseDirectory, "alsoft.ini");
-        if (!File.Exists(iniPath))
-        {
-            using var stream = assembly.GetManifestResourceStream("Rombadil.alsoft.ini")!;
-            using var reader = new StreamReader(stream);
-            File.WriteAllText(iniPath, reader.ReadToEnd());
-        }
-
         blip = new Blip(0xFFFFF, clockRate, InternalSampleRate);
         hermite = new HermiteResampler(blip, InternalSampleRate, AudioFreq);
     }
@@ -93,15 +84,7 @@ public class RombadilAudio : IDisposable
         var latency = ObservedLatencyMs(effectiveSpeed);
 
         if (latency > MaxLatencyMs)
-        {
-            AL.SourceStop(source);
-            AL.GetSource(source, ALGetSourcei.BuffersQueued, out int queuedToDrop);
-
-            for (int i = 0; i < queuedToDrop; i++)
-                freeBuffers.Enqueue(AL.SourceUnqueueBuffer(source));
-
-            blip.Clear();
-        }
+            Drop();
 
         int neededBlipSamples = (int)Math.Ceiling(
             AudioChunkSize * (double)InternalSampleRate / AudioFreq * effectiveSpeed) + 1;
@@ -132,6 +115,17 @@ public class RombadilAudio : IDisposable
 
         AL.GetSource(source, ALGetSourcei.SourceState, out state);
         sourceWasPlaying = (ALSourceState)state == ALSourceState.Playing;
+    }
+
+    public void Drop()
+    {
+        AL.SourceStop(source);
+        AL.GetSource(source, ALGetSourcei.BuffersQueued, out int queuedToDrop);
+
+        for (int i = 0; i < queuedToDrop; i++)
+            freeBuffers.Enqueue(AL.SourceUnqueueBuffer(source));
+
+        blip.Clear();
     }
 
     private void ComputeDeltas()

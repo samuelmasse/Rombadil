@@ -7,13 +7,12 @@
 
     <ItemGroup>
         <EmbeddedResource Include="../../res/Icon.png" Visible="false" />
-        <EmbeddedResource Include="../../res/alsoft.ini" Visible="false" />
     </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="BigGustave" Version="1.0.6" />
         <PackageReference Include="OpenTK" Version="4.9.4" />
-        <PackageReference Include="Rombadil.OpenAL.Soft.Native" Version="1.1.0" />
+        <PackageReference Include="Rombadil.OpenAL.Soft.Native" Version="1.2.0" />
     </ItemGroup>
 
     <ItemGroup>
