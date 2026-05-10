@@ -96,10 +96,10 @@ public class RombadilAudio : IDisposable
         {
             AL.SourceStop(source);
             AL.GetSource(source, ALGetSourcei.BuffersQueued, out int queuedToDrop);
-        
+
             for (int i = 0; i < queuedToDrop; i++)
                 freeBuffers.Enqueue(AL.SourceUnqueueBuffer(source));
-        
+
             blip.Clear();
         }
 

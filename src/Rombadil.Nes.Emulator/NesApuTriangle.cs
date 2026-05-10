@@ -13,16 +13,16 @@ public class NesApuTriangle
     private bool linearReloadFlag;
     private int sequenceIndex;
     private int linearCounter;
+    private int outputLevel;
 
     public int Length => length;
 
     public float Sample()
     {
-        if (length == 0 || linearCounter == 0 || timerPeriod < 2)
+        if (timerPeriod < 2)
             return 0;
 
-        int value = sequenceIndex < 16 ? 15 - sequenceIndex : sequenceIndex - 16;
-        return value;
+        return outputLevel;
     }
 
     public void WriteRegister(int reg, byte value)
@@ -74,13 +74,14 @@ public class NesApuTriangle
 
     public void Step()
     {
-        if (length == 0 || linearCounter == 0 || timerPeriod < 2)
-            return;
-
         if (timerCounter == 0)
         {
             timerCounter = timerPeriod;
-            sequenceIndex = (sequenceIndex + 1) & 0b0001_1111;
+            if (length > 0 && linearCounter > 0 && timerPeriod >= 2)
+            {
+                sequenceIndex = (sequenceIndex + 1) & 0b0001_1111;
+                outputLevel = sequenceIndex < 16 ? 15 - sequenceIndex : sequenceIndex - 16;
+            }
         }
         else timerCounter--;
     }
