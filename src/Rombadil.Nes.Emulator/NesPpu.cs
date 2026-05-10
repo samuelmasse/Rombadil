@@ -134,7 +134,6 @@ public class NesPpu
         if (prerenderLine && cycle == 1)
         {
             status &= 0x1F;
-            bg.ClearWriteToggle();
             nmiSuppressed = false;
             vblankSuppressed = false;
         }
