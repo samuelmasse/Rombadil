@@ -1,8 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
-        <PackageReference Include="TestableIO.System.IO.Abstractions.TestingHelpers"
-            Version="22.0.14" />
+        <PackageReference Include="TestableIO.System.IO.Abstractions.TestingHelpers" Version="22.1.1" />
     </ItemGroup>
 
     <ItemGroup>
@@ -11,6 +10,15 @@
 
     <ItemGroup>
         <Using Include="System.IO.Abstractions.TestingHelpers" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Update="coverlet.collector" Version="10.0.0">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Update="Microsoft.NET.Test.Sdk" Version="18.5.1" />
+      <PackageReference Update="MSTest" Version="4.2.2" />
     </ItemGroup>
 
 </Project>
