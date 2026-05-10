@@ -4,9 +4,9 @@ public class RombadilAudio : IDisposable
 {
     private const int AudioFreq = 44100;
     private const int InternalSampleRate = 96000;
-    private const int AudioChunkSize = AudioFreq / 91;
-    private const int AudioBufferCount = 4;
-    private const double MaxLatencyMs = 50;
+    private const int AudioChunkSize = 173;
+    private const int AudioBufferCount = 12;
+    private const double MaxLatencyMs = 60;
 
     private readonly Blip blip;
     private readonly HermiteResampler hermite;
@@ -19,8 +19,9 @@ public class RombadilAudio : IDisposable
     private int source;
     private int[] buffers = [];
     private int lastMix;
-    private int underruns;
-    private DateTime lastTime;
+    private bool sourceWasPlaying;
+    private double speedMultiplier;
+    private DateTime speedMultiplierTime;
 
     public List<int> Samples => samples;
 
@@ -38,7 +39,7 @@ public class RombadilAudio : IDisposable
             File.WriteAllText(iniPath, reader.ReadToEnd());
         }
 
-        blip = new Blip(0xFFFF, clockRate, InternalSampleRate);
+        blip = new Blip(0xFFFFF, clockRate, InternalSampleRate);
         hermite = new HermiteResampler(blip, InternalSampleRate, AudioFreq);
     }
 
@@ -59,30 +60,47 @@ public class RombadilAudio : IDisposable
     {
         ComputeDeltas();
 
-        AL.GetSource(source, ALGetSourcei.BuffersProcessed, out int processed);
-        for (int i = 0; i < processed; i++)
-            freeBuffers.Enqueue(AL.SourceUnqueueBuffer(source));
+        AL.GetSource(source, ALGetSourcei.SourceState, out int stateAtStart);
+        bool playing = (ALSourceState)stateAtStart == ALSourceState.Playing;
 
-        var latency = ObservedLatencyMs(effectiveSpeed);
+        if (playing || sourceWasPlaying)
+        {
+            AL.GetSource(source, ALGetSourcei.BuffersProcessed, out int processed);
+            for (int i = 0; i < processed; i++)
+                freeBuffers.Enqueue(AL.SourceUnqueueBuffer(source));
+        }
 
         var time = DateTime.UtcNow;
-        if ((time - lastTime).TotalMilliseconds > 500)
+        AL.GetSource(source, ALGetSourcei.BuffersQueued, out int queued);
+        double targetMultiplier = 1;
+
+        if (queued < 3)
+            targetMultiplier = 1 - 1 / 256f;
+        else if (queued < 6)
+            targetMultiplier = 1 - 1 / 512f;
+        else if (queued > 11)
+            targetMultiplier = 1 + 1 / 256f;
+        else if (queued > 8)
+            targetMultiplier = 1 + 1 / 512f;
+
+        if (targetMultiplier != speedMultiplier && (time - speedMultiplierTime).TotalSeconds > 1)
         {
-            Console.WriteLine(latency);
-            lastTime = time;
+            speedMultiplier = targetMultiplier;
+            speedMultiplierTime = time;
         }
+
+        effectiveSpeed *= speedMultiplier;
+        var latency = ObservedLatencyMs(effectiveSpeed);
 
         if (latency > MaxLatencyMs)
         {
             AL.SourceStop(source);
             AL.GetSource(source, ALGetSourcei.BuffersQueued, out int queuedToDrop);
-
+        
             for (int i = 0; i < queuedToDrop; i++)
                 freeBuffers.Enqueue(AL.SourceUnqueueBuffer(source));
-
+        
             blip.Clear();
-
-            Console.WriteLine("DROP");
         }
 
         int neededBlipSamples = (int)Math.Ceiling(
@@ -107,12 +125,13 @@ public class RombadilAudio : IDisposable
 
         if ((ALSourceState)state != ALSourceState.Playing)
         {
-            Console.WriteLine($"underrun {underruns++}");
-
-            AL.GetSource(source, ALGetSourcei.BuffersQueued, out int queued);
-            if (queued > 0)
+            AL.GetSource(source, ALGetSourcei.BuffersQueued, out int ready);
+            if (ready > 9)
                 AL.SourcePlay(source);
         }
+
+        AL.GetSource(source, ALGetSourcei.SourceState, out state);
+        sourceWasPlaying = (ALSourceState)state == ALSourceState.Playing;
     }
 
     private void ComputeDeltas()
