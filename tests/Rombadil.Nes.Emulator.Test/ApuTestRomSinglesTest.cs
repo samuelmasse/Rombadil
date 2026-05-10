@@ -34,7 +34,7 @@ public class ApuTestRomSinglesTest
         var prgRom = rom.AsMemory().Slice(0x10, 0x8000);
         var chrRom = rom.AsMemory().Slice(0x8010, 0x2000);
 
-        var mapper = new NesMapperNrom(prgRom, chrRom);
+        var mapper = new NesMapperNrom(prgRom, chrRom, NesMirroring.Vertical);
         var state = new CpuEmulatorState();
         var ppu = new NesPpu(mapper, new byte[NesPpu.ScreenWidth * NesPpu.ScreenHeight * 3]);
         var apu = new NesApu(mapper, []);

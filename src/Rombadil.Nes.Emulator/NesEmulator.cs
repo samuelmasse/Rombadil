@@ -14,18 +14,22 @@ public class NesEmulator
 
     public NesEmulator(Memory<byte> rom, Memory<byte> framebuffer, List<int> samples)
     {
-        var romHeader = rom[..0x10];
         var header = new NesRomHeader(rom[..0x10]);
+        int prgStart = 0x10 + (header.HasTrainer ? 0x200 : 0);
 
-        var prg = rom.Slice(romHeader.Length, header.PrgRomSize * 0x4000);
-        var chr = rom.Slice(romHeader.Length + prg.Length, header.ChrRomSize * 0x2000);
+        var prg = rom.Slice(prgStart, header.PrgRomSize * 0x4000);
+        var chr = rom.Slice(prgStart + prg.Length, header.ChrRomSize * 0x2000);
+
+        var mirroring = header.FourScreen
+            ? NesMirroring.FourScreen
+            : header.VerticalMirroring ? NesMirroring.Vertical : NesMirroring.Horizontal;
 
         mapper = header.MapperNumber switch
         {
-            0 => new NesMapperNrom(prg, chr),
+            0 => new NesMapperNrom(prg, chr, mirroring),
             1 => new NesMapperMmc1(prg, chr),
-            2 => new NesMapperUxrom(prg, chr),
-            4 => new NesMapperMmc3(prg, chr),
+            2 => new NesMapperUxrom(prg, chr, mirroring),
+            4 => new NesMapperMmc3(prg, chr, header.FourScreen),
             _ => new NesMapper()
         };
 

@@ -46,7 +46,7 @@ public class BlarggApu2005Test
         var prg = rom.AsMemory().Slice(0x10, header.PrgRomSize * 0x4000);
         var chr = rom.AsMemory().Slice(0x10 + prg.Length, header.ChrRomSize * 0x2000);
 
-        var mapper = new NesMapperNrom(prg, chr);
+        var mapper = new NesMapperNrom(prg, chr, NesMirroring.Horizontal);
         var state = new CpuEmulatorState();
         var ppu = new NesPpu(mapper, new byte[NesPpu.ScreenWidth * NesPpu.ScreenHeight * 3]);
         var apu = new NesApu(mapper, []);

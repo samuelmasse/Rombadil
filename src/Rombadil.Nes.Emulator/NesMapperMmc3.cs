@@ -1,7 +1,10 @@
 namespace Rombadil.Nes.Emulator;
 
-public class NesMapperMmc3(Memory<byte> prg, Memory<byte> chr) : NesMapper
+public class NesMapperMmc3 : NesMapper
 {
+    private readonly Memory<byte> prg;
+    private readonly Memory<byte> chr;
+    private readonly bool fourScreen;
     private readonly byte[] chrRam = new byte[0x2000];
     private readonly byte[] ram = new byte[0x2000];
 
@@ -18,6 +21,14 @@ public class NesMapperMmc3(Memory<byte> prg, Memory<byte> chr) : NesMapper
     private bool irqReload;
     private bool irqEnable;
 
+    public NesMapperMmc3(Memory<byte> prg, Memory<byte> chr, bool fourScreen)
+    {
+        this.prg = prg;
+        this.chr = chr;
+        this.fourScreen = fourScreen;
+        UpdateMirroring();
+    }
+
     public override void Write(ushort addr, byte value)
     {
         if (addr >= 0x8000 && addr <= 0x9FFF)
@@ -31,13 +42,16 @@ public class NesMapperMmc3(Memory<byte> prg, Memory<byte> chr) : NesMapper
             else
             {
                 int bank = bankSelect & 0x07;
-                bankRegs[bank] = value;
+                bankRegs[bank] = bank >= 6 ? (byte)(value & 0x3F) : value;
             }
         }
         else if (addr >= 0xA000 && addr <= 0xBFFF)
         {
             if ((addr & 1) == 0)
+            {
                 mirror = (byte)(value & 1);
+                UpdateMirroring();
+            }
             else ramEnable = (value & 0x80) == 0;
         }
         else if (addr >= 0x6000 && addr <= 0x7FFF && ramEnable)
@@ -161,7 +175,8 @@ public class NesMapperMmc3(Memory<byte> prg, Memory<byte> chr) : NesMapper
             }
         }
 
-        return chr.Span[(bankRegs[bank] * 0x400 + offset) % chr.Length];
+        int regValue = bank < 2 ? bankRegs[bank] & 0xFE : bankRegs[bank];
+        return chr.Span[(regValue * 0x400 + offset) % chr.Length];
     }
 
     public override void WriteChr(ushort addr, byte value)
@@ -170,16 +185,15 @@ public class NesMapperMmc3(Memory<byte> prg, Memory<byte> chr) : NesMapper
             chrRam[addr & 0x1FFF] = value;
     }
 
-    public override int MapNametableAddr(ushort addr)
+    private void UpdateMirroring()
     {
-        int index = addr - 0x2000;
-
-        return mirror switch
+        if (fourScreen)
         {
-            0 => index & 0x07FF,
-            1 => ((index & 0x800) >> 1) | (index & 0x03FF),
-            _ => index & 0x07FF
-        };
+            mirroring = NesMirroring.FourScreen;
+            return;
+        }
+
+        mirroring = mirror == 0 ? NesMirroring.Vertical : NesMirroring.Horizontal;
     }
 
     public override void ClockIrq()

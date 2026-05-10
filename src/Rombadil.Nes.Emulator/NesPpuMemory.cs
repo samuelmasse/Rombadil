@@ -2,7 +2,7 @@ namespace Rombadil.Nes.Emulator;
 
 public class NesPpuMemory(NesMapper mapper)
 {
-    private readonly byte[] vram = new byte[0x800];
+    private readonly byte[] vram = new byte[0x1000];
     private readonly byte[] palette = new byte[32];
 
     public void Reset()

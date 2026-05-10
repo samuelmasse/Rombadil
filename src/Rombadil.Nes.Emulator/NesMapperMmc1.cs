@@ -1,20 +1,38 @@
 namespace Rombadil.Nes.Emulator;
 
-public class NesMapperMmc1(Memory<byte> prg, Memory<byte> chr) : NesMapper
+public class NesMapperMmc1 : NesMapper
 {
+    private readonly Memory<byte> prg;
+    private readonly Memory<byte> chr;
     private readonly byte[] chrRam = new byte[0x2000];
+    private readonly byte[] prgRam = new byte[0x2000];
     private byte shift = 0x10;
     private byte control = 0x0C;
     private byte chrBank0;
     private byte chrBank1;
     private byte prgBank;
 
+    public NesMapperMmc1(Memory<byte> prg, Memory<byte> chr)
+    {
+        this.prg = prg;
+        this.chr = chr;
+        UpdateMirroring();
+    }
+
     public override void Write(ushort addr, byte value)
     {
+        if (addr >= 0x6000 && addr <= 0x7FFF)
+        {
+            if (!PrgRamDisabled)
+                prgRam[addr - 0x6000] = value;
+            return;
+        }
+
         if ((value & 0x80) != 0)
         {
             shift = 0x10;
             control |= 0x0C;
+            UpdateMirroring();
             return;
         }
 
@@ -27,7 +45,7 @@ public class NesMapperMmc1(Memory<byte> prg, Memory<byte> chr) : NesMapper
 
             switch (reg)
             {
-                case 0: control = shift; break;
+                case 0: control = shift; UpdateMirroring(); break;
                 case 1: chrBank0 = shift; break;
                 case 2: chrBank1 = shift; break;
                 case 3: prgBank = shift; break;
@@ -39,38 +57,39 @@ public class NesMapperMmc1(Memory<byte> prg, Memory<byte> chr) : NesMapper
 
     public override byte Read(ushort addr)
     {
+        if (addr >= 0x6000 && addr <= 0x7FFF)
+            return PrgRamDisabled ? (byte)0 : prgRam[addr - 0x6000];
+
         int mode = (control >> 2) & 0b11;
+        int prgSelect = prgBank & 0x0F;
+        int prgBase = PrgBaseOffset;
 
         if (mode is 0 or 1)
         {
-            int bank = (prgBank & 0x0E) * 0x4000;
-            int index = bank + (addr - 0x8000);
+            int bank = (prgSelect & 0x0E) * 0x4000;
+            int index = prgBase + bank + (addr - 0x8000);
             return prg.Span[index % prg.Length];
         }
         else if (mode == 2)
         {
             if (addr < 0xC000)
-                return prg.Span[addr - 0x8000];
-            else
-            {
-                int bank = prgBank * 0x4000;
-                int index = bank + (addr - 0xC000);
-                return prg.Span[index % prg.Length];
-            }
+                return prg.Span[(prgBase + (addr - 0x8000)) % prg.Length];
+
+            int bank = prgSelect * 0x4000;
+            int index = prgBase + bank + (addr - 0xC000);
+            return prg.Span[index % prg.Length];
         }
         else
         {
             if (addr < 0xC000)
             {
-                int bank = prgBank * 0x4000;
-                int index = bank + (addr - 0x8000);
+                int bank = prgSelect * 0x4000;
+                int index = prgBase + bank + (addr - 0x8000);
                 return prg.Span[index % prg.Length];
             }
-            else
-            {
-                int bank = prg.Length - 0x4000;
-                return prg.Span[bank + (addr - 0xC000)];
-            }
+
+            int lastBank = (prgBase + 0x40000 - 0x4000) % prg.Length;
+            return prg.Span[lastBank + (addr - 0xC000)];
         }
     }
 
@@ -105,18 +124,27 @@ public class NesMapperMmc1(Memory<byte> prg, Memory<byte> chr) : NesMapper
         }
     }
 
-    public override int MapNametableAddr(ushort addr)
+    private void UpdateMirroring()
     {
-        int index = addr - 0x2000;
-        int mode = control & 0b11;
-
-        return mode switch
+        mirroring = (control & 0b11) switch
         {
-            0 => index % 0x400,
-            1 => 0x400 + (index % 0x400),
-            2 => index % 0x800,
-            3 => ((index & 0x800) >> 1) | (index & 0x3FF),
-            _ => index % 0x800
+            0 => NesMirroring.SingleScreenLow,
+            1 => NesMirroring.SingleScreenHigh,
+            2 => NesMirroring.Vertical,
+            _ => NesMirroring.Horizontal,
         };
+    }
+
+    private bool PrgRamDisabled => (prgBank & 0x10) != 0;
+
+    private int PrgBaseOffset
+    {
+        get
+        {
+            if (prg.Length <= 0x40000)
+                return 0;
+
+            return ((chrBank0 >> 4) & 1) * 0x40000;
+        }
     }
 }

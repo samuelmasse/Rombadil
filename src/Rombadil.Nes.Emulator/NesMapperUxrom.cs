@@ -1,9 +1,18 @@
 namespace Rombadil.Nes.Emulator;
 
-public class NesMapperUxrom(Memory<byte> prg, Memory<byte> chr) : NesMapper
+public class NesMapperUxrom : NesMapper
 {
+    private readonly Memory<byte> prg;
+    private readonly Memory<byte> chr;
     private readonly byte[] chrRam = new byte[0x2000];
     private byte selectedBank;
+
+    public NesMapperUxrom(Memory<byte> prg, Memory<byte> chr, NesMirroring mirroring)
+    {
+        this.prg = prg;
+        this.chr = chr;
+        this.mirroring = mirroring;
+    }
 
     public override void Write(ushort addr, byte value) => selectedBank = (byte)(value & 0x0F);
 
@@ -34,6 +43,4 @@ public class NesMapperUxrom(Memory<byte> prg, Memory<byte> chr) : NesMapper
 
         return chr.Span[addr % chr.Length];
     }
-
-    public override int MapNametableAddr(ushort addr) => (addr - 0x2000) % 0x800;
 }
