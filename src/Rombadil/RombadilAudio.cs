@@ -6,7 +6,7 @@ public class RombadilAudio : IDisposable
     private const int InternalSampleRate = 96000;
     private const int AudioChunkSize = 173;
     private const int AudioBufferCount = 12;
-    private const double MaxLatencyMs = 60;
+    private const double MaxLatencyMs = 70;
 
     private readonly Blip blip;
     private readonly HermiteResampler hermite;

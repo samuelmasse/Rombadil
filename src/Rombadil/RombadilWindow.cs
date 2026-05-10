@@ -64,28 +64,49 @@ public class RombadilWindow : IDisposable
             Icon = new([new(icon.Width, icon.Height, data)])
         })
         {
-            UpdateFrequency = 240
+            UpdateFrequency = 240,
+            VSync = VSyncMode.Off
         };
 
         window.Load += () =>
         {
+            Thread.CurrentThread.Priority = ThreadPriority.Highest;
+
             LoadVao();
             LoadProgram();
             LoadTexture();
             Load?.Invoke();
         };
 
+        bool rendering = false;
+
         window.RenderFrame += (e) =>
         {
+            rendering = true;
+
             if (window.IsKeyPressed(Keys.F11) && !RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 ToggleFullscreen();
             ToggleMouse();
 
-            Render?.Invoke(e.Time);
+            if (window.WindowState != WindowState.Minimized)
+                Render?.Invoke(e.Time);
+
+            Present();
+
+            rendering = false;
+        };
+
+        window.Resize += (e) =>
+        {
+            if (e.Size == Vector2i.Zero)
+                return;
+
+            if (rendering)
+                return;
 
             Present();
         };
-        window.Resize += (e) => Present();
+
         window.Unload += () => Unload?.Invoke();
     }
 
