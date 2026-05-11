@@ -30,6 +30,7 @@ public class NesEmulator
             1 => new NesMapperMmc1(prg, chr),
             2 => new NesMapperUxrom(prg, chr, mirroring),
             4 => new NesMapperMmc3(prg, chr, header.FourScreen),
+            7 => new NesMapperAxrom(prg, chr),
             _ => new NesMapper()
         };
 

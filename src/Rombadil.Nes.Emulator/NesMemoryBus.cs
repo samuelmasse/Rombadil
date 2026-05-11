@@ -53,6 +53,8 @@ public class NesMemoryBus(
                 byte b = Read((ushort)(baseAddr + i));
                 ppu.WriteOam((start + i) & 0xFF, b);
             }
+
+            state.Cycles += 513 + (state.Cycles & 1);
         }
         else if (addr == 0x4016)
         {
