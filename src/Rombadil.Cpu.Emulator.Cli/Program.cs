@@ -1,19 +1,23 @@
-var inputArgument = new Argument<FileInfo>("input", "Input binary file");
+var inputArgument = new Argument<FileInfo>("input") { Description = "Input binary file" };
 
-var startOption = new Option<ushort>(
-    aliases: ["-s", "--start"],
-    description: "Start of the program in the binary file",
-    parseArgument: (result) => ParseNumber(result, "s"));
+var startOption = new Option<ushort>("--start", "-s")
+{
+    Description = "Start of the program in the binary file",
+    CustomParser = result => ParseNumber(result, "s"),
+};
 
-var lengthOption = new Option<ushort>(
-    aliases: ["-l", "--length"],
-    description: "Length of the program in the binary file",
-    parseArgument: (result) => ParseNumber(result, "l"));
+var lengthOption = new Option<ushort>("--length", "-l")
+{
+    Description = "Length of the program in the binary file",
+    CustomParser = result => ParseNumber(result, "l"),
+};
 
-var memoryLocationOption = new Option<List<ushort>>(
-    aliases: ["-m", "--memory-location"],
-    description: "Memory location to write the program to",
-    parseArgument: (result) =>
+var memoryLocationOption = new Option<List<ushort>>("--memory-location", "-m")
+{
+    Description = "Memory location to write the program to",
+    Arity = ArgumentArity.OneOrMore,
+    AllowMultipleArgumentsPerToken = true,
+    CustomParser = result =>
     {
         var values = new List<ushort>();
 
@@ -25,16 +29,15 @@ var memoryLocationOption = new Option<List<ushort>>(
         }
 
         return values;
-    })
-{
-    Arity = ArgumentArity.OneOrMore,
-    AllowMultipleArgumentsPerToken = true
+    },
 };
 
-var regionMapOption = new Option<List<MemoryRegionRemap>>(
-    aliases: ["-r", "--remap"],
-    description: "Remap memory region (source,length=target)",
-    parseArgument: result =>
+var regionMapOption = new Option<List<MemoryRegionRemap>>("--remap", "-r")
+{
+    Description = "Remap memory region (source,length=target)",
+    Arity = ArgumentArity.ZeroOrMore,
+    AllowMultipleArgumentsPerToken = true,
+    CustomParser = result =>
     {
         var remaps = new List<MemoryRegionRemap>();
 
@@ -51,40 +54,36 @@ var regionMapOption = new Option<List<MemoryRegionRemap>>(
             }
             catch
             {
-                result.ErrorMessage = $"Invalid remap '{token.Value}'";
+                result.AddError($"Invalid remap '{token.Value}'");
                 return [];
             }
         }
 
         return remaps;
-    })
-{
-    Arity = ArgumentArity.ZeroOrMore,
-    AllowMultipleArgumentsPerToken = true
+    },
 };
 
-var byteOption = new Option<List<MemoryRegionWrite>>(
-    aliases: ["-b", "--byte"],
-    description: "Write byte values to memory before starting execution (start,length=value)",
-    parseArgument: result => ParseWrites(result, "byte"))
+var byteOption = new Option<List<MemoryRegionWrite>>("--byte", "-b")
 {
+    Description = "Write byte values to memory before starting execution (start,length=value)",
     Arity = ArgumentArity.ZeroOrMore,
-    AllowMultipleArgumentsPerToken = true
+    AllowMultipleArgumentsPerToken = true,
+    CustomParser = result => ParseWrites(result, "byte"),
 };
 
-var wordOption = new Option<List<MemoryRegionWrite>>(
-    aliases: ["-w", "--word"],
-    description: "Write word values to memory before starting execution (start,length=value)",
-    parseArgument: result => ParseWrites(result, "word"))
+var wordOption = new Option<List<MemoryRegionWrite>>("--word", "-w")
 {
+    Description = "Write word values to memory before starting execution (start,length=value)",
     Arity = ArgumentArity.ZeroOrMore,
-    AllowMultipleArgumentsPerToken = true
+    AllowMultipleArgumentsPerToken = true,
+    CustomParser = result => ParseWrites(result, "word"),
 };
 
-var programCounterOption = new Option<ushort?>(
-    aliases: ["-p", "--program-counter"],
-    description: "Initial value of the program counter",
-    parseArgument: (result) => ParseNumber(result, "p"));
+var programCounterOption = new Option<ushort?>("--program-counter", "-p")
+{
+    Description = "Initial value of the program counter",
+    CustomParser = result => ParseNumber(result, "p"),
+};
 
 var rootCommand = new RootCommand("Rombadil CPU Emulator (rombadil6502)")
 {
@@ -98,14 +97,21 @@ var rootCommand = new RootCommand("Rombadil CPU Emulator (rombadil6502)")
     wordOption
 };
 
-int exitCode = 1;
-
-rootCommand.SetHandler((input, start, length, mem, pc, remap, byteValues, wordValues) =>
+rootCommand.SetAction(parseResult =>
 {
+    var input = parseResult.GetValue(inputArgument)!;
+    var start = parseResult.GetValue(startOption);
+    var length = parseResult.GetValue(lengthOption);
+    var mem = parseResult.GetValue(memoryLocationOption) ?? [];
+    var pc = parseResult.GetValue(programCounterOption);
+    var remap = parseResult.GetValue(regionMapOption) ?? [];
+    var byteValues = parseResult.GetValue(byteOption) ?? [];
+    var wordValues = parseResult.GetValue(wordOption) ?? [];
+
     if (!input.Exists)
     {
         PrintError($"{input.Name}: ", "File not found");
-        return;
+        return 1;
     }
 
     byte[] rom = File.ReadAllBytes(input.FullName);
@@ -115,13 +121,13 @@ rootCommand.SetHandler((input, start, length, mem, pc, remap, byteValues, wordVa
     if (start >= rom.Length)
     {
         PrintError($"start ", $"Out of range ({start} is larger than the file size of {rom.Length})");
-        return;
+        return 1;
     }
 
     if (start + length > rom.Length)
     {
         PrintError($"length ", $"Out of range ({start}+{length}={start + length} is larger than the file size of {rom.Length})");
-        return;
+        return 1;
     }
 
     var bytes = new byte[0x10000];
@@ -134,7 +140,7 @@ rootCommand.SetHandler((input, start, length, mem, pc, remap, byteValues, wordVa
         if (m + length > bytes.Length)
         {
             PrintError($"memory ", $"Out of range ({m}+{length}={m + length} is larger than the memory available {bytes.Length})");
-            return;
+            return 1;
         }
 
         prg.CopyTo(bytes.AsSpan().Slice(m, length));
@@ -150,14 +156,14 @@ rootCommand.SetHandler((input, start, length, mem, pc, remap, byteValues, wordVa
         {
             PrintError($"remap ",
                 $"Out of range ({r.SourceStart}+{r.Length}={r.SourceStart + r.Length} is larger than the memory available {bytes.Length})");
-            return;
+            return 1;
         }
 
         if (r.TargetStart + r.Length > bytes.Length)
         {
             PrintError($"remap ",
                 $"Out of range ({r.TargetStart}+{r.Length}={r.TargetStart + r.Length} is larger than the memory available {bytes.Length})");
-            return;
+            return 1;
         }
 
         for (int i = 0; i < r.Length; i++)
@@ -176,13 +182,13 @@ rootCommand.SetHandler((input, start, length, mem, pc, remap, byteValues, wordVa
             PrintError($"byte ",
                 $"Out of range ({value.Start}+{value.Length}={value.Start + value.Length} " +
                 $"is larger than the memory available {bytes.Length})");
-            return;
+            return 1;
         }
 
         if (value.Value > 0xFF)
         {
             PrintError($"byte ", $"Invalid value {value.Value} cannot be higher than 255");
-            return;
+            return 1;
         }
 
         for (int i = 0; i < value.Length; i++)
@@ -197,7 +203,7 @@ rootCommand.SetHandler((input, start, length, mem, pc, remap, byteValues, wordVa
             PrintError($"word ",
                 $"Out of range ({value.Start}+{l}={value.Start + l} " +
                 $"is larger than the memory available {bytes.Length})");
-            return;
+            return 1;
         }
 
         for (int i = 0; i < l; i++)
@@ -218,11 +224,10 @@ rootCommand.SetHandler((input, start, length, mem, pc, remap, byteValues, wordVa
     }
     while (code != CpuOpcode.BRK);
 
-    exitCode = 0;
-}, inputArgument, startOption, lengthOption, memoryLocationOption, programCounterOption, regionMapOption, byteOption, wordOption);
+    return 0;
+});
 
-await rootCommand.InvokeAsync(args);
-return exitCode;
+return await rootCommand.Parse(args).InvokeAsync();
 
 static void PrintError(string context, string message)
 {
@@ -250,7 +255,7 @@ static List<MemoryRegionWrite> ParseWrites(ArgumentResult result, string type)
         }
         catch
         {
-            result.ErrorMessage = $"Invalid {type} '{token.Value}'";
+            result.AddError($"Invalid {type} '{token.Value}'");
             return [];
         }
     }
@@ -274,7 +279,7 @@ static bool TryParseNumber(ArgumentResult result, string input, string alias, ou
     catch
     {
         value = 0;
-        result.ErrorMessage = $"Cannot parse argument '{input}' for option '-{alias}' as expected 'System.UInt16'.";
+        result.AddError($"Cannot parse argument '{input}' for option '-{alias}' as expected 'System.UInt16'.");
         return false;
     }
 }

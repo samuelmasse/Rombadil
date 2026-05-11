@@ -18,7 +18,6 @@
         <Using Include="Rombadil.Assembler" />
         <Using Include="System.CommandLine" />
         <Using Include="Tomlyn" />
-        <Using Include="Tomlyn.Model" />
     </ItemGroup>
 
 </Project>

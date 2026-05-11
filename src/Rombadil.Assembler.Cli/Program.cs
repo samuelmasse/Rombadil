@@ -1,6 +1,6 @@
-var inputArgument = new Argument<FileInfo>("input", "Input source file");
-var outputOption = new Option<FileInfo>(["--output", "-o"], "Output binary file");
-var configOption = new Option<FileInfo>(["--config", "-c"], "Config file");
+var inputArgument = new Argument<FileInfo>("input") { Description = "Input source file" };
+var outputOption = new Option<FileInfo?>("--output", "-o") { Description = "Output binary file" };
+var configOption = new Option<FileInfo?>("--config", "-c") { Description = "Config file" };
 
 var rootCommand = new RootCommand("Rombadil Assembler (rombadilasm)")
 {
@@ -9,14 +9,16 @@ var rootCommand = new RootCommand("Rombadil Assembler (rombadilasm)")
     configOption
 };
 
-int exitCode = 1;
-
-rootCommand.SetHandler((input, output, config) =>
+rootCommand.SetAction(parseResult =>
 {
+    var input = parseResult.GetValue(inputArgument)!;
+    var output = parseResult.GetValue(outputOption);
+    var config = parseResult.GetValue(configOption);
+
     if (!input.Exists)
     {
         PrintError($"{input.Name}: ", "File not found");
-        return;
+        return 1;
     }
 
     var segments = DefaultSegments();
@@ -26,7 +28,7 @@ rootCommand.SetHandler((input, output, config) =>
         if (!config.Exists)
         {
             PrintError($"{config.Name}: ", "Config not found");
-            return;
+            return 1;
         }
 
         try
@@ -36,7 +38,7 @@ rootCommand.SetHandler((input, output, config) =>
         catch
         {
             PrintError($"{config.Name}: ", "Failed to parse segments");
-            return;
+            return 1;
         }
     }
 
@@ -50,7 +52,7 @@ rootCommand.SetHandler((input, output, config) =>
     catch (Assembler6502Exception e)
     {
         PrintError($"{input.Name}:{e.Line + 1}: ", e.Error.TrimEnd('.'));
-        return;
+        return 1;
     }
 
     string dir = Path.GetDirectoryName(input.FullName)!;
@@ -64,12 +66,10 @@ rootCommand.SetHandler((input, output, config) =>
 
     Directory.CreateDirectory(dir);
     File.WriteAllBytes(file, binary);
-    exitCode = 0;
+    return 0;
+});
 
-}, inputArgument, outputOption, configOption);
-
-await rootCommand.InvokeAsync(args);
-return exitCode;
+return await rootCommand.Parse(args).InvokeAsync();
 
 static void PrintError(string context, string message)
 {
@@ -82,20 +82,12 @@ static void PrintError(string context, string message)
 
 static List<AssemblerSegment> ParseSegments(string tomlContent)
 {
-    var model = Toml.Parse(tomlContent).ToModel();
+    var model = TomlSerializer.Deserialize<Dictionary<string, SegmentEntry>>(tomlContent)
+                ?? throw new InvalidDataException("Empty TOML");
     var segments = new List<AssemblerSegment>();
 
-    foreach (var kvp in model)
-    {
-        if (kvp.Value is not TomlTable table)
-            continue;
-
-        var name = kvp.Key;
-        var memoryStart = Convert.ToInt32(table["MemoryStart"]);
-        var fileSize = Convert.ToInt32(table["FileSize"]);
-
-        segments.Add(new AssemblerSegment(name, memoryStart, fileSize));
-    }
+    foreach (var (name, entry) in model)
+        segments.Add(new AssemblerSegment(name, entry.MemoryStart, entry.FileSize));
 
     return segments;
 }
@@ -109,4 +101,10 @@ static List<AssemblerSegment> DefaultSegments()
         new("Vectors", 0xFFFA, 0x0006),
         new("Chars", 0x0000, 0x2000)
     ];
+}
+
+class SegmentEntry
+{
+    public int MemoryStart { get; set; }
+    public int FileSize { get; set; }
 }
