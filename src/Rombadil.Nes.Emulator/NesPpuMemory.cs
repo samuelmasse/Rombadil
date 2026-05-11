@@ -21,7 +21,7 @@ public class NesPpuMemory(NesMapper mapper)
         {
             if (addr >= 0x3000)
                 addr -= 0x1000;
-            return vram[mapper.MapNametableAddr(addr)];
+            return mapper.ReadNametable(vram, addr);
         }
 
         if (addr < 0x4000)
@@ -43,7 +43,7 @@ public class NesPpuMemory(NesMapper mapper)
         {
             if (addr >= 0x3000)
                 addr -= 0x1000;
-            vram[mapper.MapNametableAddr(addr)] = value;
+            mapper.WriteNametable(vram, addr, value);
             return;
         }
 

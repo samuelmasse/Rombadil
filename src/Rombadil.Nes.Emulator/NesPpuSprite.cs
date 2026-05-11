@@ -104,8 +104,9 @@ public class NesPpuSprite(NesMapper mapper)
                 row = spriteHeight - 1 - row;
 
             ushort patternAddr = ComputePatternAddress(tileIndex, row, spriteHeight, ctrl);
-            byte patternLow = mapper.ReadChr(patternAddr);
-            byte patternHigh = mapper.ReadChr((ushort)(patternAddr + 8));
+            bool is8x16 = spriteHeight == 16;
+            byte patternLow = mapper.ReadChrSprite(patternAddr, is8x16);
+            byte patternHigh = mapper.ReadChrSprite((ushort)(patternAddr + 8), is8x16);
 
             if ((attr & SpriteAttrFlipHorizontal) != 0)
             {

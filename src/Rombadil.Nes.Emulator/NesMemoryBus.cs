@@ -18,6 +18,8 @@ public class NesMemoryBus(
             return controller2.Peek();
         else if (addr >= 0x2000 && addr <= 0x3FFF)
             return ppu.PeekRegister(addr);
+        else if (addr >= 0x4020 && addr <= 0x5FFF)
+            return mapper.Read(addr);
         else if (addr >= 0x8000)
             return mapper.Read(addr);
         else return base.Peek(addr);
@@ -37,6 +39,8 @@ public class NesMemoryBus(
             return controller2.Read();
         else if (addr >= 0x2000 && addr <= 0x3FFF)
             return ppu.ReadRegister(addr);
+        else if (addr >= 0x4020 && addr <= 0x5FFF)
+            return mapper.Read(addr);
         else if (addr >= 0x8000)
             return mapper.Read(addr);
         else return base.Read(addr);
@@ -69,6 +73,8 @@ public class NesMemoryBus(
         }
         else if (addr >= 0x2000 && addr <= 0x3FFF)
             ppu.WriteRegister(addr, value);
+        else if (addr >= 0x4020 && addr <= 0x5FFF)
+            mapper.Write(addr, value);
         else if (addr >= 0x8000)
             mapper.Write(addr, value);
         else base.Write(addr, value);

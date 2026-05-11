@@ -13,7 +13,16 @@ public class NesMapper
     public virtual byte Read(ushort addr) => 0;
     public virtual void WriteChr(ushort addr, byte value) { }
     public virtual byte ReadChr(ushort addr) => 0;
+    public virtual byte ReadChrBg(ushort addr, ushort ntAddr) => ReadChr(addr);
+    public virtual byte ReadChrSprite(ushort addr, bool is8x16) => ReadChr(addr);
+    public virtual byte ReadBgAttribute(ushort ntAddr, byte defaultAttr) => defaultAttr;
+    public virtual void NotifyPpuCtrl(byte value) { }
+    public virtual void NotifyPpuMask(byte value) { }
     public virtual void ClockIrq() { }
+    public virtual void NotifyScanline(int scanline) { }
+
+    public virtual byte ReadNametable(byte[] vram, ushort addr) => vram[MapNametableAddr(addr)];
+    public virtual void WriteNametable(byte[] vram, ushort addr, byte value) => vram[MapNametableAddr(addr)] = value;
 
     public virtual int MapNametableAddr(ushort addr)
     {

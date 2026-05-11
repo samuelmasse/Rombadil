@@ -12,6 +12,7 @@ public class NesPpuBackground(NesPpuMemory memory, NesMapper mapper)
     private byte readBuffer;
     private byte nametableLatch;
     private byte attributeLatch;
+    private ushort lastNtAddr;
     private byte bgPatternLowLatch;
     private byte bgPatternHighLatch;
     private ushort bgPatternLowShift;
@@ -143,7 +144,11 @@ public class NesPpuBackground(NesPpuMemory memory, NesMapper mapper)
         v += (ctrl & CtrlVramIncrement) != 0 ? (ushort)32 : (ushort)1;
     }
 
-    private void FetchNametableByte() => nametableLatch = memory.Read((ushort)(0x2000 | (v & 0x0FFF)));
+    private void FetchNametableByte()
+    {
+        lastNtAddr = (ushort)(0x2000 | (v & 0x0FFF));
+        nametableLatch = memory.Read(lastNtAddr);
+    }
 
     private void FetchAttributeByte()
     {
@@ -152,21 +157,21 @@ public class NesPpuBackground(NesPpuMemory memory, NesMapper mapper)
             | (v & 0x0C00)
             | ((v >> 4) & 0x38)
             | ((v >> 2) & 0x07));
-        attributeLatch = memory.Read(addr);
+        attributeLatch = mapper.ReadBgAttribute(lastNtAddr, memory.Read(addr));
     }
 
     private void FetchPatternLow(byte ctrl)
     {
         int patternTable = (ctrl & CtrlBgPatternTable) != 0 ? 0x1000 : 0;
         int fineY = (v >> 12) & 7;
-        bgPatternLowLatch = mapper.ReadChr((ushort)(patternTable + nametableLatch * 16 + fineY));
+        bgPatternLowLatch = mapper.ReadChrBg((ushort)(patternTable + nametableLatch * 16 + fineY), lastNtAddr);
     }
 
     private void FetchPatternHigh(byte ctrl)
     {
         int patternTable = (ctrl & CtrlBgPatternTable) != 0 ? 0x1000 : 0;
         int fineY = (v >> 12) & 7;
-        bgPatternHighLatch = mapper.ReadChr((ushort)(patternTable + nametableLatch * 16 + fineY + 8));
+        bgPatternHighLatch = mapper.ReadChrBg((ushort)(patternTable + nametableLatch * 16 + fineY + 8), lastNtAddr);
     }
 
     private void ShiftRegisters()

@@ -77,6 +77,8 @@ public class NesPpu
         memory.Reset();
         bg.Reset();
         sprites.Reset();
+        mapper.NotifyPpuCtrl(0);
+        mapper.NotifyPpuMask(0);
         Array.Clear(backBuffer);
     }
 
@@ -91,6 +93,9 @@ public class NesPpu
 
         if (visibleLine && cycle >= 1 && cycle <= ScreenWidth)
             OutputPixel(cycle - 1, scanline);
+
+        if (visibleLine && cycle == 4 && rendering)
+            mapper.NotifyScanline(scanline);
 
         if (fetchLine && rendering)
             bg.RunPipeline(cycle, prerenderLine, ctrl);
@@ -183,6 +188,8 @@ public class NesPpu
         scanline = (scanline + 1) % ScanlinesPerFrame;
         if (scanline == 0)
             evenFrame = !evenFrame;
+        if (scanline == 240)
+            mapper.NotifyScanline(scanline);
 
         return false;
     }
@@ -285,8 +292,8 @@ public class NesPpu
     {
         switch (reg % 8)
         {
-            case 0: WriteCtrl(value); break;
-            case 1: mask = value; break;
+            case 0: WriteCtrl(reg, value); break;
+            case 1: WriteMask(reg, value); break;
             case 3: oamAddr = value; break;
             case 4: sprites.WriteOam(oamAddr, value); oamAddr++; break;
             case 5: bg.WriteScroll(value); break;
@@ -313,18 +320,27 @@ public class NesPpu
 
     private byte PeekStatus() => (byte)(status & 0xE0);
 
-    private void WriteCtrl(byte value)
+    private void WriteCtrl(ushort reg, byte value)
     {
         bool prevNmiEnable = (ctrl & CtrlNmiEnable) != 0;
         bool nextNmiEnable = (value & CtrlNmiEnable) != 0;
         ctrl = value;
         bg.WriteCtrlNametable(value);
+        if (reg == 0x2000)
+            mapper.NotifyPpuCtrl(value);
 
         if (prevNmiEnable && !nextNmiEnable && InVblankNmiSuppressionWindow)
             nmiDelay = 0;
 
         if (!prevNmiEnable && NmiOutput && !InVblankClearNmiEnableRace)
             nmiDelay = NmiDelayCycles;
+    }
+
+    private void WriteMask(ushort reg, byte value)
+    {
+        mask = value;
+        if (reg == 0x2001)
+            mapper.NotifyPpuMask(value);
     }
 
     private void SkipOddFrameCycle()
