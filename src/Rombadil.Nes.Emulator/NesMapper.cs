@@ -21,6 +21,7 @@ public class NesMapper
     public virtual void ResetAudio() { }
     public virtual void StepAudio() { }
     public virtual float SampleAudio() => 0;
+    public virtual void StepCpuCycle() { }
     public virtual void ClockIrq() { }
     public virtual void NotifyScanline(int scanline) { }
 

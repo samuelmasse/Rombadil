@@ -127,6 +127,7 @@ public class NesApu(NesMapper mapper, List<int> samples)
         triangle.Step();
         dmc.Step();
         mapper.StepAudio();
+        mapper.StepCpuCycle();
 
         pulse1.EndOfCycle();
         pulse2.EndOfCycle();
