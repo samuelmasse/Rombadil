@@ -36,6 +36,7 @@ public class NesEmulator
             9 => new NesMapperMmc2(prg, chr, mirroring),
             23 => new NesMapperVrc2Vrc4(prg, chr, mirroring, GetMapper23VrcRegisterMapping(header)),
             25 => new NesMapperVrc2Vrc4(prg, chr, mirroring, GetMapper25VrcRegisterMapping(header)),
+            148 => new NesMapper148(prg, chr, mirroring),
             _ => new NesMapper()
         };
 
