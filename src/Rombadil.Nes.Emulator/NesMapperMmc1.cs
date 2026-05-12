@@ -5,17 +5,19 @@ public class NesMapperMmc1 : NesMapper
     private readonly Memory<byte> prg;
     private readonly Memory<byte> chr;
     private readonly byte[] chrRam = new byte[0x2000];
-    private readonly byte[] prgRam = new byte[0x2000];
+    private readonly byte[] prgRam;
     private byte shift = 0x10;
     private byte control = 0x0C;
     private byte chrBank0;
     private byte chrBank1;
     private byte prgBank;
+    private bool suppressSerialWrites;
 
-    public NesMapperMmc1(Memory<byte> prg, Memory<byte> chr)
+    public NesMapperMmc1(Memory<byte> prg, Memory<byte> chr, int prgRamSize)
     {
         this.prg = prg;
         this.chr = chr;
+        prgRam = new byte[prgRamSize];
         UpdateMirroring();
     }
 
@@ -29,6 +31,16 @@ public class NesMapperMmc1 : NesMapper
 
         if (addr < 0x8000)
             return;
+
+        WritePrgRom(addr, value);
+    }
+
+    public override void WritePrgRom(ushort addr, byte value)
+    {
+        if (suppressSerialWrites)
+            return;
+
+        suppressSerialWrites = true;
 
         if ((value & 0x80) != 0)
         {
@@ -65,6 +77,11 @@ public class NesMapperMmc1 : NesMapper
         if (addr < 0x8000)
             return 0;
 
+        return ReadPrgRom(addr);
+    }
+
+    public override byte ReadPrgRom(ushort addr)
+    {
         int mode = (control >> 2) & 0b11;
         int prgSelect = prgBank & 0x0F;
         int prgBase = PrgBaseOffset;
@@ -100,11 +117,19 @@ public class NesMapperMmc1 : NesMapper
 
     public override void WritePrgRam(ushort addr, byte value)
     {
-        if (!PrgRamDisabled)
-            prgRam[addr - 0x6000] = value;
+        if (prgRam.Length != 0 && !PrgRamDisabled)
+            prgRam[(addr - 0x6000) % prgRam.Length] = value;
     }
 
-    public override byte ReadPrgRam(ushort addr) => PrgRamDisabled ? (byte)0 : prgRam[addr - 0x6000];
+    public override byte ReadPrgRam(ushort addr)
+    {
+        if (prgRam.Length == 0 || PrgRamDisabled)
+            return 0;
+
+        return prgRam[(addr - 0x6000) % prgRam.Length];
+    }
+
+    public override void StepCpuCycle() => suppressSerialWrites = false;
 
     public override void WriteChr(ushort addr, byte value)
     {

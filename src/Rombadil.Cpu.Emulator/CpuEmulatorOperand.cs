@@ -6,17 +6,28 @@ internal readonly struct CpuEmulatorOperand(CpuEmulatorState s, CpuEmulatorBus b
 
     public byte V
     {
-        get
-        {
-            if (mode == CpuAddressingMode.Accumulator)
-                return s.AC;
-            else return b.Read(addr);
-        }
-        set
-        {
-            if (mode == CpuAddressingMode.Accumulator)
-                s.AC = value;
-            else b.Write(addr, value);
-        }
+        get => Read();
+        set => Write(value);
+    }
+
+    internal byte Read()
+    {
+        if (mode == CpuAddressingMode.Accumulator)
+            return s.AC;
+
+        return b.Read(addr);
+    }
+
+    internal void Write(byte value)
+    {
+        if (mode == CpuAddressingMode.Accumulator)
+            s.AC = value;
+        else b.Write(addr, value);
+    }
+
+    internal void DummyWrite(byte value)
+    {
+        if (mode != CpuAddressingMode.Accumulator)
+            b.Write(addr, value);
     }
 }

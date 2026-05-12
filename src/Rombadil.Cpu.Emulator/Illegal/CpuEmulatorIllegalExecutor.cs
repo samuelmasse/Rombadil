@@ -3,35 +3,58 @@ namespace Rombadil.Cpu.Emulator;
 internal readonly struct CpuEmulatorIllegalExecutor(CpuEmulatorState s, CpuEmulatorBus b, CpuEmulatorProcessor p, CpuEmulatorOperand op)
 {
     internal void Sax() => op.V = (byte)(p.AC & p.X);
-    internal void Dcp() => p.Compare(p.AC, --op.V);
-    internal void Isb() => p.AC = p.SubWithBorrow(++op.V);
+    internal void Dcp()
+    {
+        byte value = op.Read();
+        op.DummyWrite(value);
+        byte result = (byte)(value - 1);
+        p.Compare(p.AC, result);
+        op.Write(result);
+    }
+
+    internal void Isb()
+    {
+        byte value = op.Read();
+        op.DummyWrite(value);
+        byte result = (byte)(value + 1);
+        p.AC = p.SubWithBorrow(result);
+        op.Write(result);
+    }
 
     internal void Slo()
     {
-        byte v = p.ShiftLeft(op.V);
-        op.V = v;
-        p.AC |= v;
+        byte value = op.Read();
+        op.DummyWrite(value);
+        byte result = p.ShiftLeft(value);
+        p.AC |= result;
+        op.Write(result);
     }
 
     internal void Rla()
     {
-        byte v = p.RotateLeft(op.V);
-        op.V = v;
-        p.AC &= v;
+        byte value = op.Read();
+        op.DummyWrite(value);
+        byte result = p.RotateLeft(value);
+        p.AC &= result;
+        op.Write(result);
     }
 
     internal void Sre()
     {
-        byte v = p.ShiftRight(op.V);
-        op.V = v;
-        p.AC ^= v;
+        byte value = op.Read();
+        op.DummyWrite(value);
+        byte result = p.ShiftRight(value);
+        p.AC ^= result;
+        op.Write(result);
     }
 
     internal void Rra()
     {
-        byte v = p.RotateRight(op.V);
-        op.V = v;
-        p.AC = p.AddWithCarry(v);
+        byte value = op.Read();
+        op.DummyWrite(value);
+        byte result = p.RotateRight(value);
+        p.AC = p.AddWithCarry(result);
+        op.Write(result);
     }
 
     internal void Sbc() => p.AC = p.SubWithBorrow(op.V);

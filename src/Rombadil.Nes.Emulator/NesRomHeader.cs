@@ -6,6 +6,8 @@ public readonly struct NesRomHeader(Memory<byte> header)
     public byte ChrRomSize => header.Span[5];
     public int MapperNumber => (Flags7 & 0xF0) | (Flags6 >> 4) | (IsNes20 ? (Flags8 & 0x0F) << 8 : 0);
     public byte Submapper => IsNes20 ? (byte)(Flags8 >> 4) : (byte)0;
+    public int PrgRamSize => IsNes20 ? DecodeNes20RamSize(Flags10 & 0x0F) : (HasBattery ? 0 : InesPrgRamSize);
+    public int PrgNvRamSize => IsNes20 ? DecodeNes20RamSize((Flags10 >> 4) & 0x0F) : (HasBattery ? InesPrgRamSize : 0);
 
     public bool VerticalMirroring => (Flags6 & 0x01) != 0;
     public bool HasBattery => (Flags6 & 0x02) != 0;
@@ -16,4 +18,15 @@ public readonly struct NesRomHeader(Memory<byte> header)
     private byte Flags6 => header.Span[6];
     private byte Flags7 => header.Span[7];
     private byte Flags8 => header.Span[8];
+    private byte Flags10 => header.Span[10];
+
+    private int InesPrgRamSize => Math.Max(1, (int)Flags8) * 0x2000;
+
+    private static int DecodeNes20RamSize(int shift)
+    {
+        if (shift == 0)
+            return 0;
+
+        return 64 << shift;
+    }
 }

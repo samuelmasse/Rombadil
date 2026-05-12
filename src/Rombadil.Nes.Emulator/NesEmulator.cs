@@ -27,7 +27,7 @@ public class NesEmulator
         mapper = header.MapperNumber switch
         {
             0 => new NesMapperNrom(prg, chr, mirroring),
-            1 => new NesMapperMmc1(prg, chr),
+            1 => new NesMapperMmc1(prg, chr, header.PrgRamSize + header.PrgNvRamSize),
             2 => new NesMapperUxrom(prg, chr, mirroring, header.Submapper == 2),
             3 => new NesMapperCnrom(prg, chr, mirroring),
             4 => new NesMapperMmc3(prg, chr, header.FourScreen),

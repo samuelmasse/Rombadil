@@ -2,15 +2,56 @@ namespace Rombadil.Cpu.Emulator;
 
 internal readonly struct CpuEmulatorExecutor(CpuEmulatorState s, CpuEmulatorBus b, CpuEmulatorProcessor p, CpuEmulatorOperand op)
 {
-    internal void Asl() => op.V = p.ShiftLeft(op.V);
-    internal void Lsr() => op.V = p.ShiftRight(op.V);
-    internal void Rol() => op.V = p.RotateLeft(op.V);
-    internal void Ror() => op.V = p.RotateRight(op.V);
+    internal void Asl()
+    {
+        byte value = op.Read();
+        op.DummyWrite(value);
+        op.Write(p.ShiftLeft(value));
+    }
+
+    internal void Lsr()
+    {
+        byte value = op.Read();
+        op.DummyWrite(value);
+        op.Write(p.ShiftRight(value));
+    }
+
+    internal void Rol()
+    {
+        byte value = op.Read();
+        op.DummyWrite(value);
+        op.Write(p.RotateLeft(value));
+    }
+
+    internal void Ror()
+    {
+        byte value = op.Read();
+        op.DummyWrite(value);
+        op.Write(p.RotateRight(value));
+    }
+
     internal void Sta() => op.V = p.AC;
     internal void Stx() => op.V = p.X;
     internal void Sty() => op.V = p.Y;
-    internal void Dec() => p.SetZN(--op.V);
-    internal void Inc() => p.SetZN(++op.V);
+
+    internal void Dec()
+    {
+        byte value = op.Read();
+        op.DummyWrite(value);
+        byte result = (byte)(value - 1);
+        p.SetZN(result);
+        op.Write(result);
+    }
+
+    internal void Inc()
+    {
+        byte value = op.Read();
+        op.DummyWrite(value);
+        byte result = (byte)(value + 1);
+        p.SetZN(result);
+        op.Write(result);
+    }
+
     internal void Adc() => p.AC = p.AddWithCarry(op.V);
     internal void And() => p.AC &= op.V;
     internal void Bpl() => p.Branch(!s.Negative);
