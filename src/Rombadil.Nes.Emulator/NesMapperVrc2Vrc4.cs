@@ -36,7 +36,7 @@ public class NesMapperVrc2Vrc4 : NesMapper
     public override byte Read(ushort addr)
     {
         if (addr >= 0x6000 && addr <= 0x7FFF && ramEnable)
-            return ram[(addr - 0x6000) & 0x1FFF];
+            return ReadPrgRam(addr);
 
         if (addr >= 0x8000)
             return ReadPrg(addr);
@@ -48,8 +48,7 @@ public class NesMapperVrc2Vrc4 : NesMapper
     {
         if (addr >= 0x6000 && addr <= 0x7FFF)
         {
-            if (ramEnable)
-                ram[(addr - 0x6000) & 0x1FFF] = value;
+            WritePrgRam(addr, value);
             return;
         }
 
@@ -96,6 +95,14 @@ public class NesMapperVrc2Vrc4 : NesMapper
         if (chr.Length == 0)
             chrRam[addr & 0x1FFF] = value;
     }
+
+    public override void WritePrgRam(ushort addr, byte value)
+    {
+        if (ramEnable)
+            ram[(addr - 0x6000) & 0x1FFF] = value;
+    }
+
+    public override byte ReadPrgRam(ushort addr) => ramEnable ? ram[(addr - 0x6000) & 0x1FFF] : (byte)0;
 
     public override void StepCpuCycle()
     {

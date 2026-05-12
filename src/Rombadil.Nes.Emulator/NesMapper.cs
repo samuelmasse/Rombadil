@@ -11,6 +11,15 @@ public class NesMapper
 
     public virtual void Write(ushort addr, byte value) { }
     public virtual byte Read(ushort addr) => 0;
+    public virtual void WriteExpansion(ushort addr, byte value) { }
+    public virtual byte ReadExpansion(ushort addr) => 0;
+    public virtual byte PeekExpansion(ushort addr) => ReadExpansion(addr);
+    public virtual void WritePrgRam(ushort addr, byte value) { }
+    public virtual byte ReadPrgRam(ushort addr) => 0;
+    public virtual byte PeekPrgRam(ushort addr) => ReadPrgRam(addr);
+    public virtual void WritePrgRom(ushort addr, byte value) => Write(addr, value);
+    public virtual byte ReadPrgRom(ushort addr) => Read(addr);
+    public virtual byte PeekPrgRom(ushort addr) => ReadPrgRom(addr);
     public virtual void WriteChr(ushort addr, byte value) { }
     public virtual byte ReadChr(ushort addr) => 0;
     public virtual byte ReadChrBg(ushort addr, ushort ntAddr) => ReadChr(addr);

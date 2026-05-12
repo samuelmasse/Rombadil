@@ -5,19 +5,33 @@ public class NesMapperUxrom : NesMapper
     private readonly Memory<byte> prg;
     private readonly Memory<byte> chr;
     private readonly byte[] chrRam = new byte[0x2000];
+    private readonly bool busConflicts;
     private byte selectedBank;
 
-    public NesMapperUxrom(Memory<byte> prg, Memory<byte> chr, NesMirroring mirroring)
+    public NesMapperUxrom(Memory<byte> prg, Memory<byte> chr, NesMirroring mirroring, bool busConflicts = false)
     {
         this.prg = prg;
         this.chr = chr;
         this.mirroring = mirroring;
+        this.busConflicts = busConflicts;
     }
 
-    public override void Write(ushort addr, byte value) => selectedBank = (byte)(value & 0x0F);
+    public override void Write(ushort addr, byte value)
+    {
+        if (addr < 0x8000)
+            return;
+
+        if (busConflicts)
+            value &= Read(addr);
+
+        selectedBank = (byte)(value & 0x0F);
+    }
 
     public override byte Read(ushort addr)
     {
+        if (addr < 0x8000)
+            return 0;
+
         if (addr < 0xC000)
         {
             int bank = selectedBank * 0x4000;

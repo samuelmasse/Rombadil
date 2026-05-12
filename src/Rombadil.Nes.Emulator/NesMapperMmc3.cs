@@ -56,7 +56,7 @@ public class NesMapperMmc3 : NesMapper
         }
         else if (addr >= 0x6000 && addr <= 0x7FFF && ramEnable)
         {
-            ram[addr - 0x6000] = value;
+            WritePrgRam(addr, value);
         }
         else if (addr >= 0xC000 && addr <= 0xDFFF)
         {
@@ -86,8 +86,8 @@ public class NesMapperMmc3 : NesMapper
 
     public override byte Read(ushort addr)
     {
-        if (addr >= 0x6000 && addr <= 0x7FFF && ramEnable)
-            return ram[addr - 0x6000];
+        if (addr >= 0x6000 && addr <= 0x7FFF)
+            return ReadPrgRam(addr);
 
         if (addr >= 0x8000)
         {
@@ -109,6 +109,14 @@ public class NesMapperMmc3 : NesMapper
 
         return 0;
     }
+
+    public override void WritePrgRam(ushort addr, byte value)
+    {
+        if (ramEnable)
+            ram[addr - 0x6000] = value;
+    }
+
+    public override byte ReadPrgRam(ushort addr) => ramEnable ? ram[addr - 0x6000] : (byte)0;
 
     public override byte ReadChr(ushort addr)
     {

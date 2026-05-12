@@ -23,10 +23,12 @@ public class NesMapperMmc1 : NesMapper
     {
         if (addr >= 0x6000 && addr <= 0x7FFF)
         {
-            if (!PrgRamDisabled)
-                prgRam[addr - 0x6000] = value;
+            WritePrgRam(addr, value);
             return;
         }
+
+        if (addr < 0x8000)
+            return;
 
         if ((value & 0x80) != 0)
         {
@@ -58,7 +60,10 @@ public class NesMapperMmc1 : NesMapper
     public override byte Read(ushort addr)
     {
         if (addr >= 0x6000 && addr <= 0x7FFF)
-            return PrgRamDisabled ? (byte)0 : prgRam[addr - 0x6000];
+            return ReadPrgRam(addr);
+
+        if (addr < 0x8000)
+            return 0;
 
         int mode = (control >> 2) & 0b11;
         int prgSelect = prgBank & 0x0F;
@@ -92,6 +97,14 @@ public class NesMapperMmc1 : NesMapper
             return prg.Span[lastBank + (addr - 0xC000)];
         }
     }
+
+    public override void WritePrgRam(ushort addr, byte value)
+    {
+        if (!PrgRamDisabled)
+            prgRam[addr - 0x6000] = value;
+    }
+
+    public override byte ReadPrgRam(ushort addr) => PrgRamDisabled ? (byte)0 : prgRam[addr - 0x6000];
 
     public override void WriteChr(ushort addr, byte value)
     {

@@ -122,7 +122,7 @@ public class NesApuDmc(NesMapper mapper)
         if (sampleRemaining <= 0)
             return;
 
-        sampleBuffer = mapper.Read(currentAddress++);
+        sampleBuffer = mapper.ReadPrgRom(currentAddress++);
         bufferFilled = true;
         sampleRemaining--;
 

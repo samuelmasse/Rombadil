@@ -101,14 +101,34 @@ public class NesMapperMmc5 : NesMapper
 
     public override byte Read(ushort addr)
     {
-        if (addr == 0x5010) return ReadPcmMode();
+        if (addr >= 0x4020 && addr <= 0x5FFF)
+            return ReadExpansion(addr);
+
+        if (addr >= 0x8000)
+            return ReadPrgRom(addr);
+
+        return 0;
+    }
+
+    public override void WriteExpansion(ushort addr, byte value) => Write(addr, value);
+    public override byte ReadExpansion(ushort addr) => ReadExpansionRegister(addr, hasSideEffects: true);
+    public override byte PeekExpansion(ushort addr) => ReadExpansionRegister(addr, hasSideEffects: false);
+    public override byte ReadPrgRom(ushort addr) => ReadPrgBank(addr, hasSideEffects: true);
+    public override byte PeekPrgRom(ushort addr) => ReadPrgBank(addr, hasSideEffects: false);
+
+    private byte ReadExpansionRegister(ushort addr, bool hasSideEffects)
+    {
+        if (addr == 0x5010) return ReadPcmMode(hasSideEffects);
         if (addr == 0x5015) return ReadAudioStatus();
 
         if (addr == 0x5204)
         {
             byte result = (byte)((irqInternalPending ? 0x80 : 0) | (inFrame ? 0x40 : 0));
-            irqInternalPending = false;
-            irqPending = false;
+            if (hasSideEffects)
+            {
+                irqInternalPending = false;
+                irqPending = false;
+            }
             return result;
         }
 
@@ -117,9 +137,6 @@ public class NesMapperMmc5 : NesMapper
 
         if (addr >= 0x5C00 && addr <= 0x5FFF)
             return exRam[addr - 0x5C00];
-
-        if (addr >= 0x8000)
-            return ReadPrg(addr);
 
         return 0;
     }
@@ -207,10 +224,11 @@ public class NesMapperMmc5 : NesMapper
         }
     }
 
-    private byte ReadPcmMode()
+    private byte ReadPcmMode(bool hasSideEffects)
     {
         byte result = (byte)((PcmIrqLine ? 0x80 : 0) | (pcmReadMode ? 0x01 : 0));
-        pcmIrqPending = false;
+        if (hasSideEffects)
+            pcmIrqPending = false;
         return result;
     }
 
@@ -286,7 +304,7 @@ public class NesMapperMmc5 : NesMapper
         irqPending = false;
     }
 
-    private byte ReadPrg(ushort addr)
+    private byte ReadPrgBank(ushort addr, bool hasSideEffects)
     {
         int window = (addr - 0x8000) >> 13;
         int offset = addr & 0x1FFF;
@@ -340,7 +358,7 @@ public class NesMapperMmc5 : NesMapper
             return 0;
 
         byte result = prg.Span[(bankIdx * 0x2000 + offset) % prg.Length];
-        if (pcmReadMode && addr <= 0xBFFF)
+        if (hasSideEffects && pcmReadMode && addr <= 0xBFFF)
             WritePcmDac(result);
 
         return result;
