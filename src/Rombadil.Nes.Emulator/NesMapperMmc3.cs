@@ -14,7 +14,8 @@ public class NesMapperMmc3 : NesMapper
     private bool chrMode;
 
     private byte mirror;
-    private bool ramEnable;
+    private bool ramEnable = true;
+    private bool ramWritable = true;
 
     private byte irqLatch;
     private byte irqCounter;
@@ -52,7 +53,11 @@ public class NesMapperMmc3 : NesMapper
                 mirror = (byte)(value & 1);
                 UpdateMirroring();
             }
-            else ramEnable = (value & 0x80) == 0;
+            else
+            {
+                ramEnable = (value & 0x80) != 0;
+                ramWritable = (value & 0x40) == 0;
+            }
         }
         else if (addr >= 0x6000 && addr <= 0x7FFF && ramEnable)
         {
@@ -112,7 +117,7 @@ public class NesMapperMmc3 : NesMapper
 
     public override void WritePrgRam(ushort addr, byte value)
     {
-        if (ramEnable)
+        if (ramEnable && ramWritable)
             ram[addr - 0x6000] = value;
     }
 
