@@ -4,6 +4,7 @@ public class NesMapperVrc2Vrc4 : NesMapper
 {
     private readonly Memory<byte> prg;
     private readonly Memory<byte> chr;
+    private readonly NesVrcRegisterMapping registerMapping;
     private readonly byte[] chrRam = new byte[0x2000];
     private readonly byte[] ram = new byte[0x2000];
 
@@ -20,11 +21,16 @@ public class NesMapperVrc2Vrc4 : NesMapper
     private bool irqEnableAfterAck;
     private bool irqCycleMode;
 
-    public NesMapperVrc2Vrc4(Memory<byte> prg, Memory<byte> chr, NesMirroring mirroring)
+    public NesMapperVrc2Vrc4(
+        Memory<byte> prg,
+        Memory<byte> chr,
+        NesMirroring mirroring,
+        NesVrcRegisterMapping registerMapping)
     {
         this.prg = prg;
         this.chr = chr;
         this.mirroring = mirroring;
+        this.registerMapping = registerMapping;
     }
 
     public override byte Read(ushort addr)
@@ -54,8 +60,7 @@ public class NesMapperVrc2Vrc4 : NesMapper
         switch (addr & 0xF000)
         {
             case 0x8000:
-                if (reg == 0)
-                    prgBank0 = value;
+                prgBank0 = (byte)(value & 0x1F);
                 break;
 
             case 0x9000:
@@ -63,8 +68,7 @@ public class NesMapperVrc2Vrc4 : NesMapper
                 break;
 
             case 0xA000:
-                if (reg == 0)
-                    prgBank1 = value;
+                prgBank1 = (byte)(value & 0x1F);
                 break;
 
             case >= 0xB000 and <= 0xE000:
@@ -201,15 +205,55 @@ public class NesMapperVrc2Vrc4 : NesMapper
         }
     }
 
-    private static int DecodeRegister(ushort addr)
+    private int DecodeRegister(ushort addr) => registerMapping switch
+    {
+        NesVrcRegisterMapping.Mapper23Vrc2BOrVrc4F => DecodeMapper23Vrc2BOrVrc4FRegister(addr),
+        NesVrcRegisterMapping.Mapper23Vrc4E => DecodeMapper23Vrc4ERegister(addr),
+        NesVrcRegisterMapping.Mapper25Vrc2COrVrc4B => DecodeMapper25Vrc2COrVrc4BRegister(addr),
+        NesVrcRegisterMapping.Mapper25Vrc4D => DecodeMapper25Vrc4DRegister(addr),
+        NesVrcRegisterMapping.Mapper25 => DecodeMapper25Register(addr),
+        _ => DecodeMapper23Register(addr),
+    };
+
+    private static int DecodeMapper23Register(ushort addr)
+    {
+        int vrc2B = DecodeMapper23Vrc2BOrVrc4FRegister(addr);
+        int vrc4E = DecodeMapper23Vrc4ERegister(addr);
+        return vrc2B != 0 ? vrc2B : vrc4E;
+    }
+
+    private static int DecodeMapper25Register(ushort addr)
+    {
+        int vrc2COrVrc4B = DecodeMapper25Vrc2COrVrc4BRegister(addr);
+        int vrc4D = DecodeMapper25Vrc4DRegister(addr);
+        return vrc2COrVrc4B != 0 ? vrc2COrVrc4B : vrc4D;
+    }
+
+    private static int DecodeMapper23Vrc2BOrVrc4FRegister(ushort addr)
     {
         int bit0 = addr & 0x01;
         int bit1 = (addr >> 1) & 0x01;
+        return bit0 | (bit1 << 1);
+    }
+
+    private static int DecodeMapper23Vrc4ERegister(ushort addr)
+    {
         int bit2 = (addr >> 2) & 0x01;
         int bit3 = (addr >> 3) & 0x01;
+        return bit2 | (bit3 << 1);
+    }
 
-        int vrc2B = bit0 | (bit1 << 1);
-        int vrc4E = bit2 | (bit3 << 1);
-        return vrc2B != 0 ? vrc2B : vrc4E;
+    private static int DecodeMapper25Vrc2COrVrc4BRegister(ushort addr)
+    {
+        int bit0 = addr & 0x01;
+        int bit1 = (addr >> 1) & 0x01;
+        return bit1 | (bit0 << 1);
+    }
+
+    private static int DecodeMapper25Vrc4DRegister(ushort addr)
+    {
+        int bit2 = (addr >> 2) & 0x01;
+        int bit3 = (addr >> 3) & 0x01;
+        return bit3 | (bit2 << 1);
     }
 }

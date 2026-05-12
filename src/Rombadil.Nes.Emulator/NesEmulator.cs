@@ -33,7 +33,8 @@ public class NesEmulator
             4 => new NesMapperMmc3(prg, chr, header.FourScreen),
             5 => new NesMapperMmc5(prg, chr, mirroring),
             7 => new NesMapperAxrom(prg, chr),
-            23 => new NesMapperVrc2Vrc4(prg, chr, mirroring),
+            23 => new NesMapperVrc2Vrc4(prg, chr, mirroring, GetMapper23VrcRegisterMapping(header)),
+            25 => new NesMapperVrc2Vrc4(prg, chr, mirroring, GetMapper25VrcRegisterMapping(header)),
             _ => new NesMapper()
         };
 
@@ -103,4 +104,18 @@ public class NesEmulator
 
     public void SetButtons1(NesButtons buttons) => controller1.SetButtons(buttons);
     public void SetButtons2(NesButtons buttons) => controller2.SetButtons(buttons);
+
+    private static NesVrcRegisterMapping GetMapper23VrcRegisterMapping(NesRomHeader header) => header.Submapper switch
+    {
+        1 or 3 => NesVrcRegisterMapping.Mapper23Vrc2BOrVrc4F,
+        2 => NesVrcRegisterMapping.Mapper23Vrc4E,
+        _ => NesVrcRegisterMapping.Mapper23,
+    };
+
+    private static NesVrcRegisterMapping GetMapper25VrcRegisterMapping(NesRomHeader header) => header.Submapper switch
+    {
+        1 or 3 => NesVrcRegisterMapping.Mapper25Vrc2COrVrc4B,
+        2 => NesVrcRegisterMapping.Mapper25Vrc4D,
+        _ => NesVrcRegisterMapping.Mapper25,
+    };
 }
