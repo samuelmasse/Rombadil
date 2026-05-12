@@ -36,6 +36,7 @@ public class NesApu(NesMapper mapper, List<int> samples)
         triangle = new();
         noise = new();
         dmc = new(mapper);
+        mapper.ResetAudio();
     }
 
     public byte ReadStatus()
@@ -125,6 +126,7 @@ public class NesApu(NesMapper mapper, List<int> samples)
 
         triangle.Step();
         dmc.Step();
+        mapper.StepAudio();
 
         pulse1.EndOfCycle();
         pulse2.EndOfCycle();
@@ -154,7 +156,7 @@ public class NesApu(NesMapper mapper, List<int> samples)
             ? 0
             : 159.79f / ((1f / tndMix) + 100f);
 
-        float output = pulseOut + tndOut;
+        float output = pulseOut + tndOut + mapper.SampleAudio();
         return (int)(Math.Clamp(output, 0f, 1f) * short.MaxValue);
     }
 

@@ -5,9 +5,9 @@ public class NesMapper
     protected bool irqPending;
     protected NesMirroring mirroring;
 
-    public bool PendingIrq => irqPending;
+    public virtual bool PendingIrq => irqPending;
 
-    public void ClearPendingIrq() => irqPending = false;
+    public virtual void ClearPendingIrq() => irqPending = false;
 
     public virtual void Write(ushort addr, byte value) { }
     public virtual byte Read(ushort addr) => 0;
@@ -18,6 +18,9 @@ public class NesMapper
     public virtual byte ReadBgAttribute(ushort ntAddr, byte defaultAttr) => defaultAttr;
     public virtual void NotifyPpuCtrl(byte value) { }
     public virtual void NotifyPpuMask(byte value) { }
+    public virtual void ResetAudio() { }
+    public virtual void StepAudio() { }
+    public virtual float SampleAudio() => 0;
     public virtual void ClockIrq() { }
     public virtual void NotifyScanline(int scanline) { }
 

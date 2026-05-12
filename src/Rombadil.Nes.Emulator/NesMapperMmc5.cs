@@ -6,6 +6,8 @@ public class NesMapperMmc5 : NesMapper
     private readonly Memory<byte> chr;
     private readonly byte[] chrRam = new byte[0x2000];
     private readonly byte[] exRam = new byte[0x400];
+    private readonly NesMmc5Pulse audioPulse1 = new();
+    private readonly NesMmc5Pulse audioPulse2 = new();
 
     private byte prgMode = 3;
     private byte chrMode = 3;
@@ -30,9 +32,17 @@ public class NesMapperMmc5 : NesMapper
     private byte exRamMode;
     private byte mulA;
     private byte mulB;
+    private bool pcmReadMode;
+    private bool pcmIrqEnable;
+    private bool pcmIrqPending;
+    private byte pcmDac;
+    private long audioCycles;
+    private int audioFrameCycle = 1;
 
     private bool IndependentChrActive => sprite8x16 && substitutionsEnabled;
     private bool ExtendedAttributesActive => exRamMode == 1 && substitutionsEnabled;
+    private bool PcmIrqLine => pcmIrqPending && pcmIrqEnable;
+    public override bool PendingIrq => irqPending || PcmIrqLine;
 
     public NesMapperMmc5(Memory<byte> prg, Memory<byte> chr, NesMirroring mirroring)
     {
@@ -54,6 +64,7 @@ public class NesMapperMmc5 : NesMapper
 
         switch (addr)
         {
+            case >= 0x5000 and <= 0x5015: WriteAudioRegister(addr, value); break;
             case 0x5100: prgMode = (byte)(value & 0x03); break;
             case 0x5101: chrMode = (byte)(value & 0x03); break;
             case 0x5104: exRamMode = (byte)(value & 0x03); break;
@@ -90,6 +101,9 @@ public class NesMapperMmc5 : NesMapper
 
     public override byte Read(ushort addr)
     {
+        if (addr == 0x5010) return ReadPcmMode();
+        if (addr == 0x5015) return ReadAudioStatus();
+
         if (addr == 0x5204)
         {
             byte result = (byte)((irqInternalPending ? 0x80 : 0) | (inFrame ? 0x40 : 0));
@@ -108,6 +122,126 @@ public class NesMapperMmc5 : NesMapper
             return ReadPrg(addr);
 
         return 0;
+    }
+
+    public override void ClearPendingIrq() => irqPending = false;
+
+    public override void ResetAudio()
+    {
+        audioPulse1.Reset();
+        audioPulse2.Reset();
+        pcmReadMode = false;
+        pcmIrqEnable = false;
+        pcmIrqPending = false;
+        pcmDac = 0;
+        audioCycles = 0;
+        audioFrameCycle = 1;
+    }
+
+    public override void StepAudio()
+    {
+        if ((audioCycles & 1) == 0)
+        {
+            if (audioFrameCycle == 14915)
+                audioFrameCycle = 0;
+
+            audioFrameCycle++;
+        }
+        else
+        {
+            if (audioFrameCycle is 3730 or 7458 or 11187 or 14915)
+                ClockAudioFrame();
+
+            audioPulse1.Step();
+            audioPulse2.Step();
+        }
+
+        audioCycles++;
+    }
+
+    public override float SampleAudio()
+    {
+        float pulse1 = audioPulse1.Sample();
+        float pulse2 = audioPulse2.Sample();
+        float pulseMix = pulse1 + pulse2;
+        float pulseOut = pulseMix == 0
+            ? 0
+            : 95.88f / ((8128f / pulseMix) + 100f);
+
+        float pcmMix = pcmDac / 22638f;
+        float pcmOut = pcmDac == 0
+            ? 0
+            : 159.79f / ((1f / pcmMix) + 100f);
+
+        return pulseOut + pcmOut;
+    }
+
+    private void WriteAudioRegister(ushort addr, byte value)
+    {
+        if (addr >= 0x5000 && addr <= 0x5003)
+        {
+            audioPulse1.WriteRegister(addr - 0x5000, value);
+            return;
+        }
+
+        if (addr >= 0x5004 && addr <= 0x5007)
+        {
+            audioPulse2.WriteRegister(addr - 0x5004, value);
+            return;
+        }
+
+        switch (addr)
+        {
+            case 0x5010:
+                pcmReadMode = (value & 0x01) != 0;
+                pcmIrqEnable = (value & 0x80) != 0;
+                break;
+            case 0x5011:
+                if (!pcmReadMode)
+                    WritePcmDac(value);
+                break;
+            case 0x5015:
+                audioPulse1.Toggle((value & 0x01) != 0);
+                audioPulse2.Toggle((value & 0x02) != 0);
+                break;
+        }
+    }
+
+    private byte ReadPcmMode()
+    {
+        byte result = (byte)((PcmIrqLine ? 0x80 : 0) | (pcmReadMode ? 0x01 : 0));
+        pcmIrqPending = false;
+        return result;
+    }
+
+    private byte ReadAudioStatus()
+    {
+        byte result = 0;
+        if (audioPulse1.Length > 0)
+            result |= 0x01;
+        if (audioPulse2.Length > 0)
+            result |= 0x02;
+        return result;
+    }
+
+    private void ClockAudioFrame()
+    {
+        audioPulse1.ClockEnvelope();
+        audioPulse2.ClockEnvelope();
+        audioPulse1.ClockLength();
+        audioPulse2.ClockLength();
+    }
+
+    private void WritePcmDac(byte value)
+    {
+        if (value == 0)
+        {
+            pcmIrqPending = true;
+            return;
+        }
+
+        pcmDac = value;
+        pcmIrqPending = false;
     }
 
     public override void NotifyPpuCtrl(byte value) => sprite8x16 = (value & 0x20) != 0;
@@ -205,7 +339,11 @@ public class NesMapperMmc5 : NesMapper
         if (!isRom)
             return 0;
 
-        return prg.Span[(bankIdx * 0x2000 + offset) % prg.Length];
+        byte result = prg.Span[(bankIdx * 0x2000 + offset) % prg.Length];
+        if (pcmReadMode && addr <= 0xBFFF)
+            WritePcmDac(result);
+
+        return result;
     }
 
     public override byte ReadChr(ushort addr)
