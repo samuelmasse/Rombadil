@@ -13,6 +13,9 @@
         <EmbeddedResource Include="blargg_apu_2005\*.*">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </EmbeddedResource>
+        <EmbeddedResource Include="cpu_dummy_writes\*.*">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </EmbeddedResource>
     </ItemGroup>
 
     <ItemGroup>
@@ -25,7 +28,6 @@
 
     <ItemGroup>
         <Using Include="BigGustave" />
-        <Using Include="Rombadil.Cpu.Emulator" />
         <Using Include="Rombadil.Nes.Emulator" />
     </ItemGroup>
 

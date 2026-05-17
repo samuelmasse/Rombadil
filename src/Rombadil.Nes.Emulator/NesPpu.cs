@@ -35,6 +35,7 @@ public class NesPpu
     private byte ctrl;
     private byte mask;
     private byte status;
+    private byte dataBus;
     private byte oamAddr;
     private int nmiDelay;
     private bool nmiPending;
@@ -68,6 +69,7 @@ public class NesPpu
         ctrl = 0;
         mask = 0;
         status = 0;
+        dataBus = 0;
         oamAddr = 0;
         nmiDelay = 0;
         nmiPending = false;
@@ -268,13 +270,18 @@ public class NesPpu
 
     public byte ReadRegister(ushort reg)
     {
-        return (reg % 8) switch
+        byte result = (reg % 8) switch
         {
             2 => ReadStatus(),
             4 => sprites.ReadOam(oamAddr),
             7 => bg.ReadData(ctrl),
-            _ => 0x00,
+            _ => dataBus,
         };
+
+        if (reg % 8 is 2 or 4 or 7)
+            dataBus = result;
+
+        return result;
     }
 
     public byte PeekRegister(ushort reg)
@@ -284,12 +291,14 @@ public class NesPpu
             2 => PeekStatus(),
             4 => sprites.ReadOam(oamAddr),
             7 => bg.PeekData(),
-            _ => 0x00,
+            _ => dataBus,
         };
     }
 
     public void WriteRegister(ushort reg, byte value)
     {
+        dataBus = value;
+
         switch (reg % 8)
         {
             case 0: WriteCtrl(reg, value); break;
@@ -318,7 +327,7 @@ public class NesPpu
         return result;
     }
 
-    private byte PeekStatus() => (byte)(status & 0xE0);
+    private byte PeekStatus() => (byte)((status & 0xE0) | (dataBus & 0x1F));
 
     private void WriteCtrl(ushort reg, byte value)
     {

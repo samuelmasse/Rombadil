@@ -4,92 +4,15 @@ namespace Rombadil.Nes.Emulator.Test;
 public class PpuVblNmiTest
 {
     [TestMethod]
-    public void VblBasics() => RunTest("01-vbl_basics");
-
-    [TestMethod]
-    public void VblSetTime() => RunTest("02-vbl_set_time");
-
-    [TestMethod]
-    public void VblClearTime() => RunTest("03-vbl_clear_time");
-
-    [TestMethod]
-    public void NmiControl() => RunTest("04-nmi_control");
-
-    [TestMethod]
-    public void NmiTiming() => RunTest("05-nmi_timing");
-
-    [TestMethod]
-    public void Suppression() => RunTest("06-suppression");
-
-    [TestMethod]
-    public void NmiOnTiming() => RunTest("07-nmi_on_timing");
-
-    [TestMethod]
-    public void NmiOffTiming() => RunTest("08-nmi_off_timing");
-
-    [TestMethod]
-    public void EvenOddFrames() => RunTest("09-even_odd_frames");
-
-    [TestMethod]
-    public void EvenOddTiming() => RunTest("10-even_odd_timing");
-
-    private void RunTest(string name, string? error = null)
-    {
-        var rom = File.ReadAllBytes(Path.Join("ppu_vbl_nmi", $"{name}.nes"));
-
-        var prgRom = rom.AsMemory().Slice(0x10, 0x8000);
-        var chrRom = rom.AsMemory().Slice(0x8010, 0x2000);
-
-        var mapper = new NesMapperNrom(prgRom, chrRom, NesMirroring.Vertical);
-        var state = new CpuEmulatorState();
-        var ppu = new NesPpu(mapper, new byte[NesPpu.ScreenWidth * NesPpu.ScreenHeight * 3]);
-        var apu = new NesApu(mapper, []);
-        var controller1 = new NesController();
-        var controller2 = new NesController();
-        var bus = new NesMemoryBus(state, mapper, ppu, apu, controller1, controller2);
-        var cpu = new CpuEmulator6502(state, bus);
-
-        cpu.Reset();
-        ppu.Reset();
-
-        while (bus[0x6001] != 0xDE || bus[0x6000] > 0x7F)
-        {
-            bool done = false;
-            while (!done)
-            {
-                cpu.Step();
-
-                if (ppu.PendingNmi)
-                {
-                    cpu.Nmi();
-                    ppu.ClearPendingNmi();
-                }
-
-                while (ppu.Cycles < state.Cycles * 3)
-                {
-                    if (ppu.Step())
-                        done = true;
-                }
-            }
-        }
-
-        var result = bus[0x6000];
-        string? actualError = null;
-
-        if (result != 0)
-        {
-            List<byte> b = [];
-            int length = 0;
-            while (length < 256 && bus[(ushort)(0x6004 + length)] != 0)
-            {
-                b.Add(bus[(ushort)(0x6004 + length)]);
-                length++;
-            }
-
-            actualError = Encoding.ASCII.GetString([.. b]);
-        }
-
-        error = error?.Replace("\r\n", "\n");
-        Assert.AreEqual(error, actualError);
-    }
+    [DataRow("01-vbl_basics")]
+    [DataRow("02-vbl_set_time")]
+    [DataRow("03-vbl_clear_time")]
+    [DataRow("04-nmi_control")]
+    [DataRow("05-nmi_timing")]
+    [DataRow("06-suppression")]
+    [DataRow("07-nmi_on_timing")]
+    [DataRow("08-nmi_off_timing")]
+    [DataRow("09-even_odd_frames")]
+    [DataRow("10-even_odd_timing")]
+    public void RomPasses(string name) => BlarggStatusTest.AssertPassed("ppu_vbl_nmi", name);
 }
