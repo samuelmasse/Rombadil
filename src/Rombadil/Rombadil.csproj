@@ -3,6 +3,7 @@
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
         <ApplicationIcon>../../res/Icon.ico</ApplicationIcon>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <ItemGroup>
@@ -10,9 +11,9 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="AlvorKit.MiniAudio.Backend" Version="0.11.25.13" />
         <PackageReference Include="BigGustave" Version="1.0.6" />
         <PackageReference Include="OpenTK" Version="4.9.4" />
-        <PackageReference Include="Rombadil.OpenAL.Soft.Native" Version="1.2.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -20,8 +21,8 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Using Include="AlvorKit.MiniAudio" />
         <Using Include="BigGustave" />
-        <Using Include="OpenTK.Audio.OpenAL" />
         <Using Include="OpenTK.Graphics.OpenGL4" />
         <Using Include="OpenTK.Mathematics" />
         <Using Include="OpenTK.Windowing.Common" />
