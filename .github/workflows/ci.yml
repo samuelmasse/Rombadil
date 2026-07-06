@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions: read-all
+
+jobs:
+  ci:
+    name: Build, test, and lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: Rombadil
+      - uses: actions/checkout@v7
+        with:
+          repository: samuelmasse/AlvorKit
+          ssh-key: ${{ secrets.ALVORKIT_DEPLOY_KEY }}
+          path: AlvorKit
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+          dotnet-quality: ga
+      - name: Generate AlvorKit sources
+        working-directory: AlvorKit
+        run: |
+          dotnet run --project scripts/AlvorKit.Script.MathsGen
+          dotnet run --project scripts/AlvorKit.Script.Bindgen -- all --strict
+      - name: Build
+        run: |
+          dotnet restore Rombadil/Rombadil.slnx
+          dotnet build Rombadil/Rombadil.slnx --no-restore
+      - name: Test
+        run: dotnet test Rombadil/Rombadil.slnx --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory TestResults
+      - name: Install ReportGenerator
+        run: dotnet tool install --global dotnet-reportgenerator-globaltool
+      - name: Generate Coverage Report
+        run: reportgenerator -reports:TestResults/**/coverage.cobertura.xml -targetdir:CoverageReport -reporttypes:Html
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: CoverageReport
+          path: CoverageReport
+      - name: Lint
+        working-directory: AlvorKit
+        run: dotnet run --project scripts/AlvorKit.Script.Lint -- --repo-root ../Rombadil

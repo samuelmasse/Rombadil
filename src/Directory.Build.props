@@ -7,10 +7,14 @@
     </PropertyGroup>
 
     <PropertyGroup>
+        <RombadilRepositoryRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\'))</RombadilRepositoryRoot>
+        <AlvorKitRoot>$([System.IO.Path]::GetFullPath('$(RombadilRepositoryRoot)..\AlvorKit\'))</AlvorKitRoot>
         <BaseOutputPath>..\..\bin\$(MSBuildProjectName)</BaseOutputPath>
         <BaseIntermediateOutputPath>..\..\obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     </PropertyGroup>
+
+    <Import Project="$(AlvorKitRoot)AlvorKit.Packages.props" Condition="Exists('$(AlvorKitRoot)AlvorKit.Packages.props')" />
 
     <ItemGroup>
 		<Using Include="System.Buffers" />

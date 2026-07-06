@@ -7,7 +7,7 @@ internal sealed class NesTestRomRunner
 
     private NesTestRomRunner(byte[] rom)
     {
-        byte[] framebuffer = new byte[NesPpu.ScreenWidth * NesPpu.ScreenHeight * 3];
+        byte[] framebuffer = new byte[NesPpu.ScreenWidth * NesPpu.ScreenHeight * 4];
         emulator = new NesEmulator(rom, framebuffer, samples);
     }
 

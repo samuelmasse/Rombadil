@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
@@ -11,24 +11,37 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="AlvorKit.MiniAudio.Backend" Version="0.11.25.13" />
         <PackageReference Include="BigGustave" Version="1.0.6" />
-        <PackageReference Include="OpenTK" Version="4.9.4" />
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="$(AlvorKitRoot)src\AlvorKit.Engine\AlvorKit.Engine.csproj" />
+        <ProjectReference Include="$(AlvorKitRoot)src\AlvorKit.Engine.Loop\AlvorKit.Engine.Loop.csproj" />
+        <ProjectReference Include="$(AlvorKitRoot)src\AlvorKit.Graphics2D\AlvorKit.Graphics2D.csproj" />
+        <ProjectReference Include="$(AlvorKitRoot)src\AlvorKit.Injection\AlvorKit.Injection.csproj" />
+        <ProjectReference Include="$(AlvorKitRoot)src\AlvorKit.Maths\AlvorKit.Maths.csproj" />
+        <ProjectReference Include="$(AlvorKitRoot)src\AlvorKit.OpenGL.Layer\AlvorKit.OpenGL.Layer.csproj" />
+        <ProjectReference Include="$(AlvorKitRoot)src\AlvorKit.Windowing\AlvorKit.Windowing.csproj" />
         <ProjectReference Include="..\Rombadil.Nes.Emulator\Rombadil.Nes.Emulator.csproj" />
     </ItemGroup>
 
     <ItemGroup>
+        <Using Include="AlvorKit.Engine" />
+        <Using Include="AlvorKit.Engine.Loop" />
+        <Using Include="AlvorKit.Graphics2D" />
+        <Using Include="AlvorKit.Injection" />
+        <Using Include="AlvorKit.Maths" />
         <Using Include="AlvorKit.MiniAudio" />
+        <Using Include="AlvorKit.OpenGL" />
+        <Using Include="AlvorKit.OpenGL.Layer" />
+        <Using Include="AlvorKit.Windowing" />
         <Using Include="BigGustave" />
-        <Using Include="OpenTK.Graphics.OpenGL4" />
-        <Using Include="OpenTK.Mathematics" />
-        <Using Include="OpenTK.Windowing.Common" />
-        <Using Include="OpenTK.Windowing.Desktop" />
-        <Using Include="OpenTK.Windowing.GraphicsLibraryFramework" />
         <Using Include="Rombadil.Nes.Emulator" />
     </ItemGroup>
+
+    <Target Name="EnsureAlvorKitSibling" BeforeTargets="ResolveProjectReferences">
+        <Error Condition="!Exists('$(AlvorKitRoot)AlvorKit.slnx')"
+            Text="AlvorKit sibling clone not found at '$(AlvorKitRoot)'. Clone AlvorKit next to the Rombadil repository." />
+    </Target>
 
 </Project>

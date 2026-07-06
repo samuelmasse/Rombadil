@@ -57,7 +57,7 @@ public class NesPpu
         memory = new NesPpuMemory(mapper);
         bg = new NesPpuBackground(memory, mapper);
         sprites = new NesPpuSprite(mapper);
-        backBuffer = new byte[ScreenWidth * ScreenHeight * 3];
+        backBuffer = new byte[ScreenWidth * ScreenHeight * 4];
     }
 
     public void Reset()
@@ -227,10 +227,11 @@ public class NesPpu
 
         int emphasis = (mask >> MaskEmphasisShift) & 7;
         int rgbIndex = (emphasis * 64 + (colorIndex & 0x3F)) * 3;
-        int dst = (yScreen * ScreenWidth + xScreen) * 3;
+        int dst = (yScreen * ScreenWidth + xScreen) * 4;
         backBuffer[dst + 0] = NesPpuPalette.Rgb[rgbIndex + 0];
         backBuffer[dst + 1] = NesPpuPalette.Rgb[rgbIndex + 1];
         backBuffer[dst + 2] = NesPpuPalette.Rgb[rgbIndex + 2];
+        backBuffer[dst + 3] = 0xFF;
     }
 
     private ushort SelectForcedBlankingPaletteAddress()

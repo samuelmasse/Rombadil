@@ -1,5 +1,6 @@
 namespace Rombadil;
 
+[Rombadil]
 public unsafe class RombadilAudio : IDisposable
 {
     private const int AudioFreq = 44100;
@@ -11,7 +12,7 @@ public unsafe class RombadilAudio : IDisposable
     private const double MinimumMaxLatencyMs = 70;
     private const double ChunkMs = AudioChunkSize * 1000.0 / AudioFreq;
 
-    private readonly Ma ma = new MaBackend();
+    private readonly Ma ma;
     private readonly object audioLock = new();
     private readonly MaDeviceDataProc dataCallback;
     private readonly Blip blip;
@@ -40,10 +41,11 @@ public unsafe class RombadilAudio : IDisposable
 
     public List<int> Samples => samples;
 
-    public RombadilAudio(double clockRate)
+    public RombadilAudio(Ma ma)
     {
+        this.ma = ma;
         dataCallback = DataCallback;
-        blip = new Blip(0xFFFFF, clockRate, InternalSampleRate);
+        blip = new Blip(0xFFFFF, RombadilNesTiming.CpuHz, InternalSampleRate);
         hermite = new HermiteResampler(blip, InternalSampleRate, AudioFreq);
     }
 

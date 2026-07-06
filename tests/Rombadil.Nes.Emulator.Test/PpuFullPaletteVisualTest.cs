@@ -9,7 +9,7 @@ public class PpuFullPaletteVisualTest
     public void FullPalette_MatchesKnownGoodScreenshot()
     {
         byte[] rom = File.ReadAllBytes(Path.Join("full_palette", "full_palette.nes"));
-        byte[] framebuffer = new byte[NesPpu.ScreenWidth * NesPpu.ScreenHeight * 3];
+        byte[] framebuffer = new byte[NesPpu.ScreenWidth * NesPpu.ScreenHeight * 4];
         var samples = new List<int>();
         var emulator = new NesEmulator(rom, framebuffer, samples);
 
@@ -30,7 +30,7 @@ public class PpuFullPaletteVisualTest
             for (int x = 0; x < NesPpu.ScreenWidth; x++)
             {
                 var pixel = expected.GetPixel(x, y);
-                int i = (y * NesPpu.ScreenWidth + x) * 3;
+                int i = (y * NesPpu.ScreenWidth + x) * 4;
 
                 if (framebuffer[i] != pixel.R ||
                     framebuffer[i + 1] != pixel.G ||
