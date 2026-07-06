@@ -13,7 +13,7 @@ public unsafe class RombadilAudio : IDisposable
     private const double ChunkMs = AudioChunkSize * 1000.0 / AudioFreq;
 
     private readonly Ma ma;
-    private readonly object audioLock = new();
+    private readonly Lock audioLock = new();
     private readonly MaDeviceDataProc dataCallback;
     private readonly Blip blip;
     private readonly HermiteResampler hermite;

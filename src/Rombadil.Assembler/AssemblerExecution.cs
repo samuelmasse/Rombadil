@@ -148,9 +148,8 @@ internal class AssemblerExecution(
                         $"The argument to \".segment\" must be a quoted segment name, e.g., '.segment \"CODE\"'.");
 
                 var name = expression[1..^1];
-                var segment = segments.FirstOrDefault(x => x.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase));
-                if (segment == null)
-                    throw new Assembler6502Exception(statement.LineNumber,
+                var segment = segments.FirstOrDefault(x => x.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase))
+                    ?? throw new Assembler6502Exception(statement.LineNumber,
                         $"Segment \"{name}\" not defined. Available segments: {string.Join(", ", segments.Select(s => $"\"{s.Name}\""))}");
 
                 statement.Segment = segment;
