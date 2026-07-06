@@ -1,1 +1,0 @@
-new CoverageScript(args).RunScript();

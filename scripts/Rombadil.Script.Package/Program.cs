@@ -1,41 +1,89 @@
-Info("Packaging emulator");
+var repoRoot = FindRepositoryRoot();
+var project = Path.Combine(repoRoot, "src", "Rombadil", "Rombadil.csproj");
+var dist = Path.Combine(repoRoot, "dist");
+var runtimes = new[] { "win-x64", "linux-x64", "osx-arm64" };
 
-Info("Deleting dist directory");
-Delete("dist");
+Console.WriteLine("Packaging emulator");
+ResetDirectory(dist);
 
-var runtimes = new List<string>()
+var executables = new List<string>();
+foreach (var runtime in runtimes)
 {
-    "win-x64",
-    "linux-x64",
-    "osx-arm64"
-};
+    var output = Path.Combine(dist, runtime, "Rombadil");
+    await PublishAsync(repoRoot, project, output, runtime);
+    executables.Add(Path.Combine(output, "Rombadil" + (runtime.StartsWith("win", StringComparison.Ordinal) ? ".exe" : "")));
+}
 
-var exes = runtimes.Select((runtime) =>
+Console.WriteLine("Emulator packaged");
+foreach (var executable in executables)
+    Console.WriteLine("-> " + executable);
+
+static string FindRepositoryRoot()
 {
-    Dir("src", "Rombadil", out var projectDir);
-    Dir("dist", runtime, "Rombadil", out var outDir);
-
-    Section(() =>
+    foreach (var start in new[] { Directory.GetCurrentDirectory(), AppContext.BaseDirectory })
     {
-        var command = string.Join(' ',
-            "dotnet",
-            "publish",
-            projectDir,
-            "-c Release",
-            "--self-contained",
-            "-p:PublishSingleFile=true",
-            "-p:IncludeNativeLibrariesForSelfExtract=true",
-            "-p:DebugType=None",
-            $"-r {runtime}",
-            $"-o {outDir}"
-        );
+        for (var current = Path.GetFullPath(start); current is not null; current = Directory.GetParent(current)?.FullName)
+        {
+            if (File.Exists(Path.Combine(current, "Rombadil.slnx")))
+                return current;
+        }
+    }
 
-        Run(command, $"Publishing for {runtime}", $"Failed to publish for {runtime}");
-    });
+    throw new InvalidOperationException("Rombadil.slnx not found above the current process directories.");
+}
 
-    Dir(outDir, $"Rombadil{(runtime.StartsWith("win") ? ".exe" : "")}", out var exeFile);
-    return exeFile;
-}).ToList();
+static void ResetDirectory(string path)
+{
+    Console.WriteLine("Deleting " + path);
+    if (Directory.Exists(path))
+        Directory.Delete(path, recursive: true);
+    Directory.CreateDirectory(path);
+}
 
-Success($"Emulator packaged");
-exes.ForEach(x => Success($"-> {x}"));
+static async Task PublishAsync(string repoRoot, string project, string output, string runtime)
+{
+    Console.WriteLine("Publishing for " + runtime);
+    Directory.CreateDirectory(output);
+
+    using var process = new Process
+    {
+        StartInfo =
+        {
+            FileName = "dotnet",
+            WorkingDirectory = repoRoot,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false
+        }
+    };
+
+    foreach (var argument in new[]
+    {
+        "publish",
+        project,
+        "-c",
+        "Release",
+        "--self-contained",
+        "-p:PublishSingleFile=true",
+        "-p:IncludeNativeLibrariesForSelfExtract=true",
+        "-p:DebugType=None",
+        "-r",
+        runtime,
+        "-o",
+        output
+    })
+    {
+        process.StartInfo.ArgumentList.Add(argument);
+    }
+
+    process.Start();
+    var outputTask = process.StandardOutput.ReadToEndAsync();
+    var errorTask = process.StandardError.ReadToEndAsync();
+    await process.WaitForExitAsync();
+
+    var text = await outputTask + await errorTask;
+    Console.Write(text);
+
+    if (process.ExitCode != 0)
+        throw new InvalidOperationException($"Publishing for {runtime} failed with exit code {process.ExitCode}.");
+}

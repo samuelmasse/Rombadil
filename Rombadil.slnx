@@ -4,10 +4,8 @@
         <Project Path="src/Rombadil.Cpu.Emulator.Cli/Rombadil.Cpu.Emulator.Cli.csproj" />
     </Folder>
     <Folder Name="/Scripts/">
-        <Project Path="scripts/Rombadil.Script.Coverage/Rombadil.Script.Coverage.csproj" />
         <Project Path="scripts/Rombadil.Script.Dev/Rombadil.Script.Dev.csproj" />
         <Project Path="scripts/Rombadil.Script.Package/Rombadil.Script.Package.csproj" />
-        <Project Path="scripts/Rombadil.Script.Screenshot/Rombadil.Script.Screenshot.csproj" />
     </Folder>
     <Folder Name="/Tests/">
         <Project Path="tests/Rombadil.Assembler.Test/Rombadil.Assembler.Test.csproj" />

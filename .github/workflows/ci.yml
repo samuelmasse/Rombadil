@@ -34,16 +34,7 @@ jobs:
           dotnet restore Rombadil/Rombadil.slnx
           dotnet build Rombadil/Rombadil.slnx --no-restore
       - name: Test
-        run: dotnet test Rombadil/Rombadil.slnx --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory TestResults
-      - name: Install ReportGenerator
-        run: dotnet tool install --global dotnet-reportgenerator-globaltool
-      - name: Generate Coverage Report
-        run: reportgenerator -reports:TestResults/**/coverage.cobertura.xml -targetdir:CoverageReport -reporttypes:Html
-      - name: Upload Coverage Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: CoverageReport
-          path: CoverageReport
+        run: dotnet test Rombadil/Rombadil.slnx --no-build --verbosity normal
       - name: Lint
         working-directory: AlvorKit
         run: dotnet run --project scripts/AlvorKit.Script.Lint -- --repo-root ../Rombadil

@@ -18,3 +18,13 @@ Rombadil is a cycle accurate NES emulator implemented in C# using OpenTK (OpenGL
 
 - `rombadilasm` is a 6502 assembler
 - `rombadil6502` is a standalone 6502 CPU emulator
+
+## Developer Scripts
+
+Use AlvorSense for visual capture:
+
+```powershell
+dotnet run --project ..\AlvorKit\scripts\AlvorKit.Script.AlvorSense -- start --id rombadil --project scripts\Rombadil.Script.Dev --workdir .
+dotnet run --project ..\AlvorKit\scripts\AlvorKit.Script.AlvorSense -- send --id rombadil --command "render" --command "screenshot out\shots\rombadil.png"
+dotnet run --project ..\AlvorKit\scripts\AlvorKit.Script.AlvorSense -- stop --id rombadil
+```
