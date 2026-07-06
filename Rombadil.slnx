@@ -4,7 +4,7 @@
         <Project Path="src/Rombadil.Cpu.Emulator.Cli/Rombadil.Cpu.Emulator.Cli.csproj" />
     </Folder>
     <Folder Name="/Scripts/">
-        <Project Path="scripts/Rombadil.Script.Dev/Rombadil.Script.Dev.csproj" />
+        <Project Path="scripts/Rombadil.Script.Dev/Rombadil.Script.Dev.csproj" DefaultStartup="true" />
         <Project Path="scripts/Rombadil.Script.Package/Rombadil.Script.Package.csproj" />
     </Folder>
     <Folder Name="/Tests/">
