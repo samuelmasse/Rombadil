@@ -27,8 +27,8 @@ jobs:
       - name: Generate AlvorKit sources
         working-directory: AlvorKit
         run: |
-          dotnet run --project scripts/AlvorKit.Script.MathsGen
-          dotnet run --project scripts/AlvorKit.Script.Bindgen -- all --strict
+          dotnet run --project scripts/AlvorKit.Script.MathsGen -- --setup-local
+          dotnet run --project scripts/AlvorKit.Script.Bindgen -- all --strict --setup-local
       - name: Build
         run: |
           dotnet restore Rombadil/Rombadil.slnx
