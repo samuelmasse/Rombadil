@@ -62,6 +62,7 @@ rules:
 
 - `AlvorSense.md`: hidden, engine-native visual harness for AlvorKit games.
 - `AlvorEye.md`: OS-level visual automation for real desktop windows.
+- `ProjectSplitModel.md`: pure, frontend, menu, backend, server, protocol, and executable package split.
 - `GameScopeOrganization.md`: DI scopes, scope prefixes, loader scopes, states,
   controls, seeding, and constructor ordering.
 - `GlOwnership.md`: hierarchical `GlLayer` ownership and GPU object lifetime.
@@ -73,6 +74,14 @@ rules:
 Use `../AlvorKit/demos/` as runnable examples for engine APIs.
 Other docs and design references exist under `../AlvorKit/docs/`; open them
 only when the task touches that area.
+
+Before adding a `ProjectReference`, make sure it preserves the package's role.
+It is vitally important that a project does not take on a dirty dependency in
+the `.csproj` that defeats the purpose of the split. Pure packages must not
+reference UI, GL, frontend, menu, audio, or windowing packages. Frontend
+packages may depend on `AlvorKit.Engine`, but should not depend on
+`AlvorKit.Engine.Loop`; loop ownership belongs in the executable, menus, or
+another composition package.
 
 ## Visual Checks
 
