@@ -4,11 +4,15 @@ public class NesMapperUxrom : NesMapper
 {
     private readonly Memory<byte> prg;
     private readonly Memory<byte> chr;
-    private readonly byte[] chrRam = new byte[0x2000];
     private readonly bool busConflicts;
     private byte selectedBank;
 
-    public NesMapperUxrom(Memory<byte> prg, Memory<byte> chr, NesMirroring mirroring, bool busConflicts = false)
+    public NesMapperUxrom(
+        Memory<byte> prg,
+        Memory<byte> chr,
+        NesMirroring mirroring,
+        bool busConflicts,
+        NesCartridgeRamSizes ram) : base(ram)
     {
         this.prg = prg;
         this.chr = chr;
@@ -47,14 +51,15 @@ public class NesMapperUxrom : NesMapper
     public override void WriteChr(ushort addr, byte value)
     {
         if (chr.Length == 0)
-            chrRam[addr & 0x1FFF] = value;
+            WriteChrRam(addr, value);
     }
 
     public override byte ReadChr(ushort addr)
     {
         if (chr.Length == 0)
-            return chrRam[addr & 0x1FFF];
+            return ReadChrRam(addr);
 
         return chr.Span[addr % chr.Length];
     }
+
 }

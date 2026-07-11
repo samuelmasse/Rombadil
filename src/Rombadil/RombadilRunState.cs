@@ -11,6 +11,7 @@ public class RombadilRunState(
     RootSprites sprites,
     RombadilScope scope,
     RombadilAudio audio,
+    RombadilBatterySave batterySave,
     RombadilEmulator emulator,
     RombadilFramebuffer framebuffer,
     RombadilScreenTexture screenTexture) : State
@@ -56,6 +57,7 @@ public class RombadilRunState(
         }
 
         audio.Pump(effectiveSpeed);
+        batterySave.Update(delta);
     }
 
     public override void Render()

@@ -5,8 +5,6 @@ public class NesMapperMmc3 : NesMapper
     private readonly Memory<byte> prg;
     private readonly Memory<byte> chr;
     private readonly bool fourScreen;
-    private readonly byte[] chrRam = new byte[0x2000];
-    private readonly byte[] ram = new byte[0x2000];
 
     private readonly byte[] bankRegs = new byte[8];
     private byte bankSelect;
@@ -22,7 +20,11 @@ public class NesMapperMmc3 : NesMapper
     private bool irqReload;
     private bool irqEnable;
 
-    public NesMapperMmc3(Memory<byte> prg, Memory<byte> chr, bool fourScreen)
+    public NesMapperMmc3(
+        Memory<byte> prg,
+        Memory<byte> chr,
+        bool fourScreen,
+        NesCartridgeRamSizes ram) : base(ram)
     {
         this.prg = prg;
         this.chr = chr;
@@ -118,15 +120,15 @@ public class NesMapperMmc3 : NesMapper
     public override void WritePrgRam(ushort addr, byte value)
     {
         if (ramEnable && ramWritable)
-            ram[addr - 0x6000] = value;
+            WritePrgRamOffset(addr - 0x6000, value);
     }
 
-    public override byte ReadPrgRam(ushort addr) => ramEnable ? ram[addr - 0x6000] : (byte)0;
+    public override byte ReadPrgRam(ushort addr) => ramEnable ? ReadPrgRamOffset(addr - 0x6000) : (byte)0;
 
     public override byte ReadChr(ushort addr)
     {
         if (chr.Length == 0)
-            return chrRam[addr & 0x1FFF];
+            return ReadChrRam(addr);
 
         int bank;
         int offset;
@@ -195,7 +197,7 @@ public class NesMapperMmc3 : NesMapper
     public override void WriteChr(ushort addr, byte value)
     {
         if (chr.Length == 0)
-            chrRam[addr & 0x1FFF] = value;
+            WriteChrRam(addr, value);
     }
 
     private void UpdateMirroring()

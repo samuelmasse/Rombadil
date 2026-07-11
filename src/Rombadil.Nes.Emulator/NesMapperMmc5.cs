@@ -4,7 +4,6 @@ public class NesMapperMmc5 : NesMapper
 {
     private readonly Memory<byte> prg;
     private readonly Memory<byte> chr;
-    private readonly byte[] chrRam = new byte[0x2000];
     private readonly byte[] exRam = new byte[0x400];
     private readonly NesMmc5Pulse audioPulse1 = new();
     private readonly NesMmc5Pulse audioPulse2 = new();
@@ -16,6 +15,8 @@ public class NesMapperMmc5 : NesMapper
     private readonly int[] chrBankB = new int[4];
     private byte chrUpper;
     private byte prgRamBank;
+    private byte prgRamProtect1;
+    private byte prgRamProtect2;
     private byte ntMapping;
     private byte fillTile;
     private byte fillAttr;
@@ -44,7 +45,11 @@ public class NesMapperMmc5 : NesMapper
     private bool PcmIrqLine => pcmIrqPending && pcmIrqEnable;
     public override bool PendingIrq => irqPending || PcmIrqLine;
 
-    public NesMapperMmc5(Memory<byte> prg, Memory<byte> chr, NesMirroring mirroring)
+    public NesMapperMmc5(
+        Memory<byte> prg,
+        Memory<byte> chr,
+        NesMirroring mirroring,
+        NesCartridgeRamSizes ram) : base(ram)
     {
         this.prg = prg;
         this.chr = chr;
@@ -67,6 +72,8 @@ public class NesMapperMmc5 : NesMapper
             case >= 0x5000 and <= 0x5015: WriteAudioRegister(addr, value); break;
             case 0x5100: prgMode = (byte)(value & 0x03); break;
             case 0x5101: chrMode = (byte)(value & 0x03); break;
+            case 0x5102: prgRamProtect1 = (byte)(value & 0x03); break;
+            case 0x5103: prgRamProtect2 = (byte)(value & 0x03); break;
             case 0x5104: exRamMode = (byte)(value & 0x03); break;
             case 0x5105: ntMapping = value; break;
             case 0x5106: fillTile = value; break;
@@ -115,6 +122,8 @@ public class NesMapperMmc5 : NesMapper
     public override byte PeekExpansion(ushort addr) => ReadExpansionRegister(addr, hasSideEffects: false);
     public override byte ReadPrgRom(ushort addr) => ReadPrgBank(addr, hasSideEffects: true);
     public override byte PeekPrgRom(ushort addr) => ReadPrgBank(addr, hasSideEffects: false);
+    public override byte ReadPrgRam(ushort addr) => ReadRamBank(prgRamBank, addr & 0x1FFF);
+    public override void WritePrgRam(ushort addr, byte value) => WriteRamBank(prgRamBank, addr & 0x1FFF, value);
 
     private byte ReadExpansionRegister(ushort addr, bool hasSideEffects)
     {
@@ -355,7 +364,7 @@ public class NesMapperMmc5 : NesMapper
         }
 
         if (!isRom)
-            return 0;
+            return ReadRamBank(bankIdx, offset);
 
         byte result = prg.Span[(bankIdx * 0x2000 + offset) % prg.Length];
         if (hasSideEffects && pcmReadMode && addr <= 0xBFFF)
@@ -367,7 +376,7 @@ public class NesMapperMmc5 : NesMapper
     public override byte ReadChr(ushort addr)
     {
         if (chr.Length == 0)
-            return chrRam[addr & 0x1FFF];
+            return ReadChrRam(addr);
 
         if (sprite8x16 && chrIoUsesBankB)
             return ReadChrFromBankSetB(addr);
@@ -378,7 +387,7 @@ public class NesMapperMmc5 : NesMapper
     public override void WriteChr(ushort addr, byte value)
     {
         if (chr.Length == 0)
-            chrRam[addr & 0x1FFF] = value;
+            WriteChrRam(addr, value);
     }
 
     public override byte ReadChrBg(ushort addr, ushort ntAddr)
@@ -406,7 +415,7 @@ public class NesMapperMmc5 : NesMapper
     private byte ReadChrFromBankSetA(ushort addr)
     {
         if (chr.Length == 0)
-            return chrRam[addr & 0x1FFF];
+            return ReadChrRam(addr);
 
         int bank;
         int offsetInBank;
@@ -444,7 +453,7 @@ public class NesMapperMmc5 : NesMapper
     private byte ReadChrFromBankSetB(ushort addr)
     {
         if (chr.Length == 0)
-            return chrRam[addr & 0x1FFF];
+            return ReadChrRam(addr);
 
         int bank;
         int offsetInBank;
@@ -483,6 +492,22 @@ public class NesMapperMmc5 : NesMapper
     {
         int mappedAddr = (bank * bankSize + offsetInBank) % chr.Length;
         return chr.Span[mappedAddr];
+    }
+
+    private byte ReadRamBank(int bank, int offset)
+    {
+        if (PrgRamLength == 0)
+            return 0;
+
+        return ReadPrgRamOffset((bank & 0x07) * 0x2000 + offset);
+    }
+
+    private void WriteRamBank(int bank, int offset, byte value)
+    {
+        if (PrgRamLength == 0 || prgRamProtect1 != 0x02 || prgRamProtect2 != 0x01)
+            return;
+
+        WritePrgRamOffset((bank & 0x07) * 0x2000 + offset, value);
     }
 
     public override byte ReadNametable(byte[] vram, ushort addr)

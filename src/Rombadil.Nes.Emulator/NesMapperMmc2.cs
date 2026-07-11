@@ -4,8 +4,6 @@ public class NesMapperMmc2 : NesMapper
 {
     private readonly Memory<byte> prg;
     private readonly Memory<byte> chr;
-    private readonly byte[] chrRam = new byte[0x2000];
-    private readonly byte[] prgRam = new byte[0x2000];
 
     private byte prgBank;
     private byte chrBank0Fd;
@@ -15,7 +13,11 @@ public class NesMapperMmc2 : NesMapper
     private bool latch0Fe;
     private bool latch1Fe;
 
-    public NesMapperMmc2(Memory<byte> prg, Memory<byte> chr, NesMirroring mirroring)
+    public NesMapperMmc2(
+        Memory<byte> prg,
+        Memory<byte> chr,
+        NesMirroring mirroring,
+        NesCartridgeRamSizes ram) : base(ram)
     {
         this.prg = prg;
         this.chr = chr;
@@ -44,9 +46,6 @@ public class NesMapperMmc2 : NesMapper
         if (addr >= 0x8000)
             WritePrgRom(addr, value);
     }
-
-    public override byte ReadPrgRam(ushort addr) => prgRam[addr - 0x6000];
-    public override void WritePrgRam(ushort addr, byte value) => prgRam[addr - 0x6000] = value;
 
     public override byte ReadPrgRom(ushort addr)
     {
@@ -85,7 +84,7 @@ public class NesMapperMmc2 : NesMapper
 
         if (chr.Length == 0)
         {
-            result = chrRam[addr & 0x1FFF];
+            result = ReadChrRam(addr);
         }
         else
         {
@@ -104,7 +103,7 @@ public class NesMapperMmc2 : NesMapper
     public override void WriteChr(ushort addr, byte value)
     {
         if (chr.Length == 0)
-            chrRam[addr & 0x1FFF] = value;
+            WriteChrRam(addr, value);
     }
 
     private void UpdateLatch(ushort addr)

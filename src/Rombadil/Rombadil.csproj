@@ -37,6 +37,7 @@
         <Using Include="AlvorKit.Windowing" />
         <Using Include="BigGustave" />
         <Using Include="Rombadil.Nes.Emulator" />
+        <Using Include="System.Security.Cryptography" />
     </ItemGroup>
 
     <Target Name="EnsureAlvorKitSibling" BeforeTargets="ResolveProjectReferences">

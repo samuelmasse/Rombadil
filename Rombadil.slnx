@@ -11,6 +11,7 @@
         <Project Path="tests/Rombadil.Assembler.Test/Rombadil.Assembler.Test.csproj" />
         <Project Path="tests/Rombadil.Cpu.Emulator.Test/Rombadil.Cpu.Emulator.Test.csproj" />
         <Project Path="tests/Rombadil.Nes.Emulator.Test/Rombadil.Nes.Emulator.Test.csproj" />
+        <Project Path="tests/Rombadil.Test/Rombadil.Test.csproj" />
     </Folder>
     <Project Path="src/Rombadil.Assembler/Rombadil.Assembler.csproj" />
     <Project Path="src/Rombadil.Cpu.Emulator/Rombadil.Cpu.Emulator.csproj" />

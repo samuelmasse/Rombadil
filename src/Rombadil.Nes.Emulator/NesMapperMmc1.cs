@@ -4,8 +4,6 @@ public class NesMapperMmc1 : NesMapper
 {
     private readonly Memory<byte> prg;
     private readonly Memory<byte> chr;
-    private readonly byte[] chrRam = new byte[0x2000];
-    private readonly byte[] prgRam;
     private byte shift = 0x10;
     private byte control = 0x0C;
     private byte chrBank0;
@@ -13,11 +11,13 @@ public class NesMapperMmc1 : NesMapper
     private byte prgBank;
     private bool suppressSerialWrites;
 
-    public NesMapperMmc1(Memory<byte> prg, Memory<byte> chr, int prgRamSize)
+    public NesMapperMmc1(
+        Memory<byte> prg,
+        Memory<byte> chr,
+        NesCartridgeRamSizes ram) : base(ram)
     {
         this.prg = prg;
         this.chr = chr;
-        prgRam = new byte[prgRamSize];
         UpdateMirroring();
     }
 
@@ -117,16 +117,16 @@ public class NesMapperMmc1 : NesMapper
 
     public override void WritePrgRam(ushort addr, byte value)
     {
-        if (prgRam.Length != 0 && !PrgRamDisabled)
-            prgRam[(addr - 0x6000) % prgRam.Length] = value;
+        if (!PrgRamDisabled)
+            WritePrgRamOffset(addr - 0x6000, value);
     }
 
     public override byte ReadPrgRam(ushort addr)
     {
-        if (prgRam.Length == 0 || PrgRamDisabled)
+        if (PrgRamDisabled)
             return 0;
 
-        return prgRam[(addr - 0x6000) % prgRam.Length];
+        return ReadPrgRamOffset(addr - 0x6000);
     }
 
     public override void StepCpuCycle() => suppressSerialWrites = false;
@@ -134,13 +134,13 @@ public class NesMapperMmc1 : NesMapper
     public override void WriteChr(ushort addr, byte value)
     {
         if (chr.Length == 0)
-            chrRam[addr & 0x1FFF] = value;
+            WriteChrRam(addr, value);
     }
 
     public override byte ReadChr(ushort addr)
     {
         if (chr.Length == 0)
-            return chrRam[addr & 0x1FFF];
+            return ReadChrRam(addr);
 
         if ((control & 0x10) != 0)
         {

@@ -4,10 +4,12 @@ public class NesMapperAxrom : NesMapper
 {
     private readonly Memory<byte> prg;
     private readonly Memory<byte> chr;
-    private readonly byte[] chrRam = new byte[0x2000];
     private byte selectedBank;
 
-    public NesMapperAxrom(Memory<byte> prg, Memory<byte> chr)
+    public NesMapperAxrom(
+        Memory<byte> prg,
+        Memory<byte> chr,
+        NesCartridgeRamSizes ram) : base(ram)
     {
         this.prg = prg;
         this.chr = chr;
@@ -29,14 +31,15 @@ public class NesMapperAxrom : NesMapper
     public override void WriteChr(ushort addr, byte value)
     {
         if (chr.Length == 0)
-            chrRam[addr & 0x1FFF] = value;
+            WriteChrRam(addr, value);
     }
 
     public override byte ReadChr(ushort addr)
     {
         if (chr.Length == 0)
-            return chrRam[addr & 0x1FFF];
+            return ReadChrRam(addr);
 
         return chr.Span[addr % chr.Length];
     }
+
 }

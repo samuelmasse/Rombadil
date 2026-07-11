@@ -4,10 +4,13 @@ public class NesMapper148 : NesMapper
 {
     private readonly Memory<byte> prg;
     private readonly Memory<byte> chr;
-    private readonly byte[] chrRam = new byte[0x2000];
     private byte selectedBank;
 
-    public NesMapper148(Memory<byte> prg, Memory<byte> chr, NesMirroring mirroring)
+    public NesMapper148(
+        Memory<byte> prg,
+        Memory<byte> chr,
+        NesMirroring mirroring,
+        NesCartridgeRamSizes ram) : base(ram)
     {
         this.prg = prg;
         this.chr = chr;
@@ -42,7 +45,7 @@ public class NesMapper148 : NesMapper
     public override byte ReadChr(ushort addr)
     {
         if (chr.Length == 0)
-            return chrRam[addr & 0x1FFF];
+            return ReadChrRam(addr);
 
         int bank = (selectedBank & 0x07) * 0x2000;
         return chr.Span[(bank + addr) % chr.Length];
@@ -51,6 +54,6 @@ public class NesMapper148 : NesMapper
     public override void WriteChr(ushort addr, byte value)
     {
         if (chr.Length == 0)
-            chrRam[addr & 0x1FFF] = value;
+            WriteChrRam(addr, value);
     }
 }

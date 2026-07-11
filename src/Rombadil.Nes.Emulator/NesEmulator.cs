@@ -23,20 +23,21 @@ public class NesEmulator
         var mirroring = header.FourScreen
             ? NesMirroring.FourScreen
             : header.VerticalMirroring ? NesMirroring.Vertical : NesMirroring.Horizontal;
+        var ram = new NesCartridgeRamSizes(header.PrgRamSize, header.PrgNvRamSize, header.ChrRamSize, header.ChrNvRamSize);
 
         mapper = header.MapperNumber switch
         {
-            0 => new NesMapperNrom(prg, chr, mirroring, header.PrgRamSize + header.PrgNvRamSize),
-            1 => new NesMapperMmc1(prg, chr, header.PrgRamSize + header.PrgNvRamSize),
-            2 => new NesMapperUxrom(prg, chr, mirroring, header.Submapper == 2),
-            3 => new NesMapperCnrom(prg, chr, mirroring),
-            4 => new NesMapperMmc3(prg, chr, header.FourScreen),
-            5 => new NesMapperMmc5(prg, chr, mirroring),
-            7 => new NesMapperAxrom(prg, chr),
-            9 => new NesMapperMmc2(prg, chr, mirroring),
-            23 => new NesMapperVrc2Vrc4(prg, chr, mirroring, GetMapper23VrcRegisterMapping(header)),
-            25 => new NesMapperVrc2Vrc4(prg, chr, mirroring, GetMapper25VrcRegisterMapping(header)),
-            148 => new NesMapper148(prg, chr, mirroring),
+            0 => new NesMapperNrom(prg, chr, mirroring, ram),
+            1 => new NesMapperMmc1(prg, chr, ram),
+            2 => new NesMapperUxrom(prg, chr, mirroring, header.Submapper == 2, ram),
+            3 => new NesMapperCnrom(prg, chr, mirroring, ram),
+            4 => new NesMapperMmc3(prg, chr, header.FourScreen, ram),
+            5 => new NesMapperMmc5(prg, chr, mirroring, ram),
+            7 => new NesMapperAxrom(prg, chr, ram),
+            9 => new NesMapperMmc2(prg, chr, mirroring, ram),
+            23 => new NesMapperVrc2Vrc4(prg, chr, mirroring, GetMapper23VrcRegisterMapping(header), ram),
+            25 => new NesMapperVrc2Vrc4(prg, chr, mirroring, GetMapper25VrcRegisterMapping(header), ram),
+            148 => new NesMapper148(prg, chr, mirroring, ram),
             _ => new NesMapper()
         };
 
@@ -75,6 +76,11 @@ public class NesEmulator
     }
 
     public byte PeekCpuMemory(ushort addr) => bus.Peek(addr);
+    public int BatterySaveSize => mapper.BatterySaveSize;
+    public bool BatterySaveDirty => mapper.BatterySaveDirty;
+    public void LoadBatterySave(ReadOnlySpan<byte> source) => mapper.LoadBatterySave(source);
+    public void CopyBatterySave(Span<byte> destination) => mapper.CopyBatterySave(destination);
+    public void MarkBatterySaveClean() => mapper.MarkBatterySaveClean();
 
     private bool StepCpuInstruction()
     {

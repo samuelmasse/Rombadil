@@ -5,8 +5,6 @@ public class NesMapperVrc2Vrc4 : NesMapper
     private readonly Memory<byte> prg;
     private readonly Memory<byte> chr;
     private readonly NesVrcRegisterMapping registerMapping;
-    private readonly byte[] chrRam = new byte[0x2000];
-    private readonly byte[] ram = new byte[0x2000];
 
     private byte prgBank0;
     private byte prgBank1;
@@ -25,7 +23,8 @@ public class NesMapperVrc2Vrc4 : NesMapper
         Memory<byte> prg,
         Memory<byte> chr,
         NesMirroring mirroring,
-        NesVrcRegisterMapping registerMapping)
+        NesVrcRegisterMapping registerMapping,
+        NesCartridgeRamSizes ram) : base(ram)
     {
         this.prg = prg;
         this.chr = chr;
@@ -83,7 +82,7 @@ public class NesMapperVrc2Vrc4 : NesMapper
     public override byte ReadChr(ushort addr)
     {
         if (chr.Length == 0)
-            return chrRam[addr & 0x1FFF];
+            return ReadChrRam(addr);
 
         int slot = (addr >> 10) & 7;
         int offset = addr & 0x03FF;
@@ -93,16 +92,17 @@ public class NesMapperVrc2Vrc4 : NesMapper
     public override void WriteChr(ushort addr, byte value)
     {
         if (chr.Length == 0)
-            chrRam[addr & 0x1FFF] = value;
+            WriteChrRam(addr, value);
     }
 
     public override void WritePrgRam(ushort addr, byte value)
     {
         if (ramEnable)
-            ram[(addr - 0x6000) & 0x1FFF] = value;
+            WritePrgRamOffset((addr - 0x6000) & 0x1FFF, value);
     }
 
-    public override byte ReadPrgRam(ushort addr) => ramEnable ? ram[(addr - 0x6000) & 0x1FFF] : (byte)0;
+    public override byte ReadPrgRam(ushort addr) =>
+        ramEnable ? ReadPrgRamOffset((addr - 0x6000) & 0x1FFF) : (byte)0;
 
     public override void StepCpuCycle()
     {
