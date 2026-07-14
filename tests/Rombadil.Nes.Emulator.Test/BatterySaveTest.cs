@@ -17,7 +17,7 @@ public class BatterySaveTest
         ram.Write(1, 7);
         Assert.IsFalse(ram.Dirty);
 
-        ram.Load(new byte[] { 1, 2, 3, 4 });
+        ram.Load([1, 2, 3, 4]);
         Assert.IsFalse(ram.Dirty);
         CollectionAssert.AreEqual(new byte[] { 1, 2, 3, 4 }, Copy(ram));
     }
