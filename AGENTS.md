@@ -55,6 +55,24 @@ Game-specific overrides:
 - Use AlvorKit shapes directly: scopes, controls, vectors, maths types,
   `GlLayer`, UI menus, and engine lifecycle APIs.
 
+## Game Entities And ECS
+
+Game entities must use AlvorKit ECS. Model players, enemies, projectiles,
+items, chunks, and other mutable simulated objects with generated
+`[Components]`, ECS handles and arenas, and `AlvorKit.ECS.Indexed` when their
+component writes maintain bags, hooks, or indexes. Do not introduce a parallel
+game-entity hierarchy, bespoke component store, or alternate ECS.
+
+Keep behavior in injected services and systems and keep entity state in
+components. Services, commands, configuration, assets, protocol records, and
+ordinary value objects are not game entities and should remain normal C#
+types.
+
+Before creating or significantly changing game entities, component
+declarations, entity handles or arenas, Indexed contexts, hooks, bags, indexes,
+or entity lifetime, read `../AlvorKit/docs/ECS.md`. Follow its ownership,
+registration, mutation, iteration, and teardown contracts.
+
 ## Code Design Style
 
 These are prescriptive defaults, not merely instructions to copy nearby code.
@@ -157,6 +175,8 @@ rules:
 
 - `AlvorSense.md`: hidden, engine-native visual harness for AlvorKit games.
 - `AlvorEye.md`: OS-level visual automation for real desktop windows.
+- `ECS.md`: required game-entity components, handles, arenas, Indexed hooks and
+  bags, iteration, ownership, and teardown.
 - `ProjectSplitModel.md`: pure, frontend, menu, backend, server, protocol, and executable package split.
 - `GameScopeOrganization.md`: DI scopes, scope prefixes, loader scopes, states,
   controls, seeding, and constructor ordering.
