@@ -55,6 +55,101 @@ Game-specific overrides:
 - Use AlvorKit shapes directly: scopes, controls, vectors, maths types,
   `GlLayer`, UI menus, and engine lifecycle APIs.
 
+## Code Design Style
+
+These are prescriptive defaults, not merely instructions to copy nearby code.
+Apply them in new projects and packages even when no local precedent exists.
+
+### Services And Composition
+
+- Put runtime behavior in injected instance classes. A service should remain an
+  instance even when it currently has no fields.
+- Do not make a class or method static merely because it is stateless or because
+  an analyzer recommends it.
+- Use constructor injection. Do not introduce service locators, ambient
+  containers, or hidden global dependencies.
+- Keep composition in scopes, loaders, and entry points. Each loader should
+  initialize its own layer instead of absorbing or replacing another loader's
+  responsibilities.
+- Keep domain services focused. Do not give them unrelated loading,
+  persistence, rendering, protocol, or presentation responsibilities.
+- Prefer a valid neutral initial state during normal binding over nullable
+  placeholders and defensive access paths.
+
+### Static Members And Constants
+
+- Do not create static service classes, static mutable state, or broad
+  collections of static helpers.
+- Reserve static members for operators, extension methods, framework-required
+  entry points, compile-time values, and pure value operations that are
+  unambiguously owned by the type.
+- Use a named constant for a repeated representation invariant or a value whose
+  meaning matters. Put it on the type that owns the meaning.
+- Do not promote one-off literals or runtime policy to global constants. Use
+  injected configuration or instance state for values that can vary by runtime
+  or composition.
+- Disable analyzer rules that recommend making instance members static when
+  they conflict with these conventions.
+
+### Failure Semantics
+
+- Internal code assumes its contracts are satisfied. Do not add redundant range
+  checks, custom guard exceptions, debug assertions, or fallback behavior for
+  states that should never occur.
+- Let invalid internal or authoritative data fail naturally at the operation
+  that cannot handle it.
+- Validate external input only when validation is part of a real security,
+  compatibility, or recoverable protocol boundary.
+- Do not catch exceptions unless the code can perform a meaningful recovery.
+  Do not catch merely to log, return a default, continue partially, or replace
+  the exception.
+- Use `try`/`finally` only when cleanup must still happen after an exception.
+  Prefer ownership whose normal lifetime makes cleanup explicit.
+
+### Ownership And Lifecycle
+
+- Every mutable resource should have an obvious owner and one understandable
+  allocation, replacement, clearing, and teardown path.
+- Express lifecycle with domain operations such as `Load`, `Clear`, `Fill`,
+  `Stop`, or `Unload` when those names describe the real operation.
+- Use `IDisposable` only for types that participate in a genuine disposal
+  contract, not as a generic marker for resetting state or returning storage.
+- Similar resources should follow similar lifecycle patterns.
+- Do not add wrapper properties or methods that merely expose information
+  already publicly available.
+
+### Concurrency
+
+- Design concurrency from actual ownership and access paths. Prefer
+  thread-owned, worker-owned, or scope-owned state over shared mutable state.
+- Reuse per-worker buffers when their lifetime naturally matches a worker.
+- Add locks only around state that is genuinely accessed concurrently and
+  requires synchronization.
+- Do not add volatile publication, snapshots, defensive copies, or additional
+  locks for hypothetical races unsupported by the lifecycle.
+- Do not assign unusual thread priorities without a measured scheduling
+  requirement.
+
+### Design Restraint
+
+- Implement the smallest coherent design that satisfies the current system. Do
+  not add speculative extensibility, defensive infrastructure, or future
+  abstraction layers.
+- Do not create a feature-specific protocol, synchronization channel, or side
+  system when the concern belongs to a general system that has not been built
+  yet.
+- Keep package roles strict. Pure simulation, backend persistence, frontend
+  presentation, protocol, and executable composition remain separate.
+- Put derived presentation values in frontend packages instead of pure
+  simulation packages.
+- Give each class one clear responsibility. Move initialization, persistence,
+  and presentation derivations to their respective owners instead of
+  accumulating convenience methods on a domain object.
+- Preserve unrelated behavior. A subsystem change should not also alter menus,
+  loading presentation, scheduling policy, or other user-visible behavior.
+- Prefer direct, readable code over infrastructure justified only by
+  theoretical robustness.
+
 ## Documentation Router
 
 Open the matching guide under `../AlvorKit/docs/` instead of re-inventing local
