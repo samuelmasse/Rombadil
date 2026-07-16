@@ -82,6 +82,14 @@ iteration, and teardown contracts.
 These are prescriptive defaults, not merely instructions to copy nearby code.
 Apply them in new projects and packages even when no local precedent exists.
 
+### Accessibility
+
+- Prefer `public` over `internal` for game-code types and collaborating members.
+  Game projects are not curated library API surfaces; assembly boundaries should
+  not hide ordinary game systems, state, commands, or helpers.
+- Keep details `private` when they are owned by one type. Use `internal` only
+  when a deliberately small, curated assembly API is a real design requirement.
+
 ### Services And Composition
 
 - Put runtime behavior in injected instance classes. A service should remain an
