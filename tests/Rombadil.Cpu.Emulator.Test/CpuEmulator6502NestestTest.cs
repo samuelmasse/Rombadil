@@ -28,12 +28,12 @@ public sealed class CpuEmulator6502NestestTest
         var state = new CpuEmulatorState();
         var bus = new CpuEmulatorBusMap(bytes, map);
         var cpu = new CpuEmulator6502(state, bus);
-        var logger = new CpuEmulatorLogger(state, bus, cpu);
+        var trace = new CpuInstructionTraceFormatter(state, bus, cpu);
         cpu.Reset(0xC000);
 
         for (int i = 0; i < log.Length; i++)
         {
-            string msg = logger.Log();
+            string msg = trace.Format();
             if (log[i] != msg)
                 throw new AssertFailedException($"\n{i + 1,-8} Expected : {log[i]}\n{i + 1,-8} But got  : {msg}");
 

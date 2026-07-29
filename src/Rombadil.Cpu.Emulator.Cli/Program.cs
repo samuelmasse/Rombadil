@@ -173,7 +173,7 @@ rootCommand.SetAction(parseResult =>
     var state = new CpuEmulatorState();
     var bus = new CpuEmulatorBusMap(bytes, map);
     var cpu = new CpuEmulator6502(state, bus);
-    var logger = new CpuEmulatorLogger(state, bus, cpu);
+    var trace = new CpuInstructionTraceFormatter(state, bus, cpu);
 
     foreach (var value in byteValues)
     {
@@ -218,7 +218,7 @@ rootCommand.SetAction(parseResult =>
     CpuOpcode code;
     do
     {
-        Console.WriteLine(logger.Log());
+        Console.WriteLine(trace.Format());
         code = (CpuOpcode)bus[state.PC];
         cpu.Step();
     }

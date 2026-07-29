@@ -1,8 +1,8 @@
 namespace Rombadil.Cpu.Emulator;
 
-public class CpuEmulatorLogger(CpuEmulatorState state, CpuEmulatorBus memory, CpuEmulator6502 cpu)
+public class CpuInstructionTraceFormatter(CpuEmulatorState state, CpuEmulatorBus memory, CpuEmulator6502 cpu)
 {
-    public string Log()
+    public string Format()
     {
         var reg = state.Reg;
         var opcode = memory.Peek(reg.PC);

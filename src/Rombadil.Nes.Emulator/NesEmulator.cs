@@ -10,7 +10,6 @@ public class NesEmulator
     private readonly NesController controller2;
     private readonly NesMemoryBus bus;
     private readonly CpuEmulator6502 cpu;
-    private readonly CpuEmulatorLogger logger;
 
     public NesEmulator(Memory<byte> rom, Memory<byte> framebuffer, List<int> samples)
     {
@@ -48,8 +47,6 @@ public class NesEmulator
         controller2 = new NesController();
         bus = new NesMemoryBus(state, mapper, ppu, apu, controller1, controller2);
         cpu = new CpuEmulator6502(state, bus);
-        logger = new CpuEmulatorLogger(state, bus, cpu);
-
         Reset();
     }
 
