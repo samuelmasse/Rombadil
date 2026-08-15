@@ -131,7 +131,8 @@ public unsafe class RombadilAudio : IDisposable
         if (pOutput == 0 || frameCount == 0)
             return;
 
-        var output = new Span<short>((void*)pOutput, checked((int)frameCount));
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(frameCount, (uint)int.MaxValue);
+        var output = new Span<short>((void*)pOutput, (int)frameCount);
         var outputOffset = 0;
         var remaining = output.Length;
 
