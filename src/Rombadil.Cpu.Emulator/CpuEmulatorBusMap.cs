@@ -1,4 +1,4 @@
-namespace Rombadil.Cpu.Emulator;
+namespace Rombadil;
 
 public class CpuEmulatorBusMap(Memory<byte> memory, Memory<ushort> map) : CpuEmulatorBus
 {

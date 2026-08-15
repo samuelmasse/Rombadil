@@ -1,4 +1,4 @@
-namespace Rombadil.Assembler.Test;
+namespace Rombadil;
 
 [TestClass]
 public class Assembler6502ErrorTest

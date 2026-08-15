@@ -1,4 +1,4 @@
-namespace Rombadil.Cpu;
+namespace Rombadil;
 
 public enum CpuInstruction : byte
 {

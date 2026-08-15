@@ -17,7 +17,8 @@
     <Import Project="$(AlvorKitRoot)AlvorKit.Packages.props" Condition="Exists('$(AlvorKitRoot)AlvorKit.Packages.props')" />
 
     <ItemGroup>
-		<Using Include="System.Buffers" />
+        <Using Include="Rombadil" />
+        <Using Include="System.Buffers" />
         <Using Include="System.Collections.Concurrent" />
         <Using Include="System.Diagnostics" />
         <Using Include="System.Diagnostics.CodeAnalysis" />

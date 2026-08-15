@@ -1,4 +1,4 @@
-namespace Rombadil.Cpu.Emulator;
+namespace Rombadil;
 
 internal readonly struct CpuEmulatorProcessor(CpuEmulatorState s, CpuEmulatorBus b)
 {

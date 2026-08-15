@@ -28,7 +28,6 @@
 
     <ItemGroup>
         <Using Include="BigGustave" />
-        <Using Include="Rombadil.Nes.Emulator" />
     </ItemGroup>
 
 </Project>

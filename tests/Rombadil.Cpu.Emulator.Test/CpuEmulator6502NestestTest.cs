@@ -1,4 +1,4 @@
-namespace Rombadil.Cpu.Emulator.Test;
+namespace Rombadil;
 
 [TestClass]
 public sealed class CpuEmulator6502NestestTest

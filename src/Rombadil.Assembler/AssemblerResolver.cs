@@ -1,4 +1,4 @@
-namespace Rombadil.Assembler;
+namespace Rombadil;
 
 internal class AssemblerResolver(
     List<AssemblerStatement> statements,

@@ -1,4 +1,4 @@
-namespace Rombadil.Cpu.Emulator;
+namespace Rombadil;
 
 public class CpuInstructionTraceFormatter(CpuEmulatorState state, CpuEmulatorBus memory, CpuEmulator6502 cpu)
 {

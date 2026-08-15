@@ -14,6 +14,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Using Include="AlvorKit" Condition="'$(MSBuildProjectName)' != 'Rombadil.Script.Package'" />
+        <Using Include="Rombadil" Condition="'$(MSBuildProjectName)' != 'Rombadil.Script.Package'" />
         <Using Include="System.Collections.Concurrent" />
         <Using Include="System.Diagnostics" />
         <Using Include="System.Diagnostics.CodeAnalysis" />

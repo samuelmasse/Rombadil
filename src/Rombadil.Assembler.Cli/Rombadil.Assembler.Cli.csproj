@@ -15,7 +15,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Using Include="Rombadil.Assembler" />
         <Using Include="System.CommandLine" />
         <Using Include="Tomlyn" />
     </ItemGroup>

@@ -1,4 +1,4 @@
-namespace Rombadil.Cpu.Emulator;
+namespace Rombadil;
 
 public class CpuEmulator6502(CpuEmulatorState state, CpuEmulatorBus bus)
 {

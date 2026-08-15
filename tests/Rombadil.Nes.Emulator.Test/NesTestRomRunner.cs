@@ -1,4 +1,4 @@
-namespace Rombadil.Nes.Emulator.Test;
+namespace Rombadil;
 
 internal sealed class NesTestRomRunner
 {

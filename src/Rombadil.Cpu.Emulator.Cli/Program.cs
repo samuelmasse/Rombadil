@@ -295,5 +295,8 @@ static ushort ParseNumberString(string input)
     return Convert.ToUInt16(input, 10);
 }
 
-record struct MemoryRegionRemap(ushort SourceStart, ushort TargetStart, ushort Length);
-record struct MemoryRegionWrite(ushort Start, ushort Value, ushort Length);
+namespace Rombadil
+{
+    record struct MemoryRegionRemap(ushort SourceStart, ushort TargetStart, ushort Length);
+    record struct MemoryRegionWrite(ushort Start, ushort Value, ushort Length);
+}

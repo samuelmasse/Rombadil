@@ -1,5 +1,3 @@
-using Rombadil;
-
 RootLoop.RunGlfw<RootRombadilLoadState>(injector =>
 {
     string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);

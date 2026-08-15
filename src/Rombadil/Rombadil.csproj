@@ -26,17 +26,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Using Include="AlvorKit.Engine" />
-        <Using Include="AlvorKit.Engine.Loop" />
-        <Using Include="AlvorKit.Graphics2D" />
-        <Using Include="AlvorKit.Injection" />
-        <Using Include="AlvorKit.Maths" />
-        <Using Include="AlvorKit.MiniAudio" />
-        <Using Include="AlvorKit.OpenGL" />
-        <Using Include="AlvorKit.OpenGL.Layer" />
-        <Using Include="AlvorKit.Windowing" />
+        <Using Include="AlvorKit" />
         <Using Include="BigGustave" />
-        <Using Include="Rombadil.Nes.Emulator" />
         <Using Include="System.Security.Cryptography" />
     </ItemGroup>
 

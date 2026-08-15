@@ -1,4 +1,4 @@
-namespace Rombadil.Nes.Emulator;
+namespace Rombadil;
 
 public class NesApu(NesMapper mapper, List<int> samples)
 {

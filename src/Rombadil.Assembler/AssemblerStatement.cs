@@ -1,4 +1,4 @@
-namespace Rombadil.Assembler;
+namespace Rombadil;
 
 internal record class AssemblerStatement(int LineNumber, string Name, string Value, AssemblerStatementType Type)
 {

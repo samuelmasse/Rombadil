@@ -1,5 +1,3 @@
-using Rombadil;
-
 RootLoop.RunGlfw<RootRombadilLoadState>(injector =>
 {
     byte[] rom;

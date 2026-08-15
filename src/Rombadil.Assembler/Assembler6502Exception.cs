@@ -1,4 +1,4 @@
-namespace Rombadil.Assembler;
+namespace Rombadil;
 
 public class Assembler6502Exception(int line, string error) : Exception($"{line + 1}: {error}")
 {

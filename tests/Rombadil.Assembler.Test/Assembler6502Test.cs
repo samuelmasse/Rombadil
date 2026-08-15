@@ -1,4 +1,4 @@
-namespace Rombadil.Assembler.Test;
+namespace Rombadil;
 
 [TestClass]
 public sealed class Assembler6502Test

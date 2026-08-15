@@ -1,4 +1,4 @@
-namespace Rombadil.Test;
+namespace Rombadil;
 
 [TestClass]
 public sealed class RombadilSaveFileTest

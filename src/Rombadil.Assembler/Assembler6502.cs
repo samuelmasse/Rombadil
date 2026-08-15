@@ -1,4 +1,4 @@
-namespace Rombadil.Assembler;
+namespace Rombadil;
 
 public class Assembler6502(IReadOnlyList<AssemblerSegment> segments, IFileSystem fileSystem)
 {

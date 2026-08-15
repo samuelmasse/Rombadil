@@ -1,4 +1,4 @@
-namespace Rombadil.Nes.Emulator;
+namespace Rombadil;
 
 public class NesPpuBackground(NesPpuMemory memory, NesMapper mapper)
 {

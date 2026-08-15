@@ -1,4 +1,4 @@
-namespace Rombadil.Cpu;
+namespace Rombadil;
 
 [Flags]
 public enum CpuStatus : byte

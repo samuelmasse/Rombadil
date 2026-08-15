@@ -8,9 +8,4 @@
         <ProjectReference Include="..\..\src\Rombadil\Rombadil.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-        <Using Include="AlvorKit.Engine.Loop" />
-        <Using Include="AlvorKit.Injection" />
-    </ItemGroup>
-
 </Project>

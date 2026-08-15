@@ -1,4 +1,4 @@
-namespace Rombadil.Nes.Emulator;
+namespace Rombadil;
 
 [Flags]
 public enum NesButtons : byte

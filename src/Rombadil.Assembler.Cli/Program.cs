@@ -103,8 +103,11 @@ static List<AssemblerSegment> DefaultSegments()
     ];
 }
 
-class SegmentEntry
+namespace Rombadil
 {
-    public int MemoryStart { get; set; }
-    public int FileSize { get; set; }
+    class SegmentEntry
+    {
+        public int MemoryStart { get; set; }
+        public int FileSize { get; set; }
+    }
 }
