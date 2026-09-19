@@ -28,3 +28,15 @@ dotnet run --project ..\AlvorKit\scripts\AlvorKit.Script.AlvorSense -- start --i
 dotnet run --project ..\AlvorKit\scripts\AlvorKit.Script.AlvorSense -- send --id rombadil --command "render" --command "screenshot out\shots\rombadil.png"
 dotnet run --project ..\AlvorKit\scripts\AlvorKit.Script.AlvorSense -- stop --id rombadil
 ```
+
+## Repository solution
+
+From this checkout, generate the gitignored solution from projects and evaluated
+dependencies, then open `Rombadil.slnx`:
+
+```powershell
+dotnet run --project ../AlvorKit/scripts/AlvorKit.Script.Solution -- --repo-root .
+```
+
+Add `--watch` for continuous updates. See
+[the solution workflow](../AlvorKit/docs/Solutions.md) for discovery and CI.

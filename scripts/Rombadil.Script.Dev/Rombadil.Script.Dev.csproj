@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <WorkspaceStartup>true</WorkspaceStartup>
         <ApplicationIcon>../../res/Icon.ico</ApplicationIcon>
     </PropertyGroup>
 

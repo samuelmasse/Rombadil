@@ -24,12 +24,12 @@ static string FindRepositoryRoot()
     {
         for (var current = Path.GetFullPath(start); current is not null; current = Directory.GetParent(current)?.FullName)
         {
-            if (File.Exists(Path.Combine(current, "Rombadil.slnx")))
+            if (Directory.Exists(Path.Combine(current, ".git")) || File.Exists(Path.Combine(current, ".git")))
                 return current;
         }
     }
 
-    throw new InvalidOperationException("Rombadil.slnx not found above the current process directories.");
+    throw new InvalidOperationException("Rombadil Git checkout not found above the current process directories.");
 }
 
 static void ResetDirectory(string path)

@@ -29,12 +29,19 @@ jobs:
         run: |
           dotnet run --project scripts/AlvorKit.Script.MathsGen -- --setup-local
           dotnet run --project scripts/AlvorKit.Script.Bindgen -- all --strict --setup-local
+      - name: Generate repository solution
+        working-directory: AlvorKit
+        run: dotnet run --project scripts/AlvorKit.Script.Solution -- --repo-root ../Rombadil
       - name: Build
         run: |
           dotnet restore Rombadil/Rombadil.slnx
           dotnet build Rombadil/Rombadil.slnx --no-restore
       - name: Test
-        run: dotnet test Rombadil/Rombadil.slnx --no-build --verbosity normal
+        working-directory: Rombadil
+        run: |
+          for project in tests/*/*.Test.csproj; do
+            dotnet test "$project" --no-build --verbosity normal
+          done
       - name: Lint
         working-directory: AlvorKit
         run: dotnet run --project scripts/AlvorKit.Script.Lint -- --repo-root ../Rombadil
