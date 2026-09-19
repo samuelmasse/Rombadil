@@ -38,10 +38,7 @@ jobs:
           dotnet build Rombadil/Rombadil.slnx --no-restore
       - name: Test
         working-directory: Rombadil
-        run: |
-          for project in tests/*/*.Test.csproj; do
-            dotnet test "$project" --no-build --verbosity normal
-          done
+        run: dotnet test Rombadil.slnx --no-build --no-restore --verbosity normal
       - name: Lint
         working-directory: AlvorKit
         run: dotnet run --project scripts/AlvorKit.Script.Lint -- --repo-root ../Rombadil
