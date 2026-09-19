@@ -32,7 +32,7 @@
     </ItemGroup>
 
     <Target Name="EnsureAlvorKitSibling" BeforeTargets="ResolveProjectReferences">
-        <Error Condition="!Exists('$(AlvorKitRoot)AlvorKit.slnx')"
+        <Error Condition="!Exists('$(AlvorKitRoot)AlvorKit.Packages.props')"
             Text="AlvorKit sibling clone not found at '$(AlvorKitRoot)'. Clone AlvorKit next to the Rombadil repository." />
     </Target>
 
