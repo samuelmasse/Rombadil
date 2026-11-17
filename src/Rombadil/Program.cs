@@ -1,4 +1,4 @@
-RootLoop.RunGlfw<RootRombadilLoadState>(injector =>
+RootLoop.RunGlfw<RootRombadilLoadState>([], injector =>
 {
     byte[] rom;
     try
