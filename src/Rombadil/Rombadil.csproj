@@ -15,13 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="$(AlvorKitRoot)src\AlvorKit.Engine\AlvorKit.Engine.csproj" />
         <ProjectReference Include="$(AlvorKitRoot)src\AlvorKit.Engine.Loop\AlvorKit.Engine.Loop.csproj" />
-        <ProjectReference Include="$(AlvorKitRoot)src\AlvorKit.Graphics2D\AlvorKit.Graphics2D.csproj" />
-        <ProjectReference Include="$(AlvorKitRoot)src\AlvorKit.Injection\AlvorKit.Injection.csproj" />
-        <ProjectReference Include="$(AlvorKitRoot)src\AlvorKit.Maths\AlvorKit.Maths.csproj" />
-        <ProjectReference Include="$(AlvorKitRoot)src\AlvorKit.OpenGL.Layer\AlvorKit.OpenGL.Layer.csproj" />
-        <ProjectReference Include="$(AlvorKitRoot)src\AlvorKit.Windowing\AlvorKit.Windowing.csproj" />
         <ProjectReference Include="..\Rombadil.Nes.Emulator\Rombadil.Nes.Emulator.csproj" />
     </ItemGroup>
 
